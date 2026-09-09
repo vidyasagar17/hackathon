@@ -1,16 +1,4 @@
-type Column = 'hundreds' | 'tens' | 'ones'
-
-const chipColor: Record<Column, string> = {
-  hundreds: 'bg-hundreds',
-  tens: 'bg-tens',
-  ones: 'bg-ones',
-}
-
-const borderColor: Record<Column, string> = {
-  hundreds: 'border-hundreds',
-  tens: 'border-tens',
-  ones: 'border-ones',
-}
+import { borderColor, chipColor, type Column } from '../columns'
 
 function DigitChip({ digit, column }: { digit: number; column: Column }) {
   return (

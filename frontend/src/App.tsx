@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import DashboardPage from './pages/DashboardPage'
 import LandingPage from './pages/LandingPage'
 import PracticePage from './pages/PracticePage'
 
@@ -8,6 +9,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/practice" element={<PracticePage />} />
+        <Route path="/summary" element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>
   )
