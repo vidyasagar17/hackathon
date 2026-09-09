@@ -62,10 +62,15 @@ function StreakMeter({ filled, total }: { filled: number; total: number }) {
   )
 }
 
+function formatMisconception(name: string): string {
+  return name.replace(/_/g, ' ')
+}
+
 function PracticePage() {
   const [problem, setProblem] = useState<Problem | null>(null)
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS)
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null)
+  const [misconception, setMisconception] = useState<string | null>(null)
   const [streak, setStreak] = useState(0)
 
   const fetchProblem = () => {
@@ -75,6 +80,7 @@ function PracticePage() {
         setProblem(data)
         setAnswers(EMPTY_ANSWERS)
         setFeedback(null)
+        setMisconception(null)
       })
   }
 
@@ -91,17 +97,30 @@ function PracticePage() {
   const allFilled = problem.columns.every((c) => answers[c.place] !== '')
 
   const checkAnswer = () => {
-    const entered = Number(
+    const submitted_answer = Number(
       problem.columns.map((c) => answers[c.place]).join(''),
     )
-    if (entered === problem.answer) {
-      setFeedback('correct')
-      setStreak((s) => s + 1)
-      fetchProblem()
-    } else {
-      setFeedback('incorrect')
-      setStreak(0)
-    }
+    fetch('http://127.0.0.1:8000/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        minuend: problem.minuend,
+        subtrahend: problem.subtrahend,
+        submitted_answer,
+      }),
+    })
+      .then((res) => res.json())
+      .then((result: { correct: boolean; misconception: string | null }) => {
+        if (result.correct) {
+          setFeedback('correct')
+          setStreak((s) => s + 1)
+          fetchProblem()
+        } else {
+          setFeedback('incorrect')
+          setMisconception(result.misconception)
+          setStreak(0)
+        }
+      })
   }
 
   return (
@@ -153,9 +172,16 @@ function PracticePage() {
           </p>
         )}
         {feedback === 'incorrect' && (
-          <p className="mt-6 text-center font-display text-lg font-semibold text-ones">
-            Not quite — try again!
-          </p>
+          <div className="mt-6 rounded-2xl border-l-8 border-helper bg-helper/10 p-4 text-left">
+            <p className="font-display text-lg font-semibold text-ones">
+              Not quite — try again!
+            </p>
+            {misconception && (
+              <p className="mt-1 text-sm text-ink/70">
+                Diagnosed pattern: {formatMisconception(misconception)}
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>

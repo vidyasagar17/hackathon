@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-from problems import Problem, generate_problem
+from misconceptions import MisconceptionName, diagnose
+from problems import Problem, compute_columns, generate_problem
 
 app = FastAPI()
 
@@ -13,6 +15,17 @@ app.add_middleware(
 )
 
 
+class CheckRequest(BaseModel):
+    minuend: int
+    subtrahend: int
+    submitted_answer: int
+
+
+class CheckResponse(BaseModel):
+    correct: bool
+    misconception: MisconceptionName | None
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -21,3 +34,16 @@ def health() -> dict[str, str]:
 @app.get("/problem")
 def get_problem() -> Problem:
     return generate_problem()
+
+
+@app.post("/check")
+def check_answer(request: CheckRequest) -> CheckResponse:
+    problem = Problem(
+        minuend=request.minuend,
+        subtrahend=request.subtrahend,
+        answer=request.minuend - request.subtrahend,
+        columns=compute_columns(request.minuend, request.subtrahend),
+    )
+    correct = request.submitted_answer == problem.answer
+    misconception = None if correct else diagnose(problem, request.submitted_answer)
+    return CheckResponse(correct=correct, misconception=misconception)
