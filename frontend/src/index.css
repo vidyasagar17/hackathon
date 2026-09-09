@@ -1,1 +1,21 @@
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Baloo+2:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-base: #F3E8D4;
+  --color-ink: #1B1B2F;
+  --color-ones: #FF5A5F;
+  --color-tens: #2EC4F1;
+  --color-hundreds: #FFD23F;
+  --color-spark: #3DDC97;
+  --color-helper: #8C6FF7;
+
+  --font-display: "Baloo 2", sans-serif;
+  --font-body: "Atkinson Hyperlegible", sans-serif;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}

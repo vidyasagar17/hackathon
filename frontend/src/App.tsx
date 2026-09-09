@@ -1,19 +1,15 @@
-import { useEffect, useState } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import LandingPage from './pages/LandingPage'
+import PracticePage from './pages/PracticePage'
 
 function App() {
-  const [status, setStatus] = useState('checking backend...')
-
-  useEffect(() => {
-    fetch('http://127.0.0.1:8000/health')
-      .then((res) => res.json())
-      .then((data) => setStatus(data.status))
-      .catch(() => setStatus('backend unreachable'))
-  }, [])
-
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <p className="text-lg">Backend status: {status}</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/practice" element={<PracticePage />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
