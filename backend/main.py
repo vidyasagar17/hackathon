@@ -1,9 +1,13 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from hints import generate_hint
 from misconceptions import MisconceptionName, diagnose
 from problems import Problem, compute_columns, generate_problem
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -24,6 +28,7 @@ class CheckRequest(BaseModel):
 class CheckResponse(BaseModel):
     correct: bool
     misconception: MisconceptionName | None
+    hint: str | None
 
 
 @app.get("/health")
@@ -45,5 +50,9 @@ def check_answer(request: CheckRequest) -> CheckResponse:
         columns=compute_columns(request.minuend, request.subtrahend),
     )
     correct = request.submitted_answer == problem.answer
-    misconception = None if correct else diagnose(problem, request.submitted_answer)
-    return CheckResponse(correct=correct, misconception=misconception)
+    if correct:
+        return CheckResponse(correct=True, misconception=None, hint=None)
+
+    misconception = diagnose(problem, request.submitted_answer)
+    hint = generate_hint(problem, misconception) if misconception else None
+    return CheckResponse(correct=False, misconception=misconception, hint=hint)

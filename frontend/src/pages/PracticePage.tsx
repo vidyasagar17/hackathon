@@ -71,6 +71,7 @@ function PracticePage() {
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS)
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null)
   const [misconception, setMisconception] = useState<string | null>(null)
+  const [hint, setHint] = useState<string | null>(null)
   const [streak, setStreak] = useState(0)
 
   const fetchProblem = () => {
@@ -81,6 +82,7 @@ function PracticePage() {
         setAnswers(EMPTY_ANSWERS)
         setFeedback(null)
         setMisconception(null)
+        setHint(null)
       })
   }
 
@@ -110,17 +112,24 @@ function PracticePage() {
       }),
     })
       .then((res) => res.json())
-      .then((result: { correct: boolean; misconception: string | null }) => {
-        if (result.correct) {
-          setFeedback('correct')
-          setStreak((s) => s + 1)
-          fetchProblem()
-        } else {
-          setFeedback('incorrect')
-          setMisconception(result.misconception)
-          setStreak(0)
-        }
-      })
+      .then(
+        (result: {
+          correct: boolean
+          misconception: string | null
+          hint: string | null
+        }) => {
+          if (result.correct) {
+            setFeedback('correct')
+            setStreak((s) => s + 1)
+            fetchProblem()
+          } else {
+            setFeedback('incorrect')
+            setMisconception(result.misconception)
+            setHint(result.hint)
+            setStreak(0)
+          }
+        },
+      )
   }
 
   return (
@@ -176,8 +185,9 @@ function PracticePage() {
             <p className="font-display text-lg font-semibold text-ones">
               Not quite — try again!
             </p>
+            {hint && <p className="mt-2">{hint}</p>}
             {misconception && (
-              <p className="mt-1 text-sm text-ink/70">
+              <p className="mt-2 text-sm text-ink/50">
                 Diagnosed pattern: {formatMisconception(misconception)}
               </p>
             )}
