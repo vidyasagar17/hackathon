@@ -52,10 +52,10 @@ function MultiplicationIcon() {
 
 function DivisionIcon() {
   return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20 opacity-40">
-      <rect x="18" y="34" width="60" height="6" rx="3" fill="#1B1B2F" />
-      <circle cx="48" cy="18" r="6" fill="#1B1B2F" />
-      <circle cx="48" cy="54" r="6" fill="#1B1B2F" />
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <rect x="18" y="34" width="60" height="6" rx="3" className="fill-ones" />
+      <circle cx="48" cy="18" r="6" className="fill-tens" />
+      <circle cx="48" cy="54" r="6" className="fill-tens" />
     </svg>
   )
 }
@@ -150,6 +150,7 @@ function LandingPage() {
             icon={<DivisionIcon />}
             title="Division"
             description="Splitting numbers into equal groups"
+            to="/practice/division"
           />
         </GameGroup>
       </main>

@@ -7,6 +7,7 @@ import { getSessionId } from '../session'
 type GameConfig = {
   heading: string
   operatorSymbol: string
+  displayMode: 'columns' | 'expression'
   topDigitField: string
   bottomDigitField: string
   regroupField: string
@@ -20,6 +21,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
   subtraction: {
     heading: "Let's subtract!",
     operatorSymbol: '−',
+    displayMode: 'columns',
     topDigitField: 'minuend_digit',
     bottomDigitField: 'subtrahend_digit',
     regroupField: 'borrows',
@@ -31,6 +33,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
   addition: {
     heading: "Let's add!",
     operatorSymbol: '+',
+    displayMode: 'columns',
     topDigitField: 'addend1_digit',
     bottomDigitField: 'addend2_digit',
     regroupField: 'carries',
@@ -42,6 +45,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
   multiplication: {
     heading: "Let's multiply!",
     operatorSymbol: '×',
+    displayMode: 'columns',
     topDigitField: 'multiplicand_digit',
     bottomDigitField: 'multiplier_digit',
     regroupField: 'carries',
@@ -49,6 +53,18 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
     badgeLabel: '1',
     sourceMark: '10+',
     destMark: '+1',
+  },
+  division: {
+    heading: "Let's divide!",
+    operatorSymbol: '÷',
+    displayMode: 'expression',
+    topDigitField: '',
+    bottomDigitField: '',
+    regroupField: 'regroups',
+    transferDirection: 'to-left',
+    badgeLabel: '',
+    sourceMark: '',
+    destMark: '',
   },
 }
 
@@ -66,6 +82,7 @@ type Problem = {
   answer: number
   columns: ColumnBreakdown[]
   difficulty: number
+  [key: string]: unknown
 }
 
 type Answers = Record<Column, string>
@@ -389,36 +406,45 @@ function PracticePage() {
       </div>
 
       <div className="rounded-3xl bg-white p-8 pt-12 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
-        <div className="flex flex-col items-end gap-3">
-          <div className="flex gap-3">
-            {problem.columns.map((c) => (
-              <RegroupTopChip
-                key={c.place}
-                digit={c[config.topDigitField] as number}
-                column={c.place}
-                config={config}
-                step={{
-                  fromStep: fromSteps[c.place],
-                  toStep: toSteps[c.place],
-                  toPlace: toPlaceByFrom[c.place],
-                }}
-                active={activeStep}
-              />
-            ))}
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="font-display text-3xl font-bold">
-              {config.operatorSymbol}
-            </span>
-            {problem.columns.map((c) => (
-              <DigitChip
-                key={c.place}
-                digit={c[config.bottomDigitField] as number}
-                column={c.place}
-              />
-            ))}
-          </div>
-          <div className="h-1 w-full rounded bg-ink/20" />
+        <div className="flex flex-col items-center gap-3">
+          {config.displayMode === 'expression' ? (
+            <p className="font-display text-4xl font-bold">
+              {String(problem.dividend)} {config.operatorSymbol}{' '}
+              {String(problem.divisor)}
+            </p>
+          ) : (
+            <div className="flex w-full flex-col items-end gap-3">
+              <div className="flex gap-3">
+                {problem.columns.map((c) => (
+                  <RegroupTopChip
+                    key={c.place}
+                    digit={c[config.topDigitField] as number}
+                    column={c.place}
+                    config={config}
+                    step={{
+                      fromStep: fromSteps[c.place],
+                      toStep: toSteps[c.place],
+                      toPlace: toPlaceByFrom[c.place],
+                    }}
+                    active={activeStep}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-display text-3xl font-bold">
+                  {config.operatorSymbol}
+                </span>
+                {problem.columns.map((c) => (
+                  <DigitChip
+                    key={c.place}
+                    digit={c[config.bottomDigitField] as number}
+                    column={c.place}
+                  />
+                ))}
+              </div>
+              <div className="h-1 w-full rounded bg-ink/20" />
+            </div>
+          )}
           <div className="flex gap-3">
             {problem.columns.map((c) => (
               <AnswerBox
