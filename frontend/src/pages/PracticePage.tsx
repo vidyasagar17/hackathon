@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import TutorialOverlay from '../components/TutorialOverlay'
 import { borderColor, chipColor, type Column } from '../columns'
 import { formatMisconception } from '../format'
 import { getSessionId } from '../session'
+import { hasSeenTutorial, markTutorialSeen } from '../tutorial'
 
 type GameConfig = {
   heading: string
@@ -232,6 +234,7 @@ function PracticePage() {
   const { gameId } = useParams<{ gameId: string }>()
   const config = gameId ? GAME_CONFIGS[gameId] : undefined
 
+  const [tutorialDone, setTutorialDone] = useState(hasSeenTutorial)
   const [problem, setProblem] = useState<Problem | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS)
@@ -293,6 +296,17 @@ function PracticePage() {
           Unknown game.
         </p>
       </div>
+    )
+  }
+
+  if (!tutorialDone) {
+    return (
+      <TutorialOverlay
+        onDone={() => {
+          markTutorialSeen()
+          setTutorialDone(true)
+        }}
+      />
     )
   }
 
