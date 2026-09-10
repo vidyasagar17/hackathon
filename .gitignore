@@ -11,3 +11,6 @@ dist/
 plan.md
 CLAUDE.md
 backend_review.md
+
+# Claude Code local state
+.claude/

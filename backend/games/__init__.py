@@ -1,6 +1,7 @@
-from . import addition, subtraction
+from . import addition, multiplication, subtraction
 
 GAMES = {
     "subtraction": subtraction,
     "addition": addition,
+    "multiplication": multiplication,
 }

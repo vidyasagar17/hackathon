@@ -39,6 +39,17 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
     sourceMark: '10+',
     destMark: '+1',
   },
+  multiplication: {
+    heading: "Let's multiply!",
+    operatorSymbol: '×',
+    topDigitField: 'multiplicand_digit',
+    bottomDigitField: 'multiplier_digit',
+    regroupField: 'carries',
+    transferDirection: 'to-left',
+    badgeLabel: '1',
+    sourceMark: '10+',
+    destMark: '+1',
+  },
 }
 
 const PLACE_ORDER: Column[] = ['hundreds', 'tens', 'ones']

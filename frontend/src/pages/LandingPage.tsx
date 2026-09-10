@@ -32,7 +32,7 @@ function AdditionIcon() {
 
 function MultiplicationIcon() {
   return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20 opacity-40">
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
       {[0, 1, 2].map((col) =>
         [0, 1].map((row) => (
           <rect
@@ -42,7 +42,7 @@ function MultiplicationIcon() {
             width="18"
             height="18"
             rx="5"
-            fill="#1B1B2F"
+            className={row === 0 ? 'fill-hundreds' : 'fill-tens'}
           />
         )),
       )}
@@ -144,6 +144,7 @@ function LandingPage() {
             icon={<MultiplicationIcon />}
             title="Multiplication"
             description="Times tables and multi-digit products"
+            to="/practice/multiplication"
           />
           <GameCard
             icon={<DivisionIcon />}
