@@ -67,15 +67,22 @@ function StreakMeter({ filled, total }: { filled: number; total: number }) {
 
 function PracticePage() {
   const [problem, setProblem] = useState<Problem | null>(null)
+  const [loadError, setLoadError] = useState(false)
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS)
-  const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null)
+  const [feedback, setFeedback] = useState<
+    'correct' | 'incorrect' | 'error' | null
+  >(null)
   const [misconception, setMisconception] = useState<string | null>(null)
   const [hint, setHint] = useState<string | null>(null)
   const [streak, setStreak] = useState(0)
 
   const fetchProblem = () => {
+    setLoadError(false)
     fetch('http://127.0.0.1:8000/problem')
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load problem')
+        return res.json()
+      })
       .then((data: Problem) => {
         setProblem(data)
         setAnswers(EMPTY_ANSWERS)
@@ -83,9 +90,27 @@ function PracticePage() {
         setMisconception(null)
         setHint(null)
       })
+      .catch(() => setLoadError(true))
   }
 
   useEffect(fetchProblem, [])
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-base">
+        <p className="font-display text-2xl font-bold text-ones">
+          Couldn't load a problem — try again.
+        </p>
+        <button
+          type="button"
+          onClick={fetchProblem}
+          className="rounded-2xl bg-ink px-6 py-3 font-display font-semibold text-base"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
 
   if (!problem) {
     return (
@@ -111,7 +136,10 @@ function PracticePage() {
         submitted_answer,
       }),
     })
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to check answer')
+        return res.json()
+      })
       .then(
         (result: {
           correct: boolean
@@ -130,6 +158,7 @@ function PracticePage() {
           }
         },
       )
+      .catch(() => setFeedback('error'))
   }
 
   return (
@@ -185,6 +214,11 @@ function PracticePage() {
         {feedback === 'correct' && (
           <p className="mt-6 text-center font-display text-lg font-semibold text-spark">
             Correct!
+          </p>
+        )}
+        {feedback === 'error' && (
+          <p className="mt-6 text-center font-display text-lg font-semibold text-ones">
+            Couldn't check your answer — try again.
           </p>
         )}
         {feedback === 'incorrect' && (
