@@ -1,8 +1,9 @@
+import json
 import sqlite3
 from contextlib import closing
 from pathlib import Path
 
-from misconceptions import MisconceptionName
+from tiering import TierAttempt
 
 DB_PATH = Path(__file__).resolve().parent / "attempts.db"
 
@@ -21,8 +22,9 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS attempts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id TEXT NOT NULL,
-                minuend INTEGER NOT NULL,
-                subtrahend INTEGER NOT NULL,
+                game TEXT NOT NULL,
+                difficulty INTEGER NOT NULL DEFAULT 1,
+                problem_data TEXT NOT NULL,
                 submitted_answer INTEGER NOT NULL,
                 correct INTEGER NOT NULL,
                 misconception TEXT,
@@ -35,22 +37,50 @@ def init_db() -> None:
 
 def log_attempt(
     session_id: str,
-    minuend: int,
-    subtrahend: int,
+    game: str,
+    difficulty: int,
+    problem_data: dict,
     submitted_answer: int,
     correct: bool,
-    misconception: MisconceptionName | None,
+    misconception: str | None,
 ) -> None:
     with closing(_connect()) as conn:
         conn.execute(
             """
             INSERT INTO attempts
-                (session_id, minuend, subtrahend, submitted_answer, correct, misconception)
-            VALUES (?, ?, ?, ?, ?, ?)
+                (session_id, game, difficulty, problem_data, submitted_answer, correct, misconception)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (session_id, minuend, subtrahend, submitted_answer, int(correct), misconception),
+            (
+                session_id,
+                game,
+                difficulty,
+                json.dumps(problem_data),
+                submitted_answer,
+                int(correct),
+                misconception,
+            ),
         )
         conn.commit()
+
+
+def get_tier_history(session_id: str, game: str) -> list[TierAttempt]:
+    """Return this session's attempts at this game, oldest first."""
+    with closing(_connect()) as conn:
+        rows = conn.execute(
+            """
+            SELECT difficulty, correct, misconception
+            FROM attempts
+            WHERE session_id = ? AND game = ?
+            ORDER BY id ASC
+            """,
+            (session_id, game),
+        ).fetchall()
+
+    return [
+        TierAttempt(difficulty=difficulty, correct=bool(correct), misconception=misconception)
+        for difficulty, correct, misconception in rows
+    ]
 
 
 def get_summary(session_id: str) -> tuple[int, int, dict[str, int]]:

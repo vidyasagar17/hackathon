@@ -1,6 +1,6 @@
 from typing import Callable, Literal
 
-from problems import Problem
+from .problems import Problem
 
 MisconceptionName = Literal[
     "smaller_from_larger",

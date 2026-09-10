@@ -2,8 +2,8 @@ import os
 
 from huggingface_hub import InferenceClient
 
-from misconceptions import MisconceptionName
-from problems import Problem
+from .misconceptions import MisconceptionName
+from .problems import Problem
 
 MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
@@ -12,7 +12,7 @@ CANNED_HINTS: dict[MisconceptionName, str] = {
     "borrowed_without_decrementing": "When you borrow from a column, remember to make that column's number one smaller too.",
     "borrow_across_zero_failure": "When the column you want to borrow from has a 0, borrow from the next column over first, then come back.",
     "always_borrow": "Check each column first. If the top number is already bigger, you don't need to borrow there.",
-    "zero_minus_digit_gives_digit": "You can't just copy the bottom number when the top is 0. Borrow from the column to the left first.",
+    "zero_minus_digit_gives_digit": "When the top digit is 0, borrow from the column to the left instead of copying the bottom number.",
 }
 
 _MISCONCEPTION_DESCRIPTIONS: dict[MisconceptionName, str] = {
@@ -27,7 +27,9 @@ _MISCONCEPTION_DESCRIPTIONS: dict[MisconceptionName, str] = {
 def generate_hint(problem: Problem, misconception: MisconceptionName) -> str:
     """Return an LLM-phrased hint for the diagnosed misconception, or a canned fallback."""
     try:
-        client = InferenceClient(token=os.environ["HF_TOKEN"], timeout=5)
+        client = InferenceClient(
+            token=os.environ["HF_TOKEN"], timeout=5, provider="featherless-ai"
+        )
         response = client.chat_completion(
             model=MODEL,
             messages=[

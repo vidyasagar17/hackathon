@@ -44,7 +44,7 @@ function DashboardPage() {
     <div className="flex min-h-screen flex-col bg-base">
       <header className="flex items-center justify-between px-6 py-4">
         <span className="font-display text-2xl font-bold">Number Quest</span>
-        <Link to="/practice" className="font-display font-semibold text-ink/70">
+        <Link to="/practice/subtraction" className="font-display font-semibold text-ink/70">
           Back to practice
         </Link>
       </header>
@@ -87,7 +87,7 @@ function DashboardPage() {
         )}
 
         <Link
-          to="/practice"
+          to="/practice/subtraction"
           className="rounded-2xl bg-ink px-8 py-4 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none"
         >
           Practice again

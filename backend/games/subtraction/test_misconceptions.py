@@ -1,5 +1,5 @@
-from misconceptions import diagnose
-from problems import Problem, compute_columns
+from .misconceptions import diagnose
+from .problems import Problem, compute_columns
 
 
 def _problem(minuend: int, subtrahend: int) -> Problem:
@@ -8,6 +8,7 @@ def _problem(minuend: int, subtrahend: int) -> Problem:
         subtrahend=subtrahend,
         answer=minuend - subtrahend,
         columns=compute_columns(minuend, subtrahend),
+        difficulty=1,
     )
 
 
