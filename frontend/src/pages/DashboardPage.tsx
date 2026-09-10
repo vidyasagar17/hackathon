@@ -1,30 +1,24 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { chipColor, type Column } from '../columns'
+import { formatMisconception } from '../format'
+import { getSessionId } from '../session'
 
-type MisconceptionRow = {
-  column: Column
-  description: string
+type MisconceptionCount = {
+  name: string
   count: number
 }
 
-const misconceptions: MisconceptionRow[] = [
-  {
-    column: 'tens',
-    description: 'Borrowed, but forgot to reduce the tens column',
-    count: 3,
-  },
-  {
-    column: 'ones',
-    description: 'Subtracted the smaller digit from the larger one',
-    count: 2,
-  },
-]
+type SessionSummary = {
+  total_attempts: number
+  correct_count: number
+  misconceptions: MisconceptionCount[]
+}
 
-function MisconceptionItem({ column, description, count }: MisconceptionRow) {
+function MisconceptionItem({ name, count }: MisconceptionCount) {
   return (
     <div className="flex items-center gap-3 py-3">
-      <span className={`h-4 w-4 flex-shrink-0 rounded-full ${chipColor[column]}`} />
-      <p className="flex-1 text-left">{description}</p>
+      <span className="h-4 w-4 flex-shrink-0 rounded-full bg-helper" />
+      <p className="flex-1 text-left">{formatMisconception(name)}</p>
       <span className="font-display font-semibold text-ink/60">
         {count} {count === 1 ? 'time' : 'times'}
       </span>
@@ -33,6 +27,19 @@ function MisconceptionItem({ column, description, count }: MisconceptionRow) {
 }
 
 function DashboardPage() {
+  const [summary, setSummary] = useState<SessionSummary | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    fetch(`http://127.0.0.1:8000/summary/${getSessionId()}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Summary request failed')
+        return res.json()
+      })
+      .then(setSummary)
+      .catch(() => setFailed(true))
+  }, [])
+
   return (
     <div className="flex min-h-screen flex-col bg-base">
       <header className="flex items-center justify-between px-6 py-4">
@@ -45,21 +52,39 @@ function DashboardPage() {
       <main className="flex flex-1 flex-col items-center gap-6 px-4 py-8">
         <h1 className="font-display text-4xl font-bold">Session summary</h1>
 
-        <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)]">
-          <p className="font-display text-5xl font-bold">8 / 12</p>
-          <p className="mt-1 text-lg">problems correct</p>
-        </div>
+        {failed ? (
+          <p className="font-display text-xl text-ones">
+            Couldn't load your summary — try again in a moment.
+          </p>
+        ) : !summary ? (
+          <p className="font-display text-xl">Loading summary...</p>
+        ) : (
+          <>
+            <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)]">
+              <p className="font-display text-5xl font-bold">
+                {summary.correct_count} / {summary.total_attempts}
+              </p>
+              <p className="mt-1 text-lg">problems correct</p>
+            </div>
 
-        <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
-          <h2 className="mb-2 font-display text-2xl font-bold">
-            Where mistakes happened
-          </h2>
-          <div className="divide-y divide-ink/10">
-            {misconceptions.map((row) => (
-              <MisconceptionItem key={row.description} {...row} />
-            ))}
-          </div>
-        </div>
+            <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
+              <h2 className="mb-2 font-display text-2xl font-bold">
+                Where mistakes happened
+              </h2>
+              {summary.misconceptions.length === 0 ? (
+                <p className="py-3 text-ink/60">
+                  No mistakes yet — keep practicing!
+                </p>
+              ) : (
+                <div className="divide-y divide-ink/10">
+                  {summary.misconceptions.map((row) => (
+                    <MisconceptionItem key={row.name} {...row} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         <Link
           to="/practice"

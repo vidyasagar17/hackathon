@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { borderColor, chipColor, type Column } from '../columns'
+import { formatMisconception } from '../format'
+import { getSessionId } from '../session'
 
 type ColumnBreakdown = {
   place: Column
@@ -62,10 +65,6 @@ function StreakMeter({ filled, total }: { filled: number; total: number }) {
   )
 }
 
-function formatMisconception(name: string): string {
-  return name.replace(/_/g, ' ')
-}
-
 function PracticePage() {
   const [problem, setProblem] = useState<Problem | null>(null)
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS)
@@ -106,6 +105,7 @@ function PracticePage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        session_id: getSessionId(),
         minuend: problem.minuend,
         subtrahend: problem.subtrahend,
         submitted_answer,
@@ -133,7 +133,14 @@ function PracticePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-base px-4">
+    <div className="relative flex min-h-screen flex-col items-center justify-center gap-8 bg-base px-4">
+      <Link
+        to="/summary"
+        className="absolute right-6 top-4 font-display font-semibold text-ink/70"
+      >
+        Session summary
+      </Link>
+
       <h1 className="font-display text-4xl font-bold">Let's subtract!</h1>
 
       <StreakMeter filled={Math.min(streak, 5)} total={5} />
