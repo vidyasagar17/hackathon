@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { borderColor, chipColor, type Column } from '../columns'
+import DigitChip from './DigitChip'
+import { borderColor, type Column } from '../columns'
 
 type Highlight = 'digits' | 'answer' | 'hint'
 
@@ -8,12 +9,24 @@ type Step = {
   caption: string
 }
 
-const STEPS: Step[] = [
+const COLUMN_STEPS: Step[] = [
   {
     highlight: 'digits',
     caption:
       'Numbers are colored by place: yellow is hundreds, blue is tens, red is ones.',
   },
+  {
+    highlight: 'answer',
+    caption: 'Type your answer one digit at a time, then check it.',
+  },
+  {
+    highlight: 'hint',
+    caption:
+      "Get it wrong? We'll show you exactly what to fix, not just that you're wrong.",
+  },
+]
+
+const EXPRESSION_STEPS: Step[] = [
   {
     highlight: 'answer',
     caption: 'Type your answer one digit at a time, then check it.',
@@ -36,74 +49,79 @@ const EXAMPLE_BOTTOM: { place: Column; digit: number }[] = [
   { place: 'ones', digit: 8 },
 ]
 
-function ExampleChip({
-  digit,
-  column,
-  highlighted,
+export default function TutorialOverlay({
+  onDone,
+  usesColumnChips,
 }: {
-  digit: number
-  column: Column
-  highlighted: boolean
+  onDone: () => void
+  usesColumnChips: boolean
 }) {
-  return (
-    <div
-      className={`flex h-14 w-14 items-center justify-center rounded-2xl font-display text-2xl font-bold text-ink shadow-[0_4px_0_rgba(0,0,0,0.15)] transition-all duration-300 ${chipColor[column]} ${
-        highlighted ? 'ring-4 ring-helper ring-offset-2 ring-offset-white' : ''
-      }`}
-    >
-      {digit}
-    </div>
-  )
-}
-
-export default function TutorialOverlay({ onDone }: { onDone: () => void }) {
+  const steps = usesColumnChips ? COLUMN_STEPS : EXPRESSION_STEPS
   const [stepIndex, setStepIndex] = useState(0)
-  const step = STEPS[stepIndex]
-  const isLast = stepIndex === STEPS.length - 1
+  const step = steps[stepIndex]
+  const isLast = stepIndex === steps.length - 1
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-base px-4">
       <h1 className="font-display text-3xl font-bold">How to play</h1>
 
       <div className="rounded-3xl bg-white p-8 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
-        <div className="flex flex-col items-end gap-3">
-          <div className="flex gap-3">
-            {EXAMPLE_TOP.map((c) => (
-              <ExampleChip
-                key={c.place}
-                digit={c.digit}
-                column={c.place}
-                highlighted={step.highlight === 'digits'}
-              />
-            ))}
+        {usesColumnChips ? (
+          <div className="flex flex-col items-end gap-3">
+            <div className="flex gap-3">
+              {EXAMPLE_TOP.map((c) => (
+                <DigitChip
+                  key={c.place}
+                  digit={c.digit}
+                  column={c.place}
+                  size="sm"
+                  highlighted={step.highlight === 'digits'}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="font-display text-2xl font-bold">−</span>
+              {EXAMPLE_BOTTOM.map((c) => (
+                <DigitChip
+                  key={c.place}
+                  digit={c.digit}
+                  column={c.place}
+                  size="sm"
+                  highlighted={step.highlight === 'digits'}
+                />
+              ))}
+            </div>
+            <div className="h-1 w-full rounded bg-ink/20" />
+            <div
+              className={`flex gap-3 rounded-2xl transition-all duration-300 ${
+                step.highlight === 'answer'
+                  ? 'ring-4 ring-helper ring-offset-2 ring-offset-white'
+                  : ''
+              }`}
+            >
+              {(['hundreds', 'tens', 'ones'] as Column[]).map((place) => (
+                <div
+                  key={place}
+                  className={`h-14 w-14 rounded-2xl border-4 bg-white ${borderColor[place]}`}
+                />
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="font-display text-2xl font-bold">−</span>
-            {EXAMPLE_BOTTOM.map((c) => (
-              <ExampleChip
-                key={c.place}
-                digit={c.digit}
-                column={c.place}
-                highlighted={step.highlight === 'digits'}
-              />
-            ))}
+        ) : (
+          <div className="flex flex-col items-center gap-3">
+            <p className="font-display text-3xl font-bold">84 ÷ 4</p>
+            <div
+              className={`flex gap-3 rounded-2xl transition-all duration-300 ${
+                step.highlight === 'answer'
+                  ? 'ring-4 ring-helper ring-offset-2 ring-offset-white'
+                  : ''
+              }`}
+            >
+              <div className="h-14 w-14 rounded-2xl border-4 border-tens bg-white" />
+              <div className="h-14 w-14 rounded-2xl border-4 border-ones bg-white" />
+            </div>
           </div>
-          <div className="h-1 w-full rounded bg-ink/20" />
-          <div
-            className={`flex gap-3 rounded-2xl transition-all duration-300 ${
-              step.highlight === 'answer'
-                ? 'ring-4 ring-helper ring-offset-2 ring-offset-white'
-                : ''
-            }`}
-          >
-            {(['hundreds', 'tens', 'ones'] as Column[]).map((place) => (
-              <div
-                key={place}
-                className={`h-14 w-14 rounded-2xl border-4 bg-white ${borderColor[place]}`}
-              />
-            ))}
-          </div>
-        </div>
+        )}
 
         {step.highlight === 'hint' && (
           <div className="mt-6 rounded-2xl border-l-8 border-helper bg-helper/10 p-4 text-left">
@@ -111,8 +129,9 @@ export default function TutorialOverlay({ onDone }: { onDone: () => void }) {
               Hint
             </p>
             <p className="text-sm">
-              Look at the ones column: 2 is smaller than 8, so borrow from
-              the tens column first.
+              {usesColumnChips
+                ? 'Look at the ones column: 2 is smaller than 8, so borrow from the tens column first.'
+                : "Don't stop after the tens digit — bring down the ones digit and keep going."}
             </p>
           </div>
         )}

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import DigitChip from '../components/DigitChip'
 import TutorialOverlay from '../components/TutorialOverlay'
-import { borderColor, chipColor, type Column } from '../columns'
+import { borderColor, type Column } from '../columns'
 import { formatMisconception } from '../format'
 import { getSessionId } from '../session'
 import { hasSeenTutorial, markTutorialSeen } from '../tutorial'
@@ -110,24 +111,6 @@ function buildRegroupSteps(problem: Problem, config: GameConfig): RegroupStep[] 
     )
   }
   return steps
-}
-
-function DigitChip({
-  digit,
-  column,
-  highlighted,
-}: {
-  digit: number
-  column: Column
-  highlighted?: boolean
-}) {
-  return (
-    <div
-      className={`flex h-16 w-16 items-center justify-center rounded-2xl font-display text-3xl font-bold text-ink shadow-[0_4px_0_rgba(0,0,0,0.15)] transition-shadow duration-300 ${chipColor[column]} ${highlighted ? 'ring-4 ring-helper ring-offset-2 ring-offset-base' : ''}`}
-    >
-      {digit}
-    </div>
-  )
 }
 
 function RegroupTopChip({
@@ -302,6 +285,7 @@ function PracticePage() {
   if (!tutorialDone) {
     return (
       <TutorialOverlay
+        usesColumnChips={config.displayMode === 'columns'}
         onDone={() => {
           markTutorialSeen()
           setTutorialDone(true)
