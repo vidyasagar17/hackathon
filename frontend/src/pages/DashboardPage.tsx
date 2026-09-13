@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { formatMisconception } from '../format'
+import { formatGameName, formatMisconception } from '../format'
 import { getSessionId } from '../session'
 
 type MisconceptionCount = {
+  game: string
   name: string
   count: number
 }
@@ -12,6 +13,14 @@ type SessionSummary = {
   total_attempts: number
   correct_count: number
   misconceptions: MisconceptionCount[]
+}
+
+function groupByGame(rows: MisconceptionCount[]): [string, MisconceptionCount[]][] {
+  const groups = new Map<string, MisconceptionCount[]>()
+  for (const row of rows) {
+    groups.set(row.game, [...(groups.get(row.game) ?? []), row])
+  }
+  return [...groups]
 }
 
 function MisconceptionItem({ name, count }: MisconceptionCount) {
@@ -44,8 +53,8 @@ function DashboardPage() {
     <div className="flex min-h-screen flex-col bg-base">
       <header className="flex items-center justify-between px-6 py-4">
         <span className="font-display text-2xl font-bold">Number Quest</span>
-        <Link to="/practice/subtraction" className="font-display font-semibold text-ink/70">
-          Back to practice
+        <Link to="/" className="font-display font-semibold text-ink/70">
+          Back to games
         </Link>
       </header>
 
@@ -76,9 +85,18 @@ function DashboardPage() {
                   No mistakes yet — keep practicing!
                 </p>
               ) : (
-                <div className="divide-y divide-ink/10">
-                  {summary.misconceptions.map((row) => (
-                    <MisconceptionItem key={row.name} {...row} />
+                <div className="flex flex-col gap-4">
+                  {groupByGame(summary.misconceptions).map(([game, rows]) => (
+                    <section key={game}>
+                      <h3 className="font-display text-lg font-semibold">
+                        {formatGameName(game)}
+                      </h3>
+                      <div className="divide-y divide-ink/10">
+                        {rows.map((row) => (
+                          <MisconceptionItem key={row.name} {...row} />
+                        ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
               )}
@@ -87,7 +105,7 @@ function DashboardPage() {
         )}
 
         <Link
-          to="/practice/subtraction"
+          to="/"
           className="rounded-2xl bg-ink px-8 py-4 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none"
         >
           Practice again

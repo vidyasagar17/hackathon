@@ -35,6 +35,7 @@ class CheckResponse(BaseModel):
 
 
 class MisconceptionCount(BaseModel):
+    game: str
     name: str
     count: int
 
@@ -88,12 +89,12 @@ def check_answer(game_id: str, request: CheckRequest) -> CheckResponse:
 
 @app.get("/summary/{session_id}")
 def get_session_summary(session_id: str) -> SessionSummary:
-    total_attempts, correct_count, misconception_counts = get_summary(session_id)
+    total_attempts, correct_count, misconception_rows = get_summary(session_id)
     return SessionSummary(
         total_attempts=total_attempts,
         correct_count=correct_count,
         misconceptions=[
-            MisconceptionCount(name=name, count=count)
-            for name, count in misconception_counts.items()
+            MisconceptionCount(game=game, name=name, count=count)
+            for game, name, count in misconception_rows
         ],
     )

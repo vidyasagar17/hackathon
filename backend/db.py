@@ -83,8 +83,11 @@ def get_tier_history(session_id: str, game: str) -> list[TierAttempt]:
     ]
 
 
-def get_summary(session_id: str) -> tuple[int, int, dict[str, int]]:
-    """Return (total_attempts, correct_count, misconception counts) for a session."""
+def get_summary(session_id: str) -> tuple[int, int, list[tuple[str, str, int]]]:
+    """Return (total_attempts, correct_count, [(game, misconception, count)]) for a session.
+
+    Misconceptions are counted per game, since different games reuse names like `no_carry`.
+    """
     with closing(_connect()) as conn:
         total_attempts, correct_count = conn.execute(
             "SELECT COUNT(*), COALESCE(SUM(correct), 0) FROM attempts WHERE session_id = ?",
@@ -93,12 +96,13 @@ def get_summary(session_id: str) -> tuple[int, int, dict[str, int]]:
 
         rows = conn.execute(
             """
-            SELECT misconception, COUNT(*)
+            SELECT game, misconception, COUNT(*)
             FROM attempts
             WHERE session_id = ? AND misconception IS NOT NULL
-            GROUP BY misconception
+            GROUP BY game, misconception
+            ORDER BY game, misconception
             """,
             (session_id,),
         ).fetchall()
 
-    return total_attempts, correct_count, dict(rows)
+    return total_attempts, correct_count, rows
