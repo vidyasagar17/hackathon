@@ -338,6 +338,20 @@ function PracticePage() {
   const readyToCheck =
     firstTyped !== -1 && digits.slice(firstTyped).every((d) => d !== '')
 
+  const fetchHint = (submitted_answer: number) => {
+    fetch(`http://127.0.0.1:8000/games/${gameId}/hint`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ problem, submitted_answer }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load hint')
+        return res.json()
+      })
+      .then((result: { hint: string | null }) => setHint(result.hint))
+      .catch(() => setHint(null))
+  }
+
   const checkAnswer = () => {
     const submitted_answer = Number(digits.join(''))
     fetch(`http://127.0.0.1:8000/games/${gameId}/check`, {
@@ -357,7 +371,6 @@ function PracticePage() {
         (result: {
           correct: boolean
           misconception: string | null
-          hint: string | null
         }) => {
           if (result.correct) {
             setFeedback('correct')
@@ -376,7 +389,7 @@ function PracticePage() {
           }
 
           setMisconception(result.misconception)
-          setHint(result.hint)
+          if (result.misconception) fetchHint(submitted_answer)
           const steps = buildRegroupSteps(problem, config)
           if (steps.length === 0) {
             setFeedback('incorrect')

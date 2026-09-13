@@ -31,6 +31,15 @@ class CheckRequest(BaseModel):
 class CheckResponse(BaseModel):
     correct: bool
     misconception: str | None
+
+
+class HintRequest(BaseModel):
+    problem: dict[str, Any]
+    submitted_answer: int
+
+
+class HintResponse(BaseModel):
+    misconception: str | None
     hint: str | None
 
 
@@ -52,6 +61,13 @@ def _get_game(game_id: str):
     return GAMES[game_id]
 
 
+def _diagnose(game, problem, submitted_answer: int) -> str | None:
+    """Return the diagnosed misconception for a wrong answer, or None for a correct one."""
+    if submitted_answer == problem.answer:
+        return None
+    return game.diagnose(problem, submitted_answer)
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
@@ -67,12 +83,11 @@ def get_problem(game_id: str, session_id: str) -> dict[str, Any]:
 
 @app.post("/games/{game_id}/check")
 def check_answer(game_id: str, request: CheckRequest) -> CheckResponse:
+    """Log the attempt and return the diagnosis. Never calls the LLM, so it stays fast."""
     game = _get_game(game_id)
     problem = game.Problem.model_validate(request.problem)
-
+    misconception = _diagnose(game, problem, request.submitted_answer)
     correct = request.submitted_answer == problem.answer
-    misconception = None if correct else game.diagnose(problem, request.submitted_answer)
-    hint = game.generate_hint(problem, misconception) if misconception else None
 
     log_attempt(
         session_id=request.session_id,
@@ -84,7 +99,17 @@ def check_answer(game_id: str, request: CheckRequest) -> CheckResponse:
         misconception=misconception,
     )
 
-    return CheckResponse(correct=correct, misconception=misconception, hint=hint)
+    return CheckResponse(correct=correct, misconception=misconception)
+
+
+@app.post("/games/{game_id}/hint")
+def get_hint(game_id: str, request: HintRequest) -> HintResponse:
+    """Re-diagnose the answer server-side and phrase a hint, only when the UI is about to show one."""
+    game = _get_game(game_id)
+    problem = game.Problem.model_validate(request.problem)
+    misconception = _diagnose(game, problem, request.submitted_answer)
+    hint = game.generate_hint(problem, misconception) if misconception else None
+    return HintResponse(misconception=misconception, hint=hint)
 
 
 @app.get("/summary/{session_id}")
