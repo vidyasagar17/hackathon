@@ -4,7 +4,7 @@ SENTENCE = "In the ones column, 2 is smaller than 8, so you can't subtract yet: 
 
 
 def test_keeps_facts_accepts_friendlier_wording():
-    rewrite = "Nice try! In the Ones column 2 is less than 8, so first borrow from the tens column."
+    rewrite = "Nice try! In the Ones column 2 is smaller than 8, so first borrow from the tens column."
     assert keeps_facts(rewrite, SENTENCE)
 
 
@@ -16,6 +16,19 @@ def test_keeps_facts_rejects_a_wrong_column():
 def test_keeps_facts_rejects_an_invented_number():
     rewrite = "In the ones column, 2 is smaller than 8, so borrow from the tens column to make 12."
     assert not keeps_facts(rewrite, SENTENCE)
+
+
+def test_keeps_facts_rejects_an_invented_comparison_rule():
+    sentence = (
+        "In the ones column, 6 + 4 makes a two-digit number: write its ones digit in the "
+        "ones column and carry its tens digit to the tens column."
+    )
+    rewrite = (
+        "In the ones column, when you put 6 and 4 together, you get a number with two digits. "
+        "Write down the smaller number (the ones place) in the ones column and the bigger "
+        "number (the tens place) above the tens column."
+    )
+    assert not keeps_facts(rewrite, sentence)
 
 
 def test_keeps_facts_rejects_swapped_order():

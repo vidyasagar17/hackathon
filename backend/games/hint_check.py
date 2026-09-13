@@ -5,7 +5,10 @@ _FILLER_OPENER = re.compile(
     re.IGNORECASE,
 )
 _QUOTED_HINT = re.compile(r'["“]([^"“”]{20,})["”]')
-_FACT = re.compile(r"\d+|\b(?:ones|tens|hundreds|thousands)\b", re.IGNORECASE)
+_FACT = re.compile(
+    r"\d+|\b(?:ones|tens|hundreds|thousands|smaller|bigger|larger|greater|less|more|fewer)\b",
+    re.IGNORECASE,
+)
 
 
 def vet_hint(text: str, answer: int, banned_words: list[str]) -> str | None:
