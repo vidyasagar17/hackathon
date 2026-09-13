@@ -94,16 +94,21 @@ def _zero_minus_digit_gives_digit(problem: Problem) -> int:
 
 
 _SIMULATORS: dict[MisconceptionName, Callable[[Problem], int]] = {
+    "zero_minus_digit_gives_digit": _zero_minus_digit_gives_digit,
     "smaller_from_larger": _smaller_from_larger,
     "borrowed_without_decrementing": _borrowed_without_decrementing,
     "borrow_across_zero_failure": _borrow_across_zero_failure,
     "always_borrow": _always_borrow,
-    "zero_minus_digit_gives_digit": _zero_minus_digit_gives_digit,
 }
 
 
 def diagnose(problem: Problem, submitted_answer: int) -> MisconceptionName | None:
-    """Return the known buggy algorithm whose simulated answer matches what was submitted, if any."""
+    """Return the known buggy algorithm whose simulated answer matches what was submitted, if any.
+
+    When several simulators match, the first in `_SIMULATORS` wins, so the most
+    specific explanation is listed first: writing the bottom digit under a 0 is
+    `zero_minus_digit_gives_digit`, even when `smaller_from_larger` also matches.
+    """
     for name, simulate in _SIMULATORS.items():
         if simulate(problem) == submitted_answer:
             return name

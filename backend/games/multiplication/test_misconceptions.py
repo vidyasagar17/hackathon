@@ -37,6 +37,16 @@ def test_drops_final_carry():
     assert diagnose(problem, 82) == "drops_final_carry"
 
 
+def test_dropped_leading_digit_beats_carry_always():
+    problem = _problem(36, 3)
+    assert diagnose(problem, 8) == "drops_final_carry"
+
+
+def test_dropped_leading_digit_beats_no_carry():
+    problem = _problem(51, 2)
+    assert diagnose(problem, 2) == "drops_final_carry"
+
+
 def test_unrecognized_wrong_answer_returns_none():
     problem = _problem(21, 3)
     assert diagnose(problem, 999999) is None

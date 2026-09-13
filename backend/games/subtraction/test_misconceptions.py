@@ -37,6 +37,11 @@ def test_zero_minus_digit_gives_digit():
     assert diagnose(problem, 166) == "zero_minus_digit_gives_digit"
 
 
+def test_zero_minus_digit_beats_smaller_from_larger():
+    problem = _problem(405, 132)
+    assert diagnose(problem, 333) == "zero_minus_digit_gives_digit"
+
+
 def test_unrecognized_wrong_answer_returns_none():
     problem = _problem(742, 158)
     assert diagnose(problem, 999) is None

@@ -76,16 +76,21 @@ def _drops_final_carry(problem: Problem) -> int:
 
 
 _SIMULATORS: dict[MisconceptionName, Callable[[Problem], int]] = {
+    "drops_final_carry": _drops_final_carry,
     "no_carry": _no_carry,
     "carry_always": _carry_always,
     "double_digit_write": _double_digit_write,
     "carry_drops_at_second_column": _carry_drops_at_second_column,
-    "drops_final_carry": _drops_final_carry,
 }
 
 
 def diagnose(problem: Problem, submitted_answer: int) -> MisconceptionName | None:
-    """Return the known buggy algorithm whose simulated answer matches what was submitted, if any."""
+    """Return the known buggy algorithm whose simulated answer matches what was submitted, if any.
+
+    When several simulators match, the first in `_SIMULATORS` wins, so the most
+    specific explanation is listed first: an answer that is the correct one minus
+    its leading digit is `drops_final_carry`, even if a broader bug also matches.
+    """
     for name, simulate in _SIMULATORS.items():
         if simulate(problem) == submitted_answer:
             return name
