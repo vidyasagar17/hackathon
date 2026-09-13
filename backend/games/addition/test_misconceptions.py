@@ -22,9 +22,9 @@ def test_carry_always():
     assert diagnose(problem, 404) == "carry_always"
 
 
-def test_double_digit_write():
+def test_reversed_carry():
     problem = _problem(456, 278)
-    assert diagnose(problem, 61214) == "double_digit_write"
+    assert diagnose(problem, 1211) == "reversed_carry"
 
 
 def test_carry_drops_at_second_column():

@@ -5,7 +5,7 @@ from .problems import Problem
 MisconceptionName = Literal[
     "no_carry",
     "carry_always",
-    "double_digit_write",
+    "reversed_carry",
     "carry_drops_at_second_column",
     "drops_final_carry",
 ]
@@ -35,11 +35,24 @@ def _carry_always(problem: Problem) -> int:
     return digit_h * 100 + digit_t * 10 + digit_o
 
 
-def _double_digit_write(problem: Problem) -> int:
-    """Writes the full two-digit column sum instead of carrying, e.g. 6+8=14 written as '14'."""
+def _reversed_carry(problem: Problem) -> int:
+    """Writes the tens digit of a column sum and carries its ones digit; the last column's sum is written in full.
+
+    e.g. 456 + 278: 6+8=14 writes 1 carries 4, 5+7+4=16 writes 1 carries 6, 4+2+6=12 -> 1211.
+    """
     ah, at, ao = _digits(problem.addend1)
     bh, bt, bo = _digits(problem.addend2)
-    return int(f"{ah + bh}{at + bt}{ao + bo}")
+
+    def column(a: int, b: int, carry_in: int) -> tuple[int, int]:
+        total = a + b + carry_in
+        if total >= 10:
+            return total // 10, total % 10
+        return total, 0
+
+    digit_o, carry_o = column(ao, bo, 0)
+    digit_t, carry_t = column(at, bt, carry_o)
+    sum_h = ah + bh + carry_t
+    return sum_h * 100 + digit_t * 10 + digit_o
 
 
 def _carry_drops_at_second_column(problem: Problem) -> int:
@@ -79,7 +92,7 @@ _SIMULATORS: dict[MisconceptionName, Callable[[Problem], int]] = {
     "drops_final_carry": _drops_final_carry,
     "no_carry": _no_carry,
     "carry_always": _carry_always,
-    "double_digit_write": _double_digit_write,
+    "reversed_carry": _reversed_carry,
     "carry_drops_at_second_column": _carry_drops_at_second_column,
 }
 

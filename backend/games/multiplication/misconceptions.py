@@ -6,7 +6,7 @@ MisconceptionName = Literal[
     "added_instead_of_multiplied",
     "no_carry",
     "carry_always",
-    "double_digit_write",
+    "added_carry_before_multiplying",
     "drops_final_carry",
 ]
 
@@ -37,11 +37,15 @@ def _carry_always(problem: Problem) -> int:
     return digit_t * 10 + digit_o
 
 
-def _double_digit_write(problem: Problem) -> int:
-    """Writes the full column product instead of carrying, e.g. 4x3=12 written as '12'."""
+def _added_carry_before_multiplying(problem: Problem) -> int:
+    """Adds the carried digit to the tens digit before multiplying, so the carry gets multiplied too.
+
+    e.g. 47 x 6: 7x6=42 writes 2 carries 4, then (4+4)x6=48 -> 482.
+    """
     t, o = _digits(problem.multiplicand)
     m = problem.multiplier
-    return int(f"{t * m}{o * m}")
+    carry, digit_o = divmod(o * m, 10)
+    return (t + carry) * m * 10 + digit_o
 
 
 def _drops_final_carry(problem: Problem) -> int:
@@ -63,7 +67,7 @@ _SIMULATORS: dict[MisconceptionName, Callable[[Problem], int]] = {
     "added_instead_of_multiplied": _added_instead_of_multiplied,
     "no_carry": _no_carry,
     "carry_always": _carry_always,
-    "double_digit_write": _double_digit_write,
+    "added_carry_before_multiplying": _added_carry_before_multiplying,
 }
 
 

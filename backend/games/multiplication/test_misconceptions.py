@@ -27,9 +27,9 @@ def test_carry_always():
     assert diagnose(problem, 73) == "carry_always"
 
 
-def test_double_digit_write():
-    problem = _problem(24, 3)
-    assert diagnose(problem, 612) == "double_digit_write"
+def test_added_carry_before_multiplying():
+    problem = _problem(47, 6)
+    assert diagnose(problem, 482) == "added_carry_before_multiplying"
 
 
 def test_drops_final_carry():
