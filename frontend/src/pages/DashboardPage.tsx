@@ -73,7 +73,7 @@ function DashboardPage() {
               <p className="font-display text-5xl font-bold">
                 {summary.correct_count} / {summary.total_attempts}
               </p>
-              <p className="mt-1 text-lg">problems correct</p>
+              <p className="mt-1 text-lg">answers correct</p>
             </div>
 
             <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
