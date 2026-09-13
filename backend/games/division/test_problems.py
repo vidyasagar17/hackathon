@@ -38,6 +38,11 @@ def test_generated_answer_fits_answer_places():
             assert problem.answer < 10 ** len(problem.answer_places)
 
 
+def test_answer_places_do_not_reveal_quotient_length():
+    for difficulty in (1, 2, 3):
+        assert generate_problem(difficulty).answer_places == ["hundreds", "tens", "ones"]
+
+
 def test_generate_problem_clamps_out_of_range_difficulty():
     assert generate_problem(0).difficulty == MIN_DIFFICULTY
     assert generate_problem(99).difficulty == MAX_DIFFICULTY

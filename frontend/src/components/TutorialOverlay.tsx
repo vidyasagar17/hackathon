@@ -117,6 +117,7 @@ export default function TutorialOverlay({
                   : ''
               }`}
             >
+              <div className="h-14 w-14 rounded-2xl border-4 border-hundreds bg-white" />
               <div className="h-14 w-14 rounded-2xl border-4 border-tens bg-white" />
               <div className="h-14 w-14 rounded-2xl border-4 border-ones bg-white" />
             </div>

@@ -4,6 +4,9 @@ from typing import Literal
 from pydantic import BaseModel
 
 Place = Literal["tens", "ones"]
+AnswerPlace = Literal["hundreds", "tens", "ones"]
+
+ANSWER_PLACES: list[AnswerPlace] = ["hundreds", "tens", "ones"]
 
 MIN_DIFFICULTY = 1
 MAX_DIFFICULTY = 3
@@ -18,7 +21,7 @@ class Problem(BaseModel):
     divisor: int
     answer: int
     columns: list[ColumnBreakdown]
-    answer_places: list[Place]
+    answer_places: list[AnswerPlace] = ANSWER_PLACES
     difficulty: int
 
 
@@ -58,12 +61,10 @@ def generate_problem(difficulty: int = MIN_DIFFICULTY) -> Problem:
         if dividend > 99:
             continue
         if classify_difficulty(dividend, divisor) == difficulty:
-            places = _places_for(quotient)
             return Problem(
                 dividend=dividend,
                 divisor=divisor,
                 answer=quotient,
-                columns=[ColumnBreakdown(place=p) for p in places],
-                answer_places=places,
+                columns=[ColumnBreakdown(place=p) for p in _places_for(quotient)],
                 difficulty=difficulty,
             )
