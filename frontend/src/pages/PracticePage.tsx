@@ -4,6 +4,7 @@ import DigitChip from '../components/DigitChip'
 import TutorialOverlay from '../components/TutorialOverlay'
 import { borderColor, type Column } from '../columns'
 import { formatMisconception } from '../format'
+import { buildRegroupSteps, PLACE_ORDER, type RegroupStep } from '../regroup'
 import { getSessionId } from '../session'
 import { hasSeenTutorial, markTutorialSeen } from '../tutorial'
 
@@ -73,8 +74,6 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
   },
 }
 
-const PLACE_ORDER: Column[] = ['hundreds', 'tens', 'ones']
-const PROCESSING_ORDER: Column[] = ['ones', 'tens', 'hundreds']
 const CHIP_SPACING = 76
 const STEP_DURATION = 900
 
@@ -92,34 +91,8 @@ type Problem = {
 }
 
 type Answers = Record<Column, string>
-type RegroupStep = { from: Column; to: Column; badge: string; destMark: string }
 
 const EMPTY_ANSWERS: Answers = { thousands: '', hundreds: '', tens: '', ones: '' }
-
-function buildRegroupSteps(problem: Problem, config: GameConfig): RegroupStep[] {
-  const byPlace = Object.fromEntries(
-    problem.columns.map((c) => [c.place, c]),
-  ) as Record<Column, ColumnBreakdown>
-  const steps: RegroupStep[] = []
-
-  for (const place of PROCESSING_ORDER) {
-    const idx = PLACE_ORDER.indexOf(place)
-    const neighbor = idx > 0 ? PLACE_ORDER[idx - 1] : null
-    if (!neighbor) continue
-    if (!byPlace[place]?.[config.regroupField]) continue
-    const carry = config.carryField ? String(byPlace[place][config.carryField]) : null
-    const labels = {
-      badge: carry ?? config.badgeLabel,
-      destMark: carry ? `+${carry}` : config.destMark,
-    }
-    steps.push(
-      config.transferDirection === 'from-left'
-        ? { from: neighbor, to: place, ...labels }
-        : { from: place, to: neighbor, ...labels },
-    )
-  }
-  return steps
-}
 
 function RegroupTopChip({
   digit,
@@ -390,7 +363,7 @@ function PracticePage() {
 
           setMisconception(result.misconception)
           fetchHint(submitted_answer)
-          const steps = buildRegroupSteps(problem, config)
+          const steps = buildRegroupSteps(problem.columns, config)
           if (steps.length === 0) {
             setFeedback('incorrect')
             setRevealed(true)
