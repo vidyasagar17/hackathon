@@ -2,12 +2,15 @@ import os
 
 from huggingface_hub import InferenceClient
 
+from ..hint_check import vet_hint
 from .misconceptions import MisconceptionName
 from .problems import Problem
 
 MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 GENERAL_HINT = "Work one column at a time, starting with the ones. If a column adds up to 10 or more, write the ones digit and carry the 1 to the next column."
+
+BANNED_WORDS = ["addend", "augend", "algorithm"]
 
 CANNED_HINTS: dict[MisconceptionName, str] = {
     "no_carry": "When a column adds up to 10 or more, write down the last digit and carry the 1 over to the next column.",
@@ -27,7 +30,10 @@ _MISCONCEPTION_DESCRIPTIONS: dict[MisconceptionName, str] = {
 
 
 def generate_hint(problem: Problem, misconception: MisconceptionName) -> str:
-    """Return an LLM-phrased hint for the diagnosed misconception, or a canned fallback."""
+    """Return an LLM-phrased hint for the diagnosed misconception, or a canned fallback.
+
+    The LLM text is shown only if `vet_hint` accepts it (no stated answer, no banned jargon).
+    """
     try:
         client = InferenceClient(
             token=os.environ["HF_TOKEN"], timeout=5, provider="featherless-ai"
@@ -39,7 +45,9 @@ def generate_hint(problem: Problem, misconception: MisconceptionName) -> str:
                     "role": "system",
                     "content": (
                         "You write short, encouraging math hints for a 2nd or "
-                        "3rd grade student. One or two sentences. No jargon."
+                        "3rd grade student. One or two sentences. No jargon. "
+                        "Never state the answer. "
+                        f"Never use these words: {', '.join(BANNED_WORDS)}."
                     ),
                 },
                 {
@@ -53,6 +61,7 @@ def generate_hint(problem: Problem, misconception: MisconceptionName) -> str:
             ],
             max_tokens=80,
         )
-        return response.choices[0].message.content.strip()
+        hint = vet_hint(response.choices[0].message.content, problem.answer, BANNED_WORDS)
+        return hint or CANNED_HINTS[misconception]
     except Exception:
         return CANNED_HINTS[misconception]
