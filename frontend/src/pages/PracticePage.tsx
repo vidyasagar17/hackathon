@@ -348,7 +348,6 @@ function PracticePage() {
           if (result.correct) {
             setFeedback('correct')
             setStreak((s) => s + 1)
-            fetchProblem()
             return
           }
 
@@ -469,7 +468,7 @@ function PracticePage() {
 
         <button
           type="button"
-          disabled={!readyToCheck}
+          disabled={!readyToCheck || feedback === 'correct'}
           onClick={checkAnswer}
           className="mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40"
         >
@@ -499,7 +498,7 @@ function PracticePage() {
             )}
           </div>
         )}
-        {revealed && (
+        {(revealed || feedback === 'correct') && (
           <button
             type="button"
             onClick={fetchProblem}
