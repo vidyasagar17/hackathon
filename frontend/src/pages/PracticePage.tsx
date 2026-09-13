@@ -389,7 +389,7 @@ function PracticePage() {
           }
 
           setMisconception(result.misconception)
-          if (result.misconception) fetchHint(submitted_answer)
+          fetchHint(submitted_answer)
           const steps = buildRegroupSteps(problem, config)
           if (steps.length === 0) {
             setFeedback('incorrect')

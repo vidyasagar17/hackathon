@@ -7,6 +7,8 @@ from .problems import Problem
 
 MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
+GENERAL_HINT = "Work one column at a time, starting with the ones. If a column adds up to 10 or more, write the ones digit and carry the 1 to the next column."
+
 CANNED_HINTS: dict[MisconceptionName, str] = {
     "no_carry": "When a column adds up to 10 or more, write down the last digit and carry the 1 over to the next column.",
     "carry_always": "Only carry a 1 to the next column when that column's sum is 10 or more.",

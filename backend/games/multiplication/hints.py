@@ -7,6 +7,8 @@ from .problems import Problem
 
 MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
+GENERAL_HINT = "Multiply the ones digit first and write down its ones digit. Carry the tens, then multiply the tens digit and add what you carried."
+
 CANNED_HINTS: dict[MisconceptionName, str] = {
     "added_instead_of_multiplied": "Multiplying means adding a number to itself several times, not adding the two numbers together once.",
     "no_carry": "When a column's product is 10 or more, write down the last digit and carry the rest over to the next column.",

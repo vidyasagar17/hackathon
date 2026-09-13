@@ -7,6 +7,8 @@ from .problems import Problem
 
 MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
+GENERAL_HINT = "Work one column at a time, starting with the ones. If the top digit is smaller than the bottom digit, borrow from the column to its left."
+
 CANNED_HINTS: dict[MisconceptionName, str] = {
     "smaller_from_larger": "Look at each column. If the top number is smaller than the bottom one, borrow from the column to its left before subtracting.",
     "borrowed_without_decrementing": "When you borrow from a column, remember to make that column's number one smaller too.",

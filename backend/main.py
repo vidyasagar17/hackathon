@@ -104,11 +104,20 @@ def check_answer(game_id: str, request: CheckRequest) -> CheckResponse:
 
 @app.post("/games/{game_id}/hint")
 def get_hint(game_id: str, request: HintRequest) -> HintResponse:
-    """Re-diagnose the answer server-side and phrase a hint, only when the UI is about to show one."""
+    """Re-diagnose the answer server-side and phrase a hint, only when the UI is about to show one.
+
+    A wrong answer with no diagnosed misconception gets the game's canned general hint,
+    never an LLM hint, since the LLM must not guess what went wrong.
+    """
     game = _get_game(game_id)
     problem = game.Problem.model_validate(request.problem)
     misconception = _diagnose(game, problem, request.submitted_answer)
-    hint = game.generate_hint(problem, misconception) if misconception else None
+    if request.submitted_answer == problem.answer:
+        hint = None
+    elif misconception:
+        hint = game.generate_hint(problem, misconception)
+    else:
+        hint = game.GENERAL_HINT
     return HintResponse(misconception=misconception, hint=hint)
 
 

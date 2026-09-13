@@ -7,6 +7,8 @@ from .problems import Problem
 
 MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
+GENERAL_HINT = "If the tens digit is too small to share into equal groups, share the whole number at once. Otherwise share the tens first, multiply back, subtract, then bring down the ones and share again."
+
 CANNED_HINTS: dict[MisconceptionName, str] = {
     "subtracted_instead_of_divided": "Dividing means splitting into equal groups, not subtracting one number from the other.",
     "multiplied_instead_of_divided": "Dividing means splitting into equal groups, not multiplying the two numbers.",

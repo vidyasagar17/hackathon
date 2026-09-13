@@ -51,6 +51,20 @@ def test_hint_rediagnoses_and_phrases_the_hint(monkeypatch):
     }
 
 
+def test_hint_falls_back_to_general_hint_for_undiagnosed_answer(monkeypatch):
+    monkeypatch.setattr(GAMES["subtraction"], "generate_hint", _fail_if_called)
+
+    response = client.post(
+        "/games/subtraction/hint",
+        json={"problem": _problem_data(), "submitted_answer": 999},
+    )
+
+    assert response.json() == {
+        "misconception": None,
+        "hint": GAMES["subtraction"].GENERAL_HINT,
+    }
+
+
 def test_hint_is_empty_for_a_correct_answer(monkeypatch):
     monkeypatch.setattr(GAMES["subtraction"], "generate_hint", _fail_if_called)
 
