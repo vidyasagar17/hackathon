@@ -1,4 +1,26 @@
-from .hint_check import vet_hint
+from .hint_check import keeps_facts, vet_hint
+
+SENTENCE = "In the ones column, 2 is smaller than 8, so you can't subtract yet: borrow from the tens column."
+
+
+def test_keeps_facts_accepts_friendlier_wording():
+    rewrite = "Nice try! In the Ones column 2 is less than 8, so first borrow from the tens column."
+    assert keeps_facts(rewrite, SENTENCE)
+
+
+def test_keeps_facts_rejects_a_wrong_column():
+    rewrite = "In the ones column, 2 is smaller than 8, so borrow from the hundreds column."
+    assert not keeps_facts(rewrite, SENTENCE)
+
+
+def test_keeps_facts_rejects_an_invented_number():
+    rewrite = "In the ones column, 2 is smaller than 8, so borrow from the tens column to make 12."
+    assert not keeps_facts(rewrite, SENTENCE)
+
+
+def test_keeps_facts_rejects_swapped_order():
+    rewrite = "In the tens column, borrow for the ones column because 2 is smaller than 8."
+    assert not keeps_facts(rewrite, SENTENCE)
 
 DIVISION_WORDS = ["dividend", "divisor", "quotient", "algorithm"]
 
@@ -33,6 +55,19 @@ def test_strips_filler_opener_from_a_clean_hint():
 
 def test_rejects_hint_that_is_only_filler():
     assert vet_hint("Certainly!", 22, DIVISION_WORDS) is None
+
+
+def test_keeps_only_the_quoted_hint_after_a_preamble():
+    reply = (
+        "Here's a friendly and encouraging rewording:\n\n"
+        '"The tens column shows 0, so it doesn\'t have anything to give."'
+    )
+    assert vet_hint(reply, 253, []) == "The tens column shows 0, so it doesn't have anything to give."
+
+
+def test_keeps_only_the_quoted_hint_after_a_stray_word():
+    reply = 'Thing! "In the tens column, there\'s a 0, so it can\'t give anything away."'
+    assert vet_hint(reply, 54, []) == "In the tens column, there's a 0, so it can't give anything away."
 
 
 def test_clean_hint_passes_unchanged():
