@@ -513,6 +513,15 @@ function PracticePage() {
             )}
           </div>
         )}
+        {revealed && (
+          <button
+            type="button"
+            onClick={fetchProblem}
+            className="mt-4 w-full rounded-2xl border-4 border-ink bg-white py-3 font-display text-xl font-semibold text-ink active:translate-y-1"
+          >
+            Next problem
+          </button>
+        )}
       </div>
     </div>
   )
