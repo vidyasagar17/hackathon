@@ -4,8 +4,10 @@ from typing import Literal
 from pydantic import BaseModel
 
 Place = Literal["hundreds", "tens", "ones"]
+AnswerPlace = Literal["thousands", "hundreds", "tens", "ones"]
 
 PLACES: list[Place] = ["hundreds", "tens", "ones"]
+ANSWER_PLACES: list[AnswerPlace] = ["thousands", "hundreds", "tens", "ones"]
 
 MIN_DIFFICULTY = 1
 MAX_DIFFICULTY = 3
@@ -23,6 +25,7 @@ class Problem(BaseModel):
     addend2: int
     answer: int
     columns: list[ColumnBreakdown]
+    answer_places: list[AnswerPlace] = ANSWER_PLACES
     difficulty: int
 
 

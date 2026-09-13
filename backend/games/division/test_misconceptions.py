@@ -10,6 +10,7 @@ def _problem(dividend: int, divisor: int) -> Problem:
         divisor=divisor,
         answer=answer,
         columns=[ColumnBreakdown(place=p) for p in places],
+        answer_places=places,
         difficulty=1,
     )
 

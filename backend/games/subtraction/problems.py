@@ -23,6 +23,7 @@ class Problem(BaseModel):
     subtrahend: int
     answer: int
     columns: list[ColumnBreakdown]
+    answer_places: list[Place] = PLACES
     difficulty: int
 
 

@@ -18,6 +18,7 @@ class Problem(BaseModel):
     divisor: int
     answer: int
     columns: list[ColumnBreakdown]
+    answer_places: list[Place]
     difficulty: int
 
 
@@ -39,10 +40,8 @@ def classify_difficulty(dividend: int, divisor: int) -> int:
     return 3 if r1 > 0 else 2
 
 
-def _columns_for(answer: int) -> list[ColumnBreakdown]:
-    if answer < 10:
-        return [ColumnBreakdown(place="ones")]
-    return [ColumnBreakdown(place="tens"), ColumnBreakdown(place="ones")]
+def _places_for(answer: int) -> list[Place]:
+    return ["ones"] if answer < 10 else ["tens", "ones"]
 
 
 def generate_problem(difficulty: int = MIN_DIFFICULTY) -> Problem:
@@ -59,10 +58,12 @@ def generate_problem(difficulty: int = MIN_DIFFICULTY) -> Problem:
         if dividend > 99:
             continue
         if classify_difficulty(dividend, divisor) == difficulty:
+            places = _places_for(quotient)
             return Problem(
                 dividend=dividend,
                 divisor=divisor,
                 answer=quotient,
-                columns=_columns_for(quotient),
+                columns=[ColumnBreakdown(place=p) for p in places],
+                answer_places=places,
                 difficulty=difficulty,
             )

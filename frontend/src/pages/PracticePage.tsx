@@ -18,6 +18,7 @@ type GameConfig = {
   badgeLabel: string
   sourceMark: string
   destMark: string
+  carryField?: string
 }
 
 const GAME_CONFIGS: Record<string, GameConfig> = {
@@ -56,6 +57,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
     badgeLabel: '1',
     sourceMark: '10+',
     destMark: '+1',
+    carryField: 'carry',
   },
   division: {
     heading: "Let's divide!",
@@ -84,14 +86,15 @@ type ColumnBreakdown = {
 type Problem = {
   answer: number
   columns: ColumnBreakdown[]
+  answer_places: Column[]
   difficulty: number
   [key: string]: unknown
 }
 
 type Answers = Record<Column, string>
-type RegroupStep = { from: Column; to: Column }
+type RegroupStep = { from: Column; to: Column; badge: string; destMark: string }
 
-const EMPTY_ANSWERS: Answers = { hundreds: '', tens: '', ones: '' }
+const EMPTY_ANSWERS: Answers = { thousands: '', hundreds: '', tens: '', ones: '' }
 
 function buildRegroupSteps(problem: Problem, config: GameConfig): RegroupStep[] {
   const byPlace = Object.fromEntries(
@@ -104,10 +107,15 @@ function buildRegroupSteps(problem: Problem, config: GameConfig): RegroupStep[] 
     const neighbor = idx > 0 ? PLACE_ORDER[idx - 1] : null
     if (!neighbor) continue
     if (!byPlace[place]?.[config.regroupField]) continue
+    const carry = config.carryField ? String(byPlace[place][config.carryField]) : null
+    const labels = {
+      badge: carry ?? config.badgeLabel,
+      destMark: carry ? `+${carry}` : config.destMark,
+    }
     steps.push(
       config.transferDirection === 'from-left'
-        ? { from: neighbor, to: place }
-        : { from: place, to: neighbor },
+        ? { from: neighbor, to: place, ...labels }
+        : { from: place, to: neighbor, ...labels },
     )
   }
   return steps
@@ -123,7 +131,13 @@ function RegroupTopChip({
   digit: number
   column: Column
   config: GameConfig
-  step: { fromStep?: number; toStep?: number; toPlace?: Column }
+  step: {
+    fromStep?: number
+    toStep?: number
+    toPlace?: Column
+    badge?: string
+    destMark?: string
+  }
   active: number | null
 }) {
   const isFromActive = step.fromStep === active
@@ -162,7 +176,7 @@ function RegroupTopChip({
           ref={badgeRef}
           className="absolute -top-9 left-1/2 rounded-full bg-ink px-2.5 py-1 font-display text-sm font-bold text-base shadow-md"
         >
-          {config.badgeLabel}
+          {step.badge}
         </span>
       )}
 
@@ -173,7 +187,7 @@ function RegroupTopChip({
       )}
       {(isToSettled || isToActive) && (
         <span className="absolute -left-2 -top-2 rounded-full bg-spark px-1.5 py-0.5 font-display text-[10px] font-bold text-base">
-          {config.destMark}
+          {step.destMark}
         </span>
       )}
     </div>
@@ -319,12 +333,13 @@ function PracticePage() {
     )
   }
 
-  const allFilled = problem.columns.every((c) => answers[c.place] !== '')
+  const digits = problem.answer_places.map((place) => answers[place])
+  const firstTyped = digits.findIndex((d) => d !== '')
+  const readyToCheck =
+    firstTyped !== -1 && digits.slice(firstTyped).every((d) => d !== '')
 
   const checkAnswer = () => {
-    const submitted_answer = Number(
-      problem.columns.map((c) => answers[c.place]).join(''),
-    )
+    const submitted_answer = Number(digits.join(''))
     fetch(`http://127.0.0.1:8000/games/${gameId}/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -379,10 +394,14 @@ function PracticePage() {
   const fromSteps: Partial<Record<Column, number>> = {}
   const toSteps: Partial<Record<Column, number>> = {}
   const toPlaceByFrom: Partial<Record<Column, Column>> = {}
+  const badgeByFrom: Partial<Record<Column, string>> = {}
+  const destMarkByTo: Partial<Record<Column, string>> = {}
   regroupSteps.forEach((s, i) => {
     fromSteps[s.from] = i
     toSteps[s.to] = i
     toPlaceByFrom[s.from] = s.to
+    badgeByFrom[s.from] = s.badge
+    destMarkByTo[s.to] = s.destMark
   })
 
   return (
@@ -423,6 +442,8 @@ function PracticePage() {
                       fromStep: fromSteps[c.place],
                       toStep: toSteps[c.place],
                       toPlace: toPlaceByFrom[c.place],
+                      badge: badgeByFrom[c.place],
+                      destMark: destMarkByTo[c.place],
                     }}
                     active={activeStep}
                   />
@@ -432,25 +453,28 @@ function PracticePage() {
                 <span className="font-display text-3xl font-bold">
                   {config.operatorSymbol}
                 </span>
-                {problem.columns.map((c) => (
-                  <DigitChip
-                    key={c.place}
-                    digit={c[config.bottomDigitField] as number}
-                    column={c.place}
-                  />
-                ))}
+                {problem.columns.map((c) => {
+                  const digit = c[config.bottomDigitField] as number | null
+                  return digit === null ? (
+                    <div key={c.place} className="h-16 w-16" />
+                  ) : (
+                    <DigitChip key={c.place} digit={digit} column={c.place} />
+                  )
+                })}
               </div>
               <div className="h-1 w-full rounded bg-ink/20" />
             </div>
           )}
-          <div className="flex gap-3">
-            {problem.columns.map((c) => (
+          <div
+            className={`flex gap-3 ${config.displayMode === 'columns' ? 'self-end' : ''}`}
+          >
+            {problem.answer_places.map((place) => (
               <AnswerBox
-                key={c.place}
-                column={c.place}
-                value={answers[c.place]}
+                key={place}
+                column={place}
+                value={answers[place]}
                 onChange={(value) =>
-                  setAnswers((a) => ({ ...a, [c.place]: value }))
+                  setAnswers((a) => ({ ...a, [place]: value }))
                 }
               />
             ))}
@@ -459,7 +483,7 @@ function PracticePage() {
 
         <button
           type="button"
-          disabled={!allFilled}
+          disabled={!readyToCheck}
           onClick={checkAnswer}
           className="mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40"
         >

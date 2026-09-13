@@ -31,6 +31,13 @@ def test_generate_problem_is_exact_division():
         assert problem.dividend == problem.divisor * problem.answer
 
 
+def test_generated_answer_fits_answer_places():
+    for difficulty in (1, 2, 3):
+        for _ in range(200):
+            problem = generate_problem(difficulty)
+            assert problem.answer < 10 ** len(problem.answer_places)
+
+
 def test_generate_problem_clamps_out_of_range_difficulty():
     assert generate_problem(0).difficulty == MIN_DIFFICULTY
     assert generate_problem(99).difficulty == MAX_DIFFICULTY
