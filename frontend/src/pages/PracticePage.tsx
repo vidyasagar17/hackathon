@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import DigitChip from '../components/DigitChip'
 import HomeButton from '../components/HomeButton'
+import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import TutorialOverlay from '../components/TutorialOverlay'
 import { API_URL } from '../api'
 import { borderColor, type Column } from '../columns'
@@ -90,6 +91,11 @@ type Problem = {
   answer_places: Column[]
   difficulty: number
   [key: string]: unknown
+}
+
+type ProblemPayload = {
+  problem: Problem
+  progress: Progress
 }
 
 type Answers = Record<Column, string>
@@ -189,20 +195,7 @@ function AnswerBox({
   )
 }
 
-function StreakMeter({ filled, total }: { filled: number; total: number }) {
-  return (
-    <div className="flex gap-2">
-      {Array.from({ length: total }).map((_, i) => (
-        <span
-          key={i}
-          className={`h-4 w-4 rounded-full ${i < filled ? 'bg-spark' : 'bg-ink/10'}`}
-        />
-      ))}
-    </div>
-  )
-}
-
-function requestProblem(gameId: string | undefined): Promise<Problem> {
+function requestProblem(gameId: string | undefined): Promise<ProblemPayload> {
   return fetch(
     `${API_URL}/games/${gameId}/problem?session_id=${getSessionId()}`,
   ).then((res) => {
@@ -217,6 +210,7 @@ function PracticePage() {
 
   const [tutorialDone, setTutorialDone] = useState(hasSeenTutorial)
   const [problem, setProblem] = useState<Problem | null>(null)
+  const [progress, setProgress] = useState<Progress | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS)
   const [feedback, setFeedback] = useState<
@@ -224,14 +218,14 @@ function PracticePage() {
   >(null)
   const [misconception, setMisconception] = useState<string | null>(null)
   const [hint, setHint] = useState<string | null>(null)
-  const [streak, setStreak] = useState(0)
   const [attemptCount, setAttemptCount] = useState(0)
   const [regroupSteps, setRegroupSteps] = useState<RegroupStep[]>([])
   const [activeStep, setActiveStep] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
 
-  const showProblem = useCallback((data: Problem) => {
-    setProblem(data)
+  const showProblem = useCallback((data: ProblemPayload) => {
+    setProblem(data.problem)
+    setProgress(data.progress)
     setAnswers(EMPTY_ANSWERS)
     setFeedback(null)
     setMisconception(null)
@@ -366,11 +360,13 @@ function PracticePage() {
         }) => {
           if (result.correct) {
             setFeedback('correct')
-            setStreak((s) => s + 1)
+            setProgress((p) =>
+              p && { ...p, correct_in_a_row: Math.min(p.correct_in_a_row + 1, p.needed) },
+            )
             return
           }
 
-          setStreak(0)
+          setProgress((p) => p && { ...p, correct_in_a_row: 0 })
           const nextAttempt = attemptCount + 1
           setAttemptCount(nextAttempt)
 
@@ -420,12 +416,7 @@ function PracticePage() {
 
       <h1 className="font-display text-4xl font-bold">{config.heading}</h1>
 
-      <div className="flex flex-col items-center gap-2">
-        <span className="rounded-full bg-ink/10 px-3 py-1 font-display text-sm font-semibold text-ink">
-          Level {problem.difficulty}
-        </span>
-        <StreakMeter filled={Math.min(streak, 5)} total={5} />
-      </div>
+      {progress && <ProgressMeter progress={progress} />}
 
       <div className="rounded-3xl bg-white p-8 pt-12 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
         <div className="flex flex-col items-center gap-3">

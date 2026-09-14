@@ -8,7 +8,7 @@ from pydantic import BaseModel, ValidationError
 
 from db import get_summary, get_tier_history, init_db, log_attempt
 from games import GAMES
-from tiering import next_tier
+from tiering import ESCALATION_RUN, MAX_TIER, correct_in_a_row, next_tier
 
 load_dotenv()
 init_db()
@@ -39,6 +39,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class Progress(BaseModel):
+    level: int
+    correct_in_a_row: int
+    needed: int
+    top_level: int
+
+
+class ProblemResponse(BaseModel):
+    problem: dict[str, Any]
+    progress: Progress
 
 
 class CheckRequest(BaseModel):
@@ -103,11 +115,20 @@ def health() -> dict[str, str]:
 
 
 @app.get("/games/{game_id}/problem")
-def get_problem(game_id: str, session_id: str) -> dict[str, Any]:
+def get_problem(game_id: str, session_id: str) -> ProblemResponse:
+    """Return the next problem at the session's tier, with progress toward the next tier."""
     game = _get_game(game_id)
     history = get_tier_history(session_id, game_id)
     difficulty = next_tier(history)
-    return game.generate_problem(difficulty).model_dump()
+    return ProblemResponse(
+        problem=game.generate_problem(difficulty).model_dump(),
+        progress=Progress(
+            level=difficulty,
+            correct_in_a_row=correct_in_a_row(history, difficulty),
+            needed=ESCALATION_RUN,
+            top_level=MAX_TIER,
+        ),
+    )
 
 
 @app.post("/games/{game_id}/check")

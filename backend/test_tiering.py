@@ -1,4 +1,4 @@
-from tiering import TierAttempt, next_tier
+from tiering import TierAttempt, correct_in_a_row, next_tier
 
 
 def _attempt(difficulty: int, correct: bool, misconception: str | None = None) -> TierAttempt:
@@ -56,3 +56,27 @@ def test_only_considers_run_at_current_tier():
         _attempt(2, True),
     ]
     assert next_tier(history) == 2
+
+
+def test_correct_in_a_row_with_no_history_is_zero():
+    assert correct_in_a_row([], 1) == 0
+
+
+def test_correct_in_a_row_counts_recent_correct_answers_at_the_tier():
+    history = [_attempt(1, False), _attempt(1, True), _attempt(1, True)]
+    assert correct_in_a_row(history, 1) == 2
+
+
+def test_correct_in_a_row_resets_after_a_miss():
+    history = [_attempt(2, True), _attempt(2, True), _attempt(2, False, "no_carry")]
+    assert correct_in_a_row(history, 2) == 0
+
+
+def test_correct_in_a_row_starts_at_zero_after_moving_up():
+    history = [_attempt(1, True), _attempt(1, True), _attempt(1, True)]
+    assert correct_in_a_row(history, next_tier(history)) == 0
+
+
+def test_correct_in_a_row_caps_at_three_on_the_top_tier():
+    history = [_attempt(3, True) for _ in range(5)]
+    assert correct_in_a_row(history, 3) == 3

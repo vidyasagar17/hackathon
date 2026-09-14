@@ -72,6 +72,19 @@ def test_check_rejects_a_tampered_answer_without_logging_it(tmp_path, monkeypatc
     assert db.get_summary("s1") == (0, 0, [])
 
 
+def test_problem_includes_progress_toward_the_next_level(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    for _ in range(2):
+        db.log_attempt("s1", "subtraction", 1, {}, 0, True, None)
+
+    response = client.get("/games/subtraction/problem", params={"session_id": "s1"})
+
+    body = response.json()
+    assert body["problem"]["difficulty"] == 1
+    assert body["progress"] == {"level": 1, "correct_in_a_row": 2, "needed": 3, "top_level": 3}
+
+
 def test_hint_rejects_a_tampered_answer():
     tampered = {**_problem_data(), "answer": 616}
 

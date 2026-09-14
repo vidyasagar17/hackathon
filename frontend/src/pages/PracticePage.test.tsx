@@ -17,6 +17,10 @@ const PROBLEM = {
   difficulty: 2,
 }
 
+const PROGRESS = { level: 2, correct_in_a_row: 1, needed: 3, top_level: 3 }
+
+let checkResult = { correct: true, misconception: null as string | null }
+
 function jsonResponse(body: unknown) {
   return Promise.resolve({ ok: true, json: () => Promise.resolve(body) })
 }
@@ -26,7 +30,7 @@ beforeEach(() => {
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string) =>
-      jsonResponse(url.includes('/check') ? { correct: true, misconception: null } : PROBLEM),
+      jsonResponse(url.includes('/check') ? checkResult : { problem: PROBLEM, progress: PROGRESS }),
     ),
   )
 })
@@ -46,17 +50,42 @@ function renderPracticePage() {
   )
 }
 
-test('a correct answer keeps Correct! on screen with a Next problem button', async () => {
+async function answer(digits: string) {
   const user = userEvent.setup()
-  renderPracticePage()
-
   const boxes = await screen.findAllByRole('textbox')
   for (let i = 0; i < boxes.length; i++) {
-    await user.type(boxes[i], '584'[i])
+    await user.type(boxes[i], digits[i])
   }
   await user.click(screen.getByRole('button', { name: 'Check answer' }))
+}
+
+test('a correct answer keeps Correct! on screen with a Next problem button', async () => {
+  checkResult = { correct: true, misconception: null }
+  renderPracticePage()
+
+  await answer('584')
 
   expect(await screen.findByText('Correct!')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Next problem' })).toBeTruthy()
   expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Check answer' }).disabled).toBe(true)
+})
+
+test('the progress meter starts from the server and fills a star on a correct answer', async () => {
+  checkResult = { correct: true, misconception: null }
+  renderPracticePage()
+
+  expect(await screen.findByRole('img', { name: '1 of 3 stars' })).toBeTruthy()
+  await answer('584')
+
+  expect(await screen.findByRole('img', { name: '2 of 3 stars' })).toBeTruthy()
+  expect(screen.getByText('1 more right in a row to reach Level 3')).toBeTruthy()
+})
+
+test('a wrong answer empties the stars, matching the level rule', async () => {
+  checkResult = { correct: false, misconception: 'smaller_from_larger' }
+  renderPracticePage()
+
+  await answer('616')
+
+  expect(await screen.findByRole('img', { name: '0 of 3 stars' })).toBeTruthy()
 })
