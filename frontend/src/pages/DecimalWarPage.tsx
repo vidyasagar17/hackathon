@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import HomeButton from '../components/HomeButton'
+import HundredthsGrid from '../components/HundredthsGrid'
 import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
 import PlayerToken from '../components/PlayerToken'
@@ -213,6 +214,7 @@ function DecimalWarPage() {
   const judged = result !== null
   const offersSame = state.choices.includes('same')
   const larger = state.correct_pick === 'mine' ? state.mine : state.robo
+  const places = Math.max(state.mine.length, state.robo.length) - 2
   const verdict = result?.correct
     ? 'Correct!'
     : state.correct_pick === 'same'
@@ -318,6 +320,10 @@ function DecimalWarPage() {
             )}
             {hint && (
               <div className="flex flex-col items-start gap-2">
+                <div className="flex flex-wrap gap-6">
+                  <HundredthsGrid digits={state.mine.slice(2)} places={places} />
+                  <HundredthsGrid digits={state.robo.slice(2)} places={places} />
+                </div>
                 <p className="text-lg">{hint}</p>
                 <ReadAloudButton text={hint} label="Read the hint aloud" />
                 {result.misconception && (

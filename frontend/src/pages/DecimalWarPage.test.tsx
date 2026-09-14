@@ -136,6 +136,8 @@ test('Show me why shows the hint, a read-aloud button and the diagnosed pattern'
   await user.click(await screen.findByRole('button', { name: 'Show me why' }))
 
   expect(await screen.findByText(HINT)).toBeTruthy()
+  expect(screen.getByRole('img', { name: '0.45 shaded: 45 of 100 squares' })).toBeTruthy()
+  expect(screen.getByRole('img', { name: '0.8 shaded: 80 of 100 squares' })).toBeTruthy()
   expect(screen.getByText('Diagnosed pattern: longer is larger')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Read the hint aloud' })).toBeTruthy()
   expect(callsTo('/rounds/round-1/hint')).toHaveLength(1)
