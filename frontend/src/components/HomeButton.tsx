@@ -43,7 +43,7 @@ export default function HomeButton() {
   }, [confirming])
 
   return (
-    <div className="absolute left-4 top-4 z-10">
+    <div className="relative z-10">
       <button
         type="button"
         aria-expanded={confirming}

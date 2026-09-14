@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { API_URL } from '../api'
+import AppHeader from '../components/AppHeader'
 import { formatGameName, formatMisconception } from '../format'
 import { getSessionId } from '../session'
 
@@ -52,12 +53,14 @@ function DashboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-base">
-      <header className="flex items-center justify-between px-6 py-4">
-        <span className="font-display text-2xl font-bold">Number Quest</span>
-        <Link to="/" className="font-display font-semibold text-ink-muted">
-          Back to games
-        </Link>
-      </header>
+      <AppHeader
+        left={<span className="font-display text-2xl font-bold">Number Quest</span>}
+        right={
+          <Link to="/" className="font-display font-semibold text-ink-muted">
+            Back to games
+          </Link>
+        }
+      />
 
       <main className="flex flex-1 flex-col items-center gap-6 px-4 py-8">
         <h1 className="font-display text-4xl font-bold">Session summary</h1>

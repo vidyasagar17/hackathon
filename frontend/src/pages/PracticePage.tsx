@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import AppHeader from '../components/AppHeader'
 import DigitChip from '../components/DigitChip'
 import HomeButton from '../components/HomeButton'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
@@ -298,18 +299,20 @@ function PracticePage() {
 
   if (loadError) {
     return (
-      <div className="relative flex min-h-screen flex-col items-center justify-center gap-4 bg-base">
-        <HomeButton />
-        <p className="font-display text-2xl font-bold text-alert-text">
-          Couldn't load a problem — try again.
-        </p>
-        <button
-          type="button"
-          onClick={fetchProblem}
-          className="rounded-2xl bg-ink px-6 py-3 font-display font-semibold text-base"
-        >
-          Retry
-        </button>
+      <div className="flex min-h-screen flex-col bg-base">
+        <AppHeader left={<HomeButton />} right={null} />
+        <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
+          <p className="font-display text-2xl font-bold text-alert-text">
+            Couldn't load a problem — try again.
+          </p>
+          <button
+            type="button"
+            onClick={fetchProblem}
+            className="rounded-2xl bg-ink px-6 py-3 font-display font-semibold text-base"
+          >
+            Retry
+          </button>
+        </main>
       </div>
     )
   }
@@ -408,125 +411,128 @@ function PracticePage() {
   })
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center gap-8 bg-base px-4">
-      <HomeButton />
-      <Link
-        to="/summary"
-        className="absolute right-6 top-4 font-display font-semibold text-ink-muted"
-      >
-        Session summary
-      </Link>
+    <div className="flex min-h-screen flex-col bg-base">
+      <AppHeader
+        left={<HomeButton />}
+        right={
+          <Link to="/summary" className="font-display font-semibold text-ink-muted">
+            Session summary
+          </Link>
+        }
+      />
 
-      <h1 className="font-display text-4xl font-bold">{config.heading}</h1>
+      <main className="flex flex-1 flex-col items-center justify-center gap-8 px-4 pb-8">
+        <h1 className="font-display text-4xl font-bold">{config.heading}</h1>
 
-      {progress && (
-        <ProgressMeter
-          progress={progress}
-          canCelebrate={activeStep === null || activeStep >= regroupSteps.length}
-        />
-      )}
-
-      <div className="rounded-3xl bg-white p-8 pt-12 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
-        <div className="flex flex-col items-center gap-3">
-          {config.displayMode === 'expression' ? (
-            <p className="font-display text-4xl font-bold">
-              {String(problem.dividend)} {config.operatorSymbol}{' '}
-              {String(problem.divisor)}
-            </p>
-          ) : (
-            <div className="flex w-full flex-col items-end gap-3">
-              <div className="flex gap-3">
-                {problem.columns.map((c) => (
-                  <RegroupTopChip
-                    key={c.place}
-                    digit={c[config.topDigitField] as number}
-                    column={c.place}
-                    config={config}
-                    step={{
-                      fromStep: fromSteps[c.place],
-                      toStep: toSteps[c.place],
-                      toPlace: toPlaceByFrom[c.place],
-                      badge: badgeByFrom[c.place],
-                      destMark: destMarkByTo[c.place],
-                    }}
-                    active={activeStep}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="font-display text-3xl font-bold">
-                  {config.operatorSymbol}
-                </span>
-                {problem.columns.map((c) => {
-                  const digit = c[config.bottomDigitField] as number | null
-                  return digit === null ? (
-                    <div key={c.place} className="h-16 w-16" />
-                  ) : (
-                    <DigitChip key={c.place} digit={digit} column={c.place} />
-                  )
-                })}
-              </div>
-              <div className="h-1 w-full rounded bg-ink/20" />
-            </div>
-          )}
-          <div
-            className={`flex gap-3 ${config.displayMode === 'columns' ? 'self-end' : ''}`}
-          >
-            {problem.answer_places.map((place) => (
-              <AnswerBox
-                key={place}
-                column={place}
-                value={answers[place]}
-                onChange={(value) =>
-                  setAnswers((a) => ({ ...a, [place]: value }))
-                }
-              />
-            ))}
-          </div>
-        </div>
-
-        <button
-          type="button"
-          disabled={!readyToCheck || feedback === 'correct'}
-          onClick={checkAnswer}
-          className="mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40"
-        >
-          Check answer
-        </button>
-
-        {feedback === 'correct' && (
-          <p className="mt-6 text-center font-display text-lg font-semibold text-success-text">
-            Correct!
-          </p>
+        {progress && (
+          <ProgressMeter
+            progress={progress}
+            canCelebrate={activeStep === null || activeStep >= regroupSteps.length}
+          />
         )}
-        {feedback === 'error' && (
-          <p className="mt-6 text-center font-display text-lg font-semibold text-alert-text">
-            Couldn't check your answer — try again.
-          </p>
-        )}
-        {feedback === 'incorrect' && (
-          <div className="mt-6 rounded-2xl border-l-8 border-helper bg-helper/10 p-4 text-left">
-            <p className="font-display text-lg font-semibold text-alert-text">
-              Not quite — try again!
-            </p>
-            {revealed && hint && <p className="mt-2">{hint}</p>}
-            {revealed && misconception && (
-              <p className="mt-2 text-sm text-ink-muted">
-                Diagnosed pattern: {formatMisconception(misconception)}
+
+        <div className="rounded-3xl bg-white p-8 pt-12 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
+          <div className="flex flex-col items-center gap-3">
+            {config.displayMode === 'expression' ? (
+              <p className="font-display text-4xl font-bold">
+                {String(problem.dividend)} {config.operatorSymbol}{' '}
+                {String(problem.divisor)}
               </p>
+            ) : (
+              <div className="flex w-full flex-col items-end gap-3">
+                <div className="flex gap-3">
+                  {problem.columns.map((c) => (
+                    <RegroupTopChip
+                      key={c.place}
+                      digit={c[config.topDigitField] as number}
+                      column={c.place}
+                      config={config}
+                      step={{
+                        fromStep: fromSteps[c.place],
+                        toStep: toSteps[c.place],
+                        toPlace: toPlaceByFrom[c.place],
+                        badge: badgeByFrom[c.place],
+                        destMark: destMarkByTo[c.place],
+                      }}
+                      active={activeStep}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="font-display text-3xl font-bold">
+                    {config.operatorSymbol}
+                  </span>
+                  {problem.columns.map((c) => {
+                    const digit = c[config.bottomDigitField] as number | null
+                    return digit === null ? (
+                      <div key={c.place} className="h-16 w-16" />
+                    ) : (
+                      <DigitChip key={c.place} digit={digit} column={c.place} />
+                    )
+                  })}
+                </div>
+                <div className="h-1 w-full rounded bg-ink/20" />
+              </div>
             )}
+            <div
+              className={`flex gap-3 ${config.displayMode === 'columns' ? 'self-end' : ''}`}
+            >
+              {problem.answer_places.map((place) => (
+                <AnswerBox
+                  key={place}
+                  column={place}
+                  value={answers[place]}
+                  onChange={(value) =>
+                    setAnswers((a) => ({ ...a, [place]: value }))
+                  }
+                />
+              ))}
+            </div>
           </div>
-        )}
-        {(revealed || feedback === 'correct') && (
+
           <button
             type="button"
-            onClick={fetchProblem}
-            className="mt-4 w-full rounded-2xl border-4 border-ink bg-white py-3 font-display text-xl font-semibold text-ink active:translate-y-1"
+            disabled={!readyToCheck || feedback === 'correct'}
+            onClick={checkAnswer}
+            className="mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40"
           >
-            Next problem
+            Check answer
           </button>
-        )}
-      </div>
+
+          {feedback === 'correct' && (
+            <p className="mt-6 text-center font-display text-lg font-semibold text-success-text">
+              Correct!
+            </p>
+          )}
+          {feedback === 'error' && (
+            <p className="mt-6 text-center font-display text-lg font-semibold text-alert-text">
+              Couldn't check your answer — try again.
+            </p>
+          )}
+          {feedback === 'incorrect' && (
+            <div className="mt-6 rounded-2xl border-l-8 border-helper bg-helper/10 p-4 text-left">
+              <p className="font-display text-lg font-semibold text-alert-text">
+                Not quite — try again!
+              </p>
+              {revealed && hint && <p className="mt-2">{hint}</p>}
+              {revealed && misconception && (
+                <p className="mt-2 text-sm text-ink-muted">
+                  Diagnosed pattern: {formatMisconception(misconception)}
+                </p>
+              )}
+            </div>
+          )}
+          {(revealed || feedback === 'correct') && (
+            <button
+              type="button"
+              onClick={fetchProblem}
+              className="mt-4 w-full rounded-2xl border-4 border-ink bg-white py-3 font-display text-xl font-semibold text-ink active:translate-y-1"
+            >
+              Next problem
+            </button>
+          )}
+        </div>
+      </main>
     </div>
   )
 }

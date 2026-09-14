@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import AppHeader from '../components/AppHeader'
 import GradePicker from '../components/GradePicker'
 import { getGradeBand, saveGradeBand, type GradeBand } from '../gradeBand'
 
@@ -161,21 +162,23 @@ function LandingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-base">
-      <header className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
-        <span className="font-display text-2xl font-bold">Number Quest</span>
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            onClick={() => setPicking(true)}
-            className="min-h-12 rounded-2xl border-4 border-ink bg-white px-4 font-display font-semibold text-ink"
-          >
-            Change grade
-          </button>
-          <Link to="/summary" className="font-display font-semibold text-ink-muted">
-            Session summary
-          </Link>
-        </div>
-      </header>
+      <AppHeader
+        left={<span className="font-display text-2xl font-bold">Number Quest</span>}
+        right={
+          <>
+            <button
+              type="button"
+              onClick={() => setPicking(true)}
+              className="min-h-12 rounded-2xl border-4 border-ink bg-white px-4 font-display font-semibold text-ink"
+            >
+              Change grade
+            </button>
+            <Link to="/summary" className="font-display font-semibold text-ink-muted">
+              Session summary
+            </Link>
+          </>
+        }
+      />
 
       <main className="flex flex-1 flex-col items-center gap-10 px-4 py-8">
         <h1 className="text-center font-display text-4xl font-bold">

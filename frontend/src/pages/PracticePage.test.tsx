@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
@@ -65,6 +65,14 @@ async function answer(digits: string) {
   }
   await user.click(screen.getByRole('button', { name: 'Check answer' }))
 }
+
+test('the practice page header holds Home and Session summary', async () => {
+  renderPracticePage()
+
+  const header = await screen.findByRole('banner')
+  expect(within(header).getByRole('button', { name: 'Home' })).toBeTruthy()
+  expect(within(header).getByRole('link', { name: 'Session summary' })).toBeTruthy()
+})
 
 test('a correct answer keeps Correct! on screen with a Next problem button', async () => {
   checkResult = { correct: true, misconception: null }
