@@ -88,23 +88,40 @@ def _drops_final_carry(problem: Problem) -> int:
     return digit_h * 100 + digit_t * 10 + digit_o
 
 
-_SIMULATORS: dict[MisconceptionName, Callable[[Problem], int]] = {
-    "drops_final_carry": _drops_final_carry,
-    "no_carry": _no_carry,
-    "carry_always": _carry_always,
-    "reversed_carry": _reversed_carry,
-    "carry_drops_at_second_column": _carry_drops_at_second_column,
-}
+def _no_carry_full_last_column(problem: Problem) -> int:
+    """Never carries, but writes the hundreds column's whole sum, e.g. 956 + 873 -> 1729."""
+    ah, at, ao = _digits(problem.addend1)
+    bh, bt, bo = _digits(problem.addend2)
+    return (ah + bh) * 100 + (at + bt) % 10 * 10 + (ao + bo) % 10
+
+
+def _carry_always_full_last_column(problem: Problem) -> int:
+    """Carries 1 into every column and writes the hundreds column's whole sum, e.g. 520 + 610 -> 1240."""
+    ah, at, ao = _digits(problem.addend1)
+    bh, bt, bo = _digits(problem.addend2)
+    return (ah + bh + 1) * 100 + (at + bt + 1) % 10 * 10 + (ao + bo) % 10
+
+
+_SIMULATORS: list[tuple[MisconceptionName, Callable[[Problem], int]]] = [
+    ("drops_final_carry", _drops_final_carry),
+    ("no_carry", _no_carry),
+    ("no_carry", _no_carry_full_last_column),
+    ("carry_always", _carry_always),
+    ("carry_always", _carry_always_full_last_column),
+    ("reversed_carry", _reversed_carry),
+    ("carry_drops_at_second_column", _carry_drops_at_second_column),
+]
 
 
 def diagnose(problem: Problem, submitted_answer: int) -> MisconceptionName | None:
     """Return the known buggy algorithm whose simulated answer matches what was submitted, if any.
 
+    A misconception may have more than one simulator, one per way a student writes it down.
     When several simulators match, the first in `_SIMULATORS` wins, so the most
     specific explanation is listed first: an answer that is the correct one minus
     its leading digit is `drops_final_carry`, even if a broader bug also matches.
     """
-    for name, simulate in _SIMULATORS.items():
+    for name, simulate in _SIMULATORS:
         if simulate(problem) == submitted_answer:
             return name
     return None

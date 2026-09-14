@@ -22,6 +22,16 @@ def test_carry_always():
     assert diagnose(problem, 404) == "carry_always"
 
 
+def test_no_carry_with_last_column_written_in_full():
+    problem = _problem(956, 873)
+    assert diagnose(problem, 1729) == "no_carry"
+
+
+def test_carry_always_with_last_column_written_in_full():
+    problem = _problem(520, 610)
+    assert diagnose(problem, 1240) == "carry_always"
+
+
 def test_reversed_carry():
     problem = _problem(456, 278)
     assert diagnose(problem, 1211) == "reversed_carry"

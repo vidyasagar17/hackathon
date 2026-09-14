@@ -62,23 +62,40 @@ def _drops_final_carry(problem: Problem) -> int:
     return digit_t * 10 + digit_o
 
 
-_SIMULATORS: dict[MisconceptionName, Callable[[Problem], int]] = {
-    "drops_final_carry": _drops_final_carry,
-    "added_instead_of_multiplied": _added_instead_of_multiplied,
-    "no_carry": _no_carry,
-    "carry_always": _carry_always,
-    "added_carry_before_multiplying": _added_carry_before_multiplying,
-}
+def _no_carry_full_last_column(problem: Problem) -> int:
+    """Never carries, but writes the tens column's whole product, e.g. 47 x 6 -> 242."""
+    t, o = _digits(problem.multiplicand)
+    m = problem.multiplier
+    return t * m * 10 + (o * m) % 10
+
+
+def _carry_always_full_last_column(problem: Problem) -> int:
+    """Carries 1 into the tens column and writes its whole result, e.g. 36 x 4 -> 134."""
+    t, o = _digits(problem.multiplicand)
+    m = problem.multiplier
+    return (t * m + 1) * 10 + (o * m) % 10
+
+
+_SIMULATORS: list[tuple[MisconceptionName, Callable[[Problem], int]]] = [
+    ("drops_final_carry", _drops_final_carry),
+    ("added_instead_of_multiplied", _added_instead_of_multiplied),
+    ("no_carry", _no_carry),
+    ("no_carry", _no_carry_full_last_column),
+    ("carry_always", _carry_always),
+    ("carry_always", _carry_always_full_last_column),
+    ("added_carry_before_multiplying", _added_carry_before_multiplying),
+]
 
 
 def diagnose(problem: Problem, submitted_answer: int) -> MisconceptionName | None:
     """Return the known buggy algorithm whose simulated answer matches what was submitted, if any.
 
+    A misconception may have more than one simulator, one per way a student writes it down.
     When several simulators match, the first in `_SIMULATORS` wins, so the most
     specific explanation is listed first: an answer that is the correct one minus
     its leading digit is `drops_final_carry`, even if a broader bug also matches.
     """
-    for name, simulate in _SIMULATORS.items():
+    for name, simulate in _SIMULATORS:
         if simulate(problem) == submitted_answer:
             return name
     return None

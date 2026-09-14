@@ -27,6 +27,16 @@ def test_carry_always():
     assert diagnose(problem, 73) == "carry_always"
 
 
+def test_no_carry_with_last_column_written_in_full():
+    problem = _problem(47, 6)
+    assert diagnose(problem, 242) == "no_carry"
+
+
+def test_carry_always_with_last_column_written_in_full():
+    problem = _problem(36, 4)
+    assert diagnose(problem, 134) == "carry_always"
+
+
 def test_added_carry_before_multiplying():
     problem = _problem(47, 6)
     assert diagnose(problem, 482) == "added_carry_before_multiplying"
