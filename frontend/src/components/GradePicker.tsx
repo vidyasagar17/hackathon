@@ -23,7 +23,7 @@ export default function GradePicker({ onPick }: { onPick: (band: GradeBand) => v
             key={band}
             type="button"
             onClick={() => onPick(band)}
-            className="tap-target min-h-20 rounded-3xl bg-white px-6 font-display text-2xl font-bold text-ink shadow-[0_6px_0_rgba(0,0,0,0.12)] active:translate-y-1 active:shadow-none"
+            className="tap-target min-h-20 rounded-2xl border-2 border-felt-edge bg-card px-6 font-display text-2xl font-bold text-ink shadow-[0_6px_0_#163A34] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2 active:translate-y-1 active:shadow-[0_2px_0_#163A34]"
           >
             {label}
           </button>

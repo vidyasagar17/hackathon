@@ -18,6 +18,8 @@ type SessionSummary = {
   misconceptions: MisconceptionCount[]
 }
 
+const NOTE = 'rounded-2xl border-2 border-felt-edge bg-card shadow-[0_6px_0_#163A34]'
+
 function groupByGame(rows: MisconceptionCount[]): [string, MisconceptionCount[]][] {
   const groups = new Map<string, MisconceptionCount[]>()
   for (const row of rows) {
@@ -28,7 +30,7 @@ function groupByGame(rows: MisconceptionCount[]): [string, MisconceptionCount[]]
 
 function MisconceptionItem({ name, count }: MisconceptionCount) {
   return (
-    <div className="flex items-center gap-3 py-3">
+    <div className="flex items-center gap-3 px-4 py-3">
       <span className="h-4 w-4 flex-shrink-0 rounded-full bg-helper" />
       <p className="flex-1 text-left">{formatMisconception(name)}</p>
       <span className="font-display font-semibold text-ink-muted">
@@ -77,26 +79,22 @@ function DashboardPage() {
           <p className="font-display text-xl">Loading summary...</p>
         ) : (
           <>
-            <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)]">
+            <div className={`w-full max-w-md p-8 text-center ${NOTE}`}>
               <p className="font-display text-5xl font-bold">
                 {summary.correct_count} / {summary.total_attempts}
               </p>
               <p className="mt-1 text-lg">answers correct</p>
             </div>
 
-            <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
-              <h2 className="mb-2 font-display text-2xl font-bold">
-                Where mistakes happened
-              </h2>
+            <div className={`w-full max-w-md p-6 ${NOTE}`}>
+              <h2 className="mb-4 font-display text-2xl font-bold">Where mistakes happened</h2>
               {summary.misconceptions.length === 0 ? (
-                <p className="py-3 text-ink-muted">
-                  No mistakes yet — keep practicing!
-                </p>
+                <p className="py-3 text-ink-muted">No mistakes yet — keep practicing!</p>
               ) : (
                 <div className="flex flex-col gap-4">
                   {groupByGame(summary.misconceptions).map(([game, rows]) => (
-                    <section key={game}>
-                      <h3 className="font-display text-lg font-semibold">
+                    <section key={game} className="overflow-hidden rounded-xl border-2 border-felt-edge">
+                      <h3 className="bg-felt px-4 py-2 font-display text-lg font-semibold text-chalk">
                         {formatGameName(game)}
                       </h3>
                       <div className="divide-y divide-ink/10">
