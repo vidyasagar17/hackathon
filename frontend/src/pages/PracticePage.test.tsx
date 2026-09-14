@@ -360,6 +360,20 @@ test('with the keypad, answer boxes do not open the device keyboard', async () =
   expect(box('Ones').inputMode).toBe('none')
 })
 
+test('typing a digit into a filled box replaces it, wherever the cursor is', async () => {
+  localStorage.setItem('grade_band', '4-5')
+  const user = userEvent.setup()
+  renderPracticePage()
+
+  const ones = await screen.findByRole('textbox', { name: 'Ones digit of your answer' })
+  await user.type(ones, '6')
+  await user.type(ones, '7')
+  expect(box('Ones').value).toBe('7')
+
+  await user.type(ones, '8', { initialSelectionStart: 0, initialSelectionEnd: 0 })
+  expect(box('Ones').value).toBe('8')
+})
+
 test('outside 2nd & 3rd grade there is no keypad and boxes use the number keyboard', async () => {
   localStorage.setItem('grade_band', '4-5')
   renderPracticePage()

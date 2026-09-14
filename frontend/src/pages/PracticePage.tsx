@@ -215,11 +215,14 @@ function AnswerBox({
     <input
       aria-label={`${column.charAt(0).toUpperCase()}${column.slice(1)} digit of your answer`}
       className={`tap-target h-16 w-16 rounded-2xl border-4 border-ink text-center font-display text-3xl font-bold text-ink focus:outline-none focus:ring-4 focus:ring-helper focus:ring-offset-2 ${active ? 'ring-4 ring-helper ring-offset-2' : ''} ${answerFill[column]}`}
-      maxLength={1}
       inputMode={usesKeypad ? 'none' : 'numeric'}
       value={value}
       onFocus={onSelect}
-      onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(-1))}
+      onChange={(e) => {
+        // No maxLength, so typing into a filled box works; keep only the digit just typed.
+        const digits = e.target.value.replace(/\D/g, '')
+        onChange((value && digits.length > value.length ? digits.replace(value, '') : digits).slice(-1))
+      }}
     />
   )
 }
