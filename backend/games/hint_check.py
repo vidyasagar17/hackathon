@@ -6,7 +6,8 @@ _FILLER_OPENER = re.compile(
 )
 _QUOTED_HINT = re.compile(r'["“]([^"“”]{20,})["”]')
 _FACT = re.compile(
-    r"\d+|\b(?:ones|tens|hundreds|thousands|smaller|bigger|larger|greater|less|more|fewer)\b",
+    r"\d+|\b(?:ones|tens|hundreds|thousands|smaller|bigger|larger|greater|less|more|fewer"
+    r"|carr(?:y|ies|ied|ying)|borrow(?:s|ed|ing)?)\b",
     re.IGNORECASE,
 )
 
@@ -31,9 +32,24 @@ def vet_hint(text: str, answer: int, banned_words: list[str]) -> str | None:
     return hint[0].upper() + hint[1:]
 
 
-def keeps_facts(rewrite: str, sentence: str) -> bool:
-    """True when a reworded hint states exactly the sentence's numbers and column names, in order.
+def _facts(text: str) -> list[str]:
+    """List the text's numbers, place names, comparison words, and carry/borrow verbs, in order."""
+    facts = []
+    for fact in _FACT.findall(text):
+        word = fact.lower()
+        if word.startswith("carr"):
+            word = "carry"
+        elif word.startswith("borrow"):
+            word = "borrow"
+        facts.append(word)
+    return facts
 
-    This stops an LLM rewording from inventing numbers or moving a digit to the wrong column.
+
+def keeps_facts(rewrite: str, sentence: str) -> bool:
+    """True when a reworded hint keeps the sentence's facts in the same order.
+
+    Facts are numbers, place names, comparison words, and any form of "carry" or "borrow".
+    This stops an LLM rewording from inventing numbers, moving a digit to the wrong column,
+    inventing a comparison rule, or replacing "carry"/"borrow" with a vaguer verb.
     """
-    return [f.lower() for f in _FACT.findall(rewrite)] == [f.lower() for f in _FACT.findall(sentence)]
+    return _facts(rewrite) == _facts(sentence)

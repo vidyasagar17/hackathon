@@ -31,6 +31,45 @@ def test_keeps_facts_rejects_an_invented_comparison_rule():
     assert not keeps_facts(rewrite, sentence)
 
 
+def test_keeps_facts_rejects_carry_reworded_as_put():
+    sentence = "In the ones column, 0 × 7 is less than 10, so don't carry anything to the tens column."
+    rewrite = "In the ones column, 0 times 7 is less than 10, so we don't need to put anything in the tens column."
+    assert not keeps_facts(rewrite, sentence)
+
+
+def test_keeps_facts_rejects_carry_reworded_as_move():
+    sentence = (
+        "In the tens column, 0 + 8 plus the 1 you carried is less than 10, "
+        "so don't carry anything to the hundreds column."
+    )
+    rewrite = (
+        "In the tens column, if you put 0 and 8 together with the 1 you carried, it's less than 10. "
+        "So, you don't need to move anything to the hundreds column."
+    )
+    assert not keeps_facts(rewrite, sentence)
+
+
+def test_keeps_facts_treats_borrow_forms_as_the_same_word():
+    sentence = (
+        "When the ones column borrows from the tens column, the tens column goes down by 1: "
+        "cross out the 1 and write 0."
+    )
+    rewrite = "When the ones need to borrow from the tens, make the tens go down by 1. Cross out the 1 and write 0."
+    assert keeps_facts(rewrite, sentence)
+
+
+def test_keeps_facts_treats_carry_forms_as_the_same_word():
+    sentence = (
+        "In the tens column, multiply first: 1 × 7. "
+        "Then add the 1 you carried, instead of adding it before you multiply."
+    )
+    rewrite = (
+        "When you're in the tens column, first do 1 times 7. After you get that, don't forget "
+        "to add the 1 you carried over, after you've multiplied."
+    )
+    assert keeps_facts(rewrite, sentence)
+
+
 def test_keeps_facts_rejects_swapped_order():
     rewrite = "In the tens column, borrow for the ones column because 2 is smaller than 8."
     assert not keeps_facts(rewrite, SENTENCE)
