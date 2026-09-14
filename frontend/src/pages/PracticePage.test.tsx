@@ -190,6 +190,33 @@ test('without reduce motion, the borrow badge slides between chips', async () =>
   expect(animate).toHaveBeenCalled()
 })
 
+test('a wrong answer after the hint updates the hint without replaying the animation', async () => {
+  checkResult = { correct: false, misconception: 'smaller_from_larger' }
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string) =>
+      url.includes('/hint')
+        ? jsonResponse({ misconception: checkResult.misconception, hint: `Hint about ${checkResult.misconception}.` })
+        : fakeApi(url),
+    ),
+  )
+  renderPracticePage()
+
+  await answer('616')
+  await answer('616')
+  await screen.findByRole('button', { name: 'Next problem' }, { timeout: 4000 })
+  expect(await screen.findByText('Hint about smaller_from_larger.')).toBeTruthy()
+  const animationsBefore = animate.mock.calls.length
+
+  checkResult = { correct: false, misconception: 'always_borrow' }
+  await answer('474')
+
+  expect(await screen.findByText('Hint about always_borrow.')).toBeTruthy()
+  expect(screen.queryByText('Hint about smaller_from_larger.')).toBeNull()
+  expect(screen.getByText('Diagnosed pattern: always borrow')).toBeTruthy()
+  expect(animate.mock.calls.length).toBe(animationsBefore)
+}, 15000)
+
 test('a hint that arrives after Next problem never shows on the new problem', async () => {
   checkResult = { correct: false, misconception: 'smaller_from_larger' }
   const hintReplies: ((hint: string) => void)[] = []

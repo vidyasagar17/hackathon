@@ -393,6 +393,7 @@ function PracticePage() {
   }
 
   const fetchHint = (submitted_answer: number) => {
+    hintRequest.current?.abort()
     const request = new AbortController()
     hintRequest.current = request
     fetch(`${API_URL}/games/${gameId}/hint`, {
@@ -449,15 +450,16 @@ function PracticePage() {
             return
           }
 
+          setFeedback('incorrect')
           setMisconception(result.misconception)
+          setHint(null)
           fetchHint(submitted_answer)
+          if (activeStep !== null || revealed) return
           const steps = buildRegroupSteps(problem.columns, config)
           if (steps.length === 0) {
-            setFeedback('incorrect')
             setRevealed(true)
             return
           }
-          setFeedback('incorrect')
           setRegroupSteps(steps)
           setActiveStep(0)
         },
