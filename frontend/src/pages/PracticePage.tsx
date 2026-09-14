@@ -527,7 +527,7 @@ function PracticePage() {
           aria-label="Game table"
           className="flex w-full max-w-4xl justify-center rounded-[2rem] border-[12px] border-felt-edge bg-felt p-4 sm:p-6"
         >
-        <div className="rounded-2xl border-2 border-felt-edge bg-white p-8 pt-12 shadow-[0_6px_0_#163A34]">
+        <div className="rounded-2xl border-2 border-felt-edge bg-white p-8 pt-12 shadow-[0_6px_0_#163A34] sm:min-w-[28rem]">
           <div className={usesKeypad ? 'flex flex-col items-center gap-8 md:flex-row md:justify-center md:gap-12' : ''}>
           <div className="flex flex-col items-center gap-3">
             {config.displayMode === 'expression' ? (
@@ -622,7 +622,7 @@ function PracticePage() {
             </p>
           )}
           {feedback === 'incorrect' && (
-            <div className="mt-6 rounded-2xl border-l-8 border-helper bg-helper/10 p-4 text-left">
+            <div className="mt-6 w-0 min-w-full rounded-2xl border-l-8 border-helper bg-helper/10 p-4 text-left">
               <p className="font-display text-lg font-semibold text-alert-text">
                 Not quite — try again!
               </p>
