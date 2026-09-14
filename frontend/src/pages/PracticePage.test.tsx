@@ -82,6 +82,14 @@ test('the practice page header holds Home, the sound switch and Session summary'
   expect(within(header).getByRole('link', { name: 'Session summary' })).toBeTruthy()
 })
 
+test('each answer box is named by its place', async () => {
+  renderPracticePage()
+
+  expect(await screen.findByRole('textbox', { name: 'Hundreds digit of your answer' })).toBeTruthy()
+  expect(screen.getByRole('textbox', { name: 'Tens digit of your answer' })).toBeTruthy()
+  expect(screen.getByRole('textbox', { name: 'Ones digit of your answer' })).toBeTruthy()
+})
+
 test('a correct answer keeps Correct! on screen with a Next problem button', async () => {
   checkResult = { correct: true, misconception: null }
   renderPracticePage()

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import DigitChip from './DigitChip'
 import ReadAloudButton from './ReadAloudButton'
-import { borderColor, type Column } from '../columns'
+import { answerFill, type Column } from '../columns'
 
 type Highlight = 'digits' | 'answer' | 'hint'
 
@@ -14,7 +14,7 @@ const COLUMN_STEPS: Step[] = [
   {
     highlight: 'digits',
     caption:
-      'Numbers are colored by place: yellow is hundreds, blue is tens, pink is ones.',
+      'Numbers are colored by place: yellow is hundreds, blue is tens, pink is ones. Each has a letter too: H, T, O.',
   },
   {
     highlight: 'answer',
@@ -49,6 +49,7 @@ const EXAMPLE_BOTTOM: { place: Column; digit: number }[] = [
   { place: 'tens', digit: 5 },
   { place: 'ones', digit: 8 },
 ]
+const EXAMPLE_ANSWER_PLACES: Column[] = ['hundreds', 'tens', 'ones']
 
 export default function TutorialOverlay({
   onDone,
@@ -61,6 +62,23 @@ export default function TutorialOverlay({
   const [stepIndex, setStepIndex] = useState(0)
   const step = steps[stepIndex]
   const isLast = stepIndex === steps.length - 1
+
+  const answerBoxes = (
+    <div
+      className={`flex gap-3 rounded-2xl transition-all duration-300 motion-reduce:transition-none ${
+        step.highlight === 'answer'
+          ? 'ring-4 ring-helper ring-offset-2 ring-offset-white'
+          : ''
+      }`}
+    >
+      {EXAMPLE_ANSWER_PLACES.map((place) => (
+        <div
+          key={place}
+          className={`h-14 w-14 rounded-2xl border-4 border-ink ${answerFill[place]}`}
+        />
+      ))}
+    </div>
+  )
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-base px-4">
@@ -93,35 +111,12 @@ export default function TutorialOverlay({
               ))}
             </div>
             <div className="h-1 w-full rounded bg-ink/20" />
-            <div
-              className={`flex gap-3 rounded-2xl transition-all duration-300 motion-reduce:transition-none ${
-                step.highlight === 'answer'
-                  ? 'ring-4 ring-helper ring-offset-2 ring-offset-white'
-                  : ''
-              }`}
-            >
-              {(['hundreds', 'tens', 'ones'] as Column[]).map((place) => (
-                <div
-                  key={place}
-                  className={`h-14 w-14 rounded-2xl border-4 bg-white ${borderColor[place]}`}
-                />
-              ))}
-            </div>
+            {answerBoxes}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3">
             <p className="font-display text-3xl font-bold">84 ÷ 4</p>
-            <div
-              className={`flex gap-3 rounded-2xl transition-all duration-300 motion-reduce:transition-none ${
-                step.highlight === 'answer'
-                  ? 'ring-4 ring-helper ring-offset-2 ring-offset-white'
-                  : ''
-              }`}
-            >
-              <div className="h-14 w-14 rounded-2xl border-4 border-hundreds bg-white" />
-              <div className="h-14 w-14 rounded-2xl border-4 border-tens bg-white" />
-              <div className="h-14 w-14 rounded-2xl border-4 border-ones bg-white" />
-            </div>
+            {answerBoxes}
           </div>
         )}
 

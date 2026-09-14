@@ -1,5 +1,6 @@
 /**
- * Check that every text/background color pair the app uses reaches WCAG AAA (7:1).
+ * Check that every color pair the app uses reaches its WCAG minimum: 7:1 (AAA) for text,
+ * 3:1 for non-text edges such as input outlines.
  *
  * Reads the color tokens from src/index.css. A background can be a token or a
  * translucent token over another, written "helper/10 over white" (10% helper on white),
@@ -8,7 +9,8 @@
  */
 import { readFileSync } from 'node:fs'
 
-const MIN_RATIO = 7
+const TEXT_MINIMUM = 7
+const NON_TEXT_MINIMUM = 3
 
 const PAIRS = [
   ['ink', 'base', 'body text on the page'],
@@ -22,11 +24,17 @@ const PAIRS = [
   ['alert-text', 'helper/10 over white', '"Not quite" in the hint box'],
   ['helper-text', 'helper/10 over white', 'hint label in the tutorial'],
   ['ink', 'ink/10 over base', 'Level and Coming soon pills'],
-  ['ink', 'hundreds', 'digits on hundreds chips'],
-  ['ink', 'tens', 'digits on tens chips'],
-  ['ink', 'ones', 'digits and marks on ones chips'],
+  ['ink', 'hundreds', 'digits and H letters on hundreds chips'],
+  ['ink', 'tens', 'digits and T letters on tens chips'],
+  ['ink', 'ones', 'digits, O letters and marks on ones chips'],
   ['ink', 'spark', 'marks on green animation badges'],
   ['base', 'ink', 'text on dark buttons'],
+  ['ink', 'hundreds/25 over white', 'digits in hundreds answer boxes'],
+  ['ink', 'tens/25 over white', 'digits in tens answer boxes'],
+  ['ink', 'ones/25 over white', 'digits in ones answer boxes'],
+  ['ink', 'ink/10 over white', 'digits in the thousands answer box'],
+  ['ink', 'white', 'answer box outline on the problem card', NON_TEXT_MINIMUM],
+  ['helper', 'white', 'focus ring around the active answer box', NON_TEXT_MINIMUM],
 ]
 
 const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')
@@ -56,15 +64,17 @@ function contrast(a, b) {
 }
 
 let failures = 0
-for (const [text, background, usage] of PAIRS) {
-  const ratio = contrast(text, background)
-  const ok = ratio >= MIN_RATIO
+for (const [foreground, background, usage, minimum = TEXT_MINIMUM] of PAIRS) {
+  const ratio = contrast(foreground, background)
+  const ok = ratio >= minimum
   if (!ok) failures += 1
-  console.log(`${ok ? 'pass' : 'FAIL'}  ${ratio.toFixed(2)}:1  ${text} on ${background}  (${usage})`)
+  console.log(
+    `${ok ? 'pass' : 'FAIL'}  ${ratio.toFixed(2)}:1 (needs ${minimum}:1)  ${foreground} on ${background}  (${usage})`,
+  )
 }
 
 if (failures > 0) {
-  console.error(`\n${failures} color pair(s) below ${MIN_RATIO}:1`)
+  console.error(`\n${failures} color pair(s) below their minimum`)
   process.exit(1)
 }
-console.log(`\nAll ${PAIRS.length} color pairs reach ${MIN_RATIO}:1`)
+console.log(`\nAll ${PAIRS.length} color pairs reach their minimum`)

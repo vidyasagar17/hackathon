@@ -33,6 +33,6 @@ test('each tutorial caption can be read aloud', async () => {
   await user.click(screen.getByRole('button', { name: 'Read aloud' }))
 
   expect(speak.mock.calls[0][0].text).toBe(
-    'Numbers are colored by place: yellow is hundreds, blue is tens, pink is ones.',
+    'Numbers are colored by place: yellow is hundreds, blue is tens, pink is ones. Each has a letter too: H, T, O.',
   )
 })

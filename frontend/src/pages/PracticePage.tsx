@@ -8,7 +8,7 @@ import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import TutorialOverlay from '../components/TutorialOverlay'
 import { API_URL } from '../api'
-import { borderColor, type Column } from '../columns'
+import { answerFill, type Column } from '../columns'
 import { formatMisconception } from '../format'
 import { prefersReducedMotion } from '../motion'
 import { buildRegroupSteps, PLACE_ORDER, type RegroupStep } from '../regroup'
@@ -198,7 +198,8 @@ function AnswerBox({
 }) {
   return (
     <input
-      className={`tap-target h-16 w-16 rounded-2xl border-4 bg-white text-center font-display text-3xl font-bold text-ink focus:outline-none ${borderColor[column]}`}
+      aria-label={`${column.charAt(0).toUpperCase()}${column.slice(1)} digit of your answer`}
+      className={`tap-target h-16 w-16 rounded-2xl border-4 border-ink text-center font-display text-3xl font-bold text-ink focus:outline-none focus:ring-4 focus:ring-helper focus:ring-offset-2 ${answerFill[column]}`}
       maxLength={1}
       inputMode="numeric"
       value={value}
