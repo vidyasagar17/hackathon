@@ -2,70 +2,110 @@
 
 Built for the Nerdy AI Hackathon Challenge. Most math practice apps mark an
 answer right or wrong and stop there. This one diagnoses *why* a wrong
-answer happened and gives a hint aimed at that exact mistake, across four
-arithmetic games: **subtraction, addition, multiplication, and division**.
+answer happened and gives a hint aimed at that exact mistake.
 
-## How it works
+It has two kinds of game, grouped on the home screen by grade band
+(K–1, 2–3, 4–5):
 
-1. **Problem generation** — each game's backend module generates a random
-   problem at one of three difficulty tiers (grounded in Common Core
-   standards, e.g. 2.NBT.B.7 for subtraction/addition, 3.OA/4.NBT.B for
-   multiplication/division) and traces the standard algorithm column by
-   column. Every problem validates that its answer and columns follow from
-   its own numbers, so the server rejects a problem the browser has edited.
+- **Skill workshops** — column **subtraction, addition, multiplication and
+  division**, one problem at a time.
+- **Games against Robo** — card games from a K-5 game curriculum, played on
+  one device against a computer opponent. The first is **Decimal War**
+  (grades 4–5): judge whose decimal is larger.
 
-2. **Misconception detection** — when an answer is wrong, a set of pure,
-   deterministic functions each simulate the answer a student *following a
-   specific known buggy procedure* would produce; the one that matches the
-   student's answer is the diagnosis. This mirrors the methodology of
-   Brown, J. S., & Burton, R. R. (1978), [*Diagnostic models for procedural
-   bugs in basic mathematical skills*](https://doi.org/10.1207/s15516709cog0202_4),
-   Cognitive Science, 2(2), 155-192, which catalogued these consistent
-   "buggy algorithms." Each game encodes 5 misconceptions (20 total), e.g.
-   subtraction's "borrow across zero failure" or addition's "reversed
-   carry" (writing the tens digit and carrying the ones). When two bugs
-   produce the same answer, the more specific one wins. An LLM never
-   guesses the diagnosis.
+## How diagnosis works
 
-3. **Adaptive difficulty** — a session-scoped tracker (`backend/tiering.py`)
-   moves a student up a tier after 3 correct answers in a row, and down
-   when the *same* misconception is diagnosed twice in a row.
+Wrong answers and moves are diagnosed by pure, deterministic, pytest-covered
+functions. An LLM never guesses the diagnosis.
 
-4. **Hints** — the first wrong answer only says "Not quite." On the second,
-   subtraction, addition, and multiplication replay the correct borrow or
-   carry on the student's own numbers (division uses a simpler display,
-   since long division's "bring down" step doesn't fit that visual), then
-   the hint and diagnosed pattern appear, with a "Next problem" button.
-   - The hint starts as a sentence **built by code from the student's
-     digits** (`sentences.py` in each game), e.g. *"In the ones column, 2 is
-     smaller than 8, so you can't subtract yet: borrow from the tens
-     column."* These sentences are pytest-covered and never state a
-     column's result.
-   - An LLM (Qwen2.5-7B-Instruct via Hugging Face) may only **reword** that
-     sentence to sound friendlier, within a 4-second total deadline. The
-     rewording is shown only if it keeps every number, place name,
-     comparison word, and carry/borrow word in the same order, and doesn't
-     state the answer or use banned jargon (`backend/games/hint_check.py`).
-     Otherwise the student sees the code-built sentence.
-   - Why: a hand review of live LLM-written hints found wrong advice in 6
-     of 32 samples (e.g. "make the 5 in the hundreds column into a 4" for
-     356 − 297). Letting the LLM phrase but never reason keeps every hint
-     correct.
-   - A wrong answer that matches no known misconception gets a fixed
-     general hint for that game.
+**Workshops.** Each workshop generates a problem at one of three levels
+(grounded in Common Core, e.g. 2.NBT.B.7, 4.NBT.B.5) and simulates the answer
+a student *following a specific known buggy procedure* would write; the
+simulator that matches the student's answer is the diagnosis. This follows
+Brown, J. S., & Burton, R. R. (1978), [*Diagnostic models for procedural bugs
+in basic mathematical skills*](https://doi.org/10.1207/s15516709cog0202_4),
+Cognitive Science, 2(2), 155-192. Each workshop has 5 misconceptions, e.g.
+subtraction's "borrow across zero failure"; a misconception can have more
+than one simulator for different ways of writing it (e.g. a carry bug with the
+last column written in full), and when two bugs give the same answer the more
+specific one wins. The server rejects a problem the browser has edited.
 
-5. **Session summary dashboard** — every attempt is logged in SQLite and
-   summarized per game: accuracy plus which misconceptions came up, so the
-   diagnostic layer stays visible rather than hidden in the backend.
+**Decimal War.** Each round deals both sides 1–3 digit cards after "0." and
+the student picks the larger number. The detectors follow decimal-comparison
+research — Steinle, V., & Stacey, K. (1998), *The incidence of misconceptions
+of decimal notation amongst students in Grades 5 to 10* (32% of Grade 5
+students chose longer decimals as larger); Steinle & Stacey (2001), *Visible
+and invisible zeros*; and Resnick, L. B., et al. (1989), *Conceptual bases of
+arithmetic errors: The case of decimal fractions*:
 
-6. **Onboarding tutorial** — a short, one-time walkthrough shown before a
-   student's first game, using the real UI components.
+| Diagnosis | Wrong pick |
+|---|---|
+| `longer_is_larger` | picks the number with more decimal places (0.45 over 0.8) |
+| `shorter_is_larger` | picks the number with fewer decimal places (0.8 over 0.85) |
+| `reciprocal_thinking` | picks the smaller of two same-length numbers (0.3 over 0.4) |
+| `ignores_zero` | says 0.3 and 0.03 are the same |
+
+Each level deals only the comparison types that reveal its misconceptions
+(level 1 same length, level 2 different lengths, level 3 zeros and equal
+pairs with a "They're the same" choice).
+
+## Adaptive difficulty
+
+`backend/tiering.py` moves a student up a level after 3 correct in a row and
+down when the *same* misconception is diagnosed twice in a row, per game.
+Stars on the page show progress; there are no timers.
+
+## Hints
+
+Hints start as a sentence **built by code from the student's own numbers**
+(`sentences.py` in each game), e.g. *"Give both numbers the same number of
+digits: 0.45 and 0.80. 80 hundredths is more than 45 hundredths, so 0.8 is
+larger."* An LLM (Qwen2.5-7B-Instruct via Hugging Face) may only **reword**
+it to sound friendlier, within a 4-second total deadline, and the rewording
+is shown only if it keeps every number, place name (including tenths,
+hundredths, thousandths), comparison word, "same", and carry/borrow word in
+order, and uses no banned jargon (`backend/games/hint_check.py`). Otherwise
+the student sees the code-built sentence. A hand review of live LLM-written
+hints found wrong advice in 6 of 32 samples, which is why the LLM phrases but
+never reasons. A wrong answer with no diagnosis gets a fixed general hint.
+
+- **Workshops:** the first miss says "Not quite"; the second replays the
+  correct borrow or carry on the student's own numbers, then shows the hint
+  and the diagnosed pattern.
+- **Decimal War:** a wrong pick outlines the larger number and offers
+  "Show me why", which draws both numbers on hundredths grids beside the hint
+  and diagnosed pattern. The hint is only fetched when the student asks.
+
+## The move engine (games against Robo)
+
+Curriculum games register in `backend/curriculum/` and provide `new_round`,
+`visible_state`, `evaluate_move`, `computer_move`, `hint_sentence` and a
+general hint. The server keeps each round (so hidden cards never reach the
+browser) and logs every move with its diagnosis:
+
+- `POST /curriculum/{game_id}/rounds` — start a round at the student's level
+- `POST /rounds/{round_id}/moves` — evaluate, log and answer a move (422 for a
+  move the game rejects, which is not logged)
+- `POST /rounds/{round_id}/hint` — hint for the round's latest move
+
+The session summary counts workshop attempts and moves together, per game.
+
+## For students
+
+- Grade-band picker on first visit; every game stays playable.
+- Large tap targets (64 px), AAA text contrast (`npm run check:contrast`),
+  read-aloud buttons, soft sound effects with a mute switch, reduced motion
+  respected, and an on-screen keypad for grades 2–3.
+- **Game-table design:** games are played on a felt table with real-looking
+  digit cards; the home screen is a set of grade-band shelves of game boxes.
+  Animation is used only for the math itself (the carry/borrow badge) and
+  short feedback cues.
 
 ## Tech stack
 
-- **Backend:** FastAPI + Pydantic, SQLite for attempt logging
-- **Frontend:** React + Vite + Tailwind, React Router
-- **Misconception detection, tiering, hint sentences:** pure Python, no LLM
+- **Backend:** FastAPI + Pydantic, SQLite (attempts, rounds, moves)
+- **Frontend:** React + Vite + Tailwind, React Router; Vitest + Testing Library
+- **Diagnosis, dealing, tiering, hint sentences:** pure Python, no LLM
 - **Hint rewording:** Qwen2.5-7B-Instruct via Hugging Face's
   `InferenceClient` (`featherless-ai` provider)
 
@@ -73,22 +113,25 @@ arithmetic games: **subtraction, addition, multiplication, and division**.
 
 ```
 backend/
-  games/
-    subtraction/   addition/   multiplication/   division/
-      problems.py         - problem generator, difficulty tiers, validation
-      misconceptions.py   - 5 pure diagnosis functions
-      sentences.py        - code-built hint sentence per misconception
-      hints.py            - game prompt, banned words, general hint
-      test_*.py           - pytest coverage for the above
-    hint_check.py   - rules an LLM rewording must pass
-    rewording.py    - LLM call with a 4-second total deadline
-  tiering.py        - session-level adaptive difficulty
-  db.py             - SQLite attempt logging and summary
-  main.py           - FastAPI routes: /problem, /check, /hint, /summary
-frontend/
-  src/pages/        - LandingPage (game picker), PracticePage, DashboardPage
-  src/components/   - DigitChip, TutorialOverlay
-  src/regroup.ts    - borrow/carry animation steps
+  games/                         skill workshops
+    subtraction/ addition/ multiplication/ division/
+      problems.py        problem generator, levels, validation
+      misconceptions.py  buggy-procedure simulators and diagnose()
+      sentences.py       code-built hint sentence per misconception
+      hints.py           rewording prompt, banned words, general hint
+    hint_check.py        rules an LLM rewording must pass
+    rewording.py         LLM call with a 4-second total deadline
+  curriculum/                    games against Robo
+    engine.py            MoveResult and the game contract
+    decimal_war/         rounds.py, misconceptions.py, moves.py,
+                         sentences.py, hints.py (+ tests)
+  tiering.py             adaptive levels
+  db.py                  SQLite: attempts, rounds, moves, summary
+  main.py                FastAPI routes
+frontend/src/
+  pages/                 LandingPage, PracticePage, DecimalWarPage, DashboardPage
+  components/            DigitChip, Keypad, ProgressMeter, HundredthsGrid, ...
+  regroup.ts             borrow/carry animation steps
 ```
 
 ## Running locally
@@ -130,7 +173,7 @@ may ask to allow Python and Node through the firewall the first time.
 backend's URL, and set `ALLOWED_ORIGINS` on the backend to the frontend's URL
 (comma-separated for more than one).
 
-**Tests**
+**Tests and checks**
 ```
 cd backend
 uv run pytest
@@ -139,4 +182,5 @@ uv run pytest
 cd frontend
 npm test
 npm run check:contrast
+npm run check:tap-targets
 ```
