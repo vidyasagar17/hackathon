@@ -147,7 +147,7 @@ export default function TutorialOverlay({
       <button
         type="button"
         onClick={() => (isLast ? onDone() : setStepIndex((i) => i + 1))}
-        className="rounded-2xl bg-ink px-8 py-4 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none"
+        className="tap-target rounded-2xl bg-ink px-8 py-4 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none"
       >
         {isLast ? "Let's go!" : 'Next'}
       </button>

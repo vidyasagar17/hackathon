@@ -9,6 +9,7 @@
     "lint": "oxlint",
     "test": "vitest run",
     "check:contrast": "node scripts/check-contrast.mjs",
+    "check:tap-targets": "node scripts/check-tap-targets.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -198,7 +198,7 @@ function AnswerBox({
 }) {
   return (
     <input
-      className={`h-16 w-16 rounded-2xl border-4 bg-white text-center font-display text-3xl font-bold text-ink focus:outline-none ${borderColor[column]}`}
+      className={`tap-target h-16 w-16 rounded-2xl border-4 bg-white text-center font-display text-3xl font-bold text-ink focus:outline-none ${borderColor[column]}`}
       maxLength={1}
       inputMode="numeric"
       value={value}
@@ -316,7 +316,7 @@ function PracticePage() {
           <button
             type="button"
             onClick={fetchProblem}
-            className="rounded-2xl bg-ink px-6 py-3 font-display font-semibold text-base"
+            className="tap-target rounded-2xl bg-ink px-6 py-3 font-display font-semibold text-base"
           >
             Retry
           </button>
@@ -427,7 +427,10 @@ function PracticePage() {
         right={
           <>
             <MuteToggle />
-            <Link to="/summary" className="font-display font-semibold text-ink-muted">
+            <Link
+              to="/summary"
+              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+            >
               Session summary
             </Link>
           </>
@@ -510,7 +513,7 @@ function PracticePage() {
             type="button"
             disabled={!readyToCheck || feedback === 'correct'}
             onClick={checkAnswer}
-            className="mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40"
+            className="tap-target mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40"
           >
             Check answer
           </button>
@@ -547,7 +550,7 @@ function PracticePage() {
             <button
               type="button"
               onClick={fetchProblem}
-              className="mt-4 w-full rounded-2xl border-4 border-ink bg-white py-3 font-display text-xl font-semibold text-ink active:translate-y-1"
+              className="tap-target mt-4 w-full rounded-2xl border-4 border-ink bg-white py-3 font-display text-xl font-semibold text-ink active:translate-y-1"
             >
               Next problem
             </button>

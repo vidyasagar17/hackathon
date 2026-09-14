@@ -59,7 +59,7 @@ function DashboardPage() {
         right={
           <>
             <MuteToggle />
-            <Link to="/" className="font-display font-semibold text-ink-muted">
+            <Link to="/" className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted">
               Back to games
             </Link>
           </>
@@ -114,7 +114,7 @@ function DashboardPage() {
 
         <Link
           to="/"
-          className="rounded-2xl bg-ink px-8 py-4 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none"
+          className="tap-target inline-flex items-center rounded-2xl bg-ink px-8 py-4 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none"
         >
           Practice again
         </Link>

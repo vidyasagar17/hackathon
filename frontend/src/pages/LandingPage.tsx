@@ -117,7 +117,7 @@ function fitsBand(game: Game, band: GradeBand): boolean {
 
 function GameCard({ game }: { game: Game }) {
   return (
-    <Link to={game.to} className="block">
+    <Link to={game.to} className="tap-target block">
       <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)] active:translate-y-1 active:shadow-none">
         {game.icon}
         <h3 className="font-display text-xl font-bold">{game.title}</h3>
@@ -171,11 +171,14 @@ function LandingPage() {
             <button
               type="button"
               onClick={() => setPicking(true)}
-              className="min-h-12 rounded-2xl border-4 border-ink bg-white px-4 font-display font-semibold text-ink"
+              className="tap-target rounded-2xl border-4 border-ink bg-white px-4 font-display font-semibold text-ink"
             >
               Change grade
             </button>
-            <Link to="/summary" className="font-display font-semibold text-ink-muted">
+            <Link
+              to="/summary"
+              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+            >
               Session summary
             </Link>
           </>

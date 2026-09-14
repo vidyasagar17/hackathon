@@ -23,6 +23,12 @@
   --font-body: "Atkinson Hyperlegible", sans-serif;
 }
 
+/* Spec: every control a student taps is at least 64×64 px. Checked by `npm run check:tap-targets`. */
+@utility tap-target {
+  min-height: 4rem;
+  min-width: 4rem;
+}
+
 body {
   background-color: var(--color-base);
   color: var(--color-ink);

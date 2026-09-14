@@ -49,7 +49,7 @@ export default function HomeButton() {
         aria-expanded={confirming}
         aria-controls="leave-problem"
         onClick={() => setConfirming(true)}
-        className="flex min-h-16 min-w-16 items-center gap-2 rounded-2xl bg-ink px-4 font-display text-lg font-semibold text-base"
+        className="tap-target flex items-center gap-2 rounded-2xl bg-ink px-4 font-display text-lg font-semibold text-base"
       >
         <HouseIcon />
         Home
@@ -70,14 +70,14 @@ export default function HomeButton() {
               ref={keepPlayingRef}
               type="button"
               onClick={() => setConfirming(false)}
-              className="min-h-16 rounded-2xl bg-ink font-display text-lg font-semibold text-base"
+              className="tap-target rounded-2xl bg-ink font-display text-lg font-semibold text-base"
             >
               Keep playing
             </button>
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="min-h-16 rounded-2xl border-4 border-ink bg-white font-display text-lg font-semibold text-ink"
+              className="tap-target rounded-2xl border-4 border-ink bg-white font-display text-lg font-semibold text-ink"
             >
               Yes, go home
             </button>

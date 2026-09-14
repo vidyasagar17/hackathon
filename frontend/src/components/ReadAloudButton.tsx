@@ -15,7 +15,7 @@ export default function ReadAloudButton({
     <button
       type="button"
       onClick={() => speak(text)}
-      className="inline-flex min-h-12 items-center gap-2 rounded-2xl border-4 border-ink bg-white px-3 font-display font-semibold text-ink"
+      className="tap-target inline-flex items-center gap-2 rounded-2xl border-4 border-ink bg-white px-3 font-display font-semibold text-ink"
     >
       <SpeakerIcon />
       {label}

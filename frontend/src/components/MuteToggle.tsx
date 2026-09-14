@@ -15,7 +15,7 @@ export default function MuteToggle() {
     <button
       type="button"
       onClick={toggle}
-      className="flex min-h-12 items-center gap-2 rounded-2xl border-4 border-ink bg-white px-3 font-display font-semibold text-ink"
+      className="tap-target flex items-center gap-2 rounded-2xl border-4 border-ink bg-white px-3 font-display font-semibold text-ink"
     >
       <SpeakerIcon muted={muted} />
       {muted ? 'Sound off' : 'Sound on'}
