@@ -520,7 +520,11 @@ function PracticePage() {
           />
         )}
 
-        <div className="rounded-3xl bg-white p-8 pt-12 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
+        <section
+          aria-label="Game table"
+          className="flex w-full max-w-4xl justify-center rounded-[2rem] border-[12px] border-felt-edge bg-felt p-4 sm:p-6"
+        >
+        <div className="rounded-2xl border-2 border-felt-edge bg-white p-8 pt-12 shadow-[0_6px_0_#163A34]">
           <div className={usesKeypad ? 'flex flex-col items-center gap-8 md:flex-row md:justify-center md:gap-12' : ''}>
           <div className="flex flex-col items-center gap-3">
             {config.displayMode === 'expression' ? (
@@ -642,6 +646,7 @@ function PracticePage() {
             </button>
           )}
         </div>
+        </section>
       </main>
     </div>
   )
