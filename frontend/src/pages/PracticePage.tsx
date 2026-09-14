@@ -419,7 +419,12 @@ function PracticePage() {
 
       <h1 className="font-display text-4xl font-bold">{config.heading}</h1>
 
-      {progress && <ProgressMeter progress={progress} />}
+      {progress && (
+        <ProgressMeter
+          progress={progress}
+          canCelebrate={activeStep === null || activeStep >= regroupSteps.length}
+        />
+      )}
 
       <div className="rounded-3xl bg-white p-8 pt-12 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
         <div className="flex flex-col items-center gap-3">
