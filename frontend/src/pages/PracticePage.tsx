@@ -155,12 +155,12 @@ function RegroupTopChip({
       )}
 
       {(isFromSettled || isFromActive) && (
-        <span className="absolute -right-2 -top-2 rounded-full bg-ones px-1.5 py-0.5 font-display text-[10px] font-bold text-base">
+        <span className="absolute -right-2 -top-2 rounded-full bg-ones px-1.5 py-0.5 font-display text-[10px] font-bold text-ink">
           {config.sourceMark}
         </span>
       )}
       {(isToSettled || isToActive) && (
-        <span className="absolute -left-2 -top-2 rounded-full bg-spark px-1.5 py-0.5 font-display text-[10px] font-bold text-base">
+        <span className="absolute -left-2 -top-2 rounded-full bg-spark px-1.5 py-0.5 font-display text-[10px] font-bold text-ink">
           {step.destMark}
         </span>
       )}
@@ -279,7 +279,7 @@ function PracticePage() {
   if (!config) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-base">
-        <p className="font-display text-2xl font-bold text-ones">
+        <p className="font-display text-2xl font-bold text-alert-text">
           Unknown game.
         </p>
       </div>
@@ -301,7 +301,7 @@ function PracticePage() {
   if (loadError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-base">
-        <p className="font-display text-2xl font-bold text-ones">
+        <p className="font-display text-2xl font-bold text-alert-text">
           Couldn't load a problem — try again.
         </p>
         <button
@@ -410,7 +410,7 @@ function PracticePage() {
     <div className="relative flex min-h-screen flex-col items-center justify-center gap-8 bg-base px-4">
       <Link
         to="/summary"
-        className="absolute right-6 top-4 font-display font-semibold text-ink/70"
+        className="absolute right-6 top-4 font-display font-semibold text-ink-muted"
       >
         Session summary
       </Link>
@@ -418,7 +418,7 @@ function PracticePage() {
       <h1 className="font-display text-4xl font-bold">{config.heading}</h1>
 
       <div className="flex flex-col items-center gap-2">
-        <span className="rounded-full bg-ink/10 px-3 py-1 font-display text-sm font-semibold text-ink/70">
+        <span className="rounded-full bg-ink/10 px-3 py-1 font-display text-sm font-semibold text-ink">
           Level {problem.difficulty}
         </span>
         <StreakMeter filled={Math.min(streak, 5)} total={5} />
@@ -493,23 +493,23 @@ function PracticePage() {
         </button>
 
         {feedback === 'correct' && (
-          <p className="mt-6 text-center font-display text-lg font-semibold text-spark">
+          <p className="mt-6 text-center font-display text-lg font-semibold text-success-text">
             Correct!
           </p>
         )}
         {feedback === 'error' && (
-          <p className="mt-6 text-center font-display text-lg font-semibold text-ones">
+          <p className="mt-6 text-center font-display text-lg font-semibold text-alert-text">
             Couldn't check your answer — try again.
           </p>
         )}
         {feedback === 'incorrect' && (
           <div className="mt-6 rounded-2xl border-l-8 border-helper bg-helper/10 p-4 text-left">
-            <p className="font-display text-lg font-semibold text-ones">
+            <p className="font-display text-lg font-semibold text-alert-text">
               Not quite — try again!
             </p>
             {revealed && hint && <p className="mt-2">{hint}</p>}
             {revealed && misconception && (
-              <p className="mt-2 text-sm text-ink/50">
+              <p className="mt-2 text-sm text-ink-muted">
                 Diagnosed pattern: {formatMisconception(misconception)}
               </p>
             )}

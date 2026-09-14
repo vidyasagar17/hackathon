@@ -1,14 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Baloo+2:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
 
+/*
+ * Bright colors (hundreds, tens, ones, spark, helper) are fills for chips, borders and badges.
+ * Text uses ink, ink-muted, or a *-text token so it reaches 7:1 (WCAG AAA).
+ * Run `npm run check:contrast` after changing any value here.
+ */
 @theme {
   --color-base: #F3E8D4;
   --color-ink: #1B1B2F;
-  --color-ones: #FF5A5F;
+  --color-ink-muted: #454578;
+  --color-ones: #FF8F91;
   --color-tens: #2EC4F1;
   --color-hundreds: #FFD23F;
   --color-spark: #3DDC97;
   --color-helper: #8C6FF7;
+  --color-success-text: #0F5436;
+  --color-alert-text: #990005;
+  --color-helper-text: #3B0DE6;
 
   --font-display: "Baloo 2", sans-serif;
   --font-body: "Atkinson Hyperlegible", sans-serif;

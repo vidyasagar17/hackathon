@@ -71,14 +71,14 @@ function GameCard({ icon, title, description, to }: GameCardProps) {
   const content = (
     <div
       className={`flex flex-col items-center gap-3 rounded-3xl bg-white p-6 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)] ${
-        to ? 'active:translate-y-1 active:shadow-none' : 'opacity-60'
+        to ? 'active:translate-y-1 active:shadow-none' : ''
       }`}
     >
       {icon}
       <h3 className="font-display text-xl font-bold">{title}</h3>
       <p className="text-sm">{description}</p>
       {!to && (
-        <span className="rounded-full bg-ink/10 px-3 py-1 font-display text-xs font-semibold text-ink/60">
+        <span className="rounded-full bg-ink/10 px-3 py-1 font-display text-xs font-semibold text-ink">
           Coming soon
         </span>
       )}
@@ -114,7 +114,7 @@ function LandingPage() {
     <div className="flex min-h-screen flex-col bg-base">
       <header className="flex items-center justify-between px-6 py-4">
         <span className="font-display text-2xl font-bold">Number Quest</span>
-        <Link to="/summary" className="font-display font-semibold text-ink/70">
+        <Link to="/summary" className="font-display font-semibold text-ink-muted">
           Session summary
         </Link>
       </header>

@@ -13,7 +13,7 @@ const COLUMN_STEPS: Step[] = [
   {
     highlight: 'digits',
     caption:
-      'Numbers are colored by place: yellow is hundreds, blue is tens, red is ones.',
+      'Numbers are colored by place: yellow is hundreds, blue is tens, pink is ones.',
   },
   {
     highlight: 'answer',
@@ -126,7 +126,7 @@ export default function TutorialOverlay({
 
         {step.highlight === 'hint' && (
           <div className="mt-6 rounded-2xl border-l-8 border-helper bg-helper/10 p-4 text-left">
-            <p className="font-display text-sm font-semibold text-helper">
+            <p className="font-display text-sm font-semibold text-helper-text">
               Hint
             </p>
             <p className="text-sm">

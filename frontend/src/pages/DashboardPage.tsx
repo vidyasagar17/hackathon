@@ -29,7 +29,7 @@ function MisconceptionItem({ name, count }: MisconceptionCount) {
     <div className="flex items-center gap-3 py-3">
       <span className="h-4 w-4 flex-shrink-0 rounded-full bg-helper" />
       <p className="flex-1 text-left">{formatMisconception(name)}</p>
-      <span className="font-display font-semibold text-ink/60">
+      <span className="font-display font-semibold text-ink-muted">
         {count} {count === 1 ? 'time' : 'times'}
       </span>
     </div>
@@ -54,7 +54,7 @@ function DashboardPage() {
     <div className="flex min-h-screen flex-col bg-base">
       <header className="flex items-center justify-between px-6 py-4">
         <span className="font-display text-2xl font-bold">Number Quest</span>
-        <Link to="/" className="font-display font-semibold text-ink/70">
+        <Link to="/" className="font-display font-semibold text-ink-muted">
           Back to games
         </Link>
       </header>
@@ -63,7 +63,7 @@ function DashboardPage() {
         <h1 className="font-display text-4xl font-bold">Session summary</h1>
 
         {failed ? (
-          <p className="font-display text-xl text-ones">
+          <p className="font-display text-xl text-alert-text">
             Couldn't load your summary — try again in a moment.
           </p>
         ) : !summary ? (
@@ -82,7 +82,7 @@ function DashboardPage() {
                 Where mistakes happened
               </h2>
               {summary.misconceptions.length === 0 ? (
-                <p className="py-3 text-ink/60">
+                <p className="py-3 text-ink-muted">
                   No mistakes yet — keep practicing!
                 </p>
               ) : (
