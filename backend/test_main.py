@@ -227,15 +227,20 @@ def test_hint_is_empty_for_a_correct_answer(monkeypatch):
     assert response.json() == {"misconception": None, "hint": None}
 
 
-def _decimal_war_dealing(tmp_path, monkeypatch, mine, robo, comparison):
-    """Use a temp database and make Decimal War deal a fixed pair, so results are predictable."""
+def _decimal_war_dealing(tmp_path, monkeypatch, mine, robo, comparison, round_level=None):
+    """Use a temp database and make Decimal War deal a fixed pair, so results are predictable.
+
+    `round_level` forces the dealt round's level (e.g. 3 for the "same" choice) on a fresh session.
+    """
     monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
     db.init_db()
     game = main.CURRICULUM_GAMES["decimal-war"]
     monkeypatch.setattr(
         game,
         "new_round",
-        lambda level: game.Round(level=level, comparison=comparison, mine=mine, robo=robo),
+        lambda level: game.Round(
+            level=round_level or level, comparison=comparison, mine=mine, robo=robo
+        ),
     )
 
 
@@ -281,3 +286,60 @@ def test_same_at_level_one_is_rejected_and_not_logged(tmp_path, monkeypatch):
 
     assert response.status_code == 422
     assert db.get_move_history("s1", "decimal-war") == []
+
+
+def _new_decimal_war_round() -> str:
+    return client.post("/curriculum/decimal-war/rounds", params={"session_id": "s1"}).json()["round_id"]
+
+
+def test_a_round_hint_before_the_round_is_judged_is_rejected(tmp_path, monkeypatch):
+    _decimal_war_dealing(tmp_path, monkeypatch, mine="45", robo="8", comparison="shorter_larger")
+
+    response = client.post(f"/rounds/{_new_decimal_war_round()}/hint")
+
+    assert response.status_code == 422
+
+
+def test_a_round_hint_for_an_unknown_round_is_404(tmp_path, monkeypatch):
+    _decimal_war_dealing(tmp_path, monkeypatch, mine="45", robo="8", comparison="shorter_larger")
+
+    response = client.post(f"/rounds/{'0' * 32}/hint")
+
+    assert response.status_code == 404
+
+
+def test_a_diagnosed_wrong_pick_gets_the_games_hint_sentence(tmp_path, monkeypatch):
+    _decimal_war_dealing(tmp_path, monkeypatch, mine="45", robo="8", comparison="shorter_larger")
+    game = main.CURRICULUM_GAMES["decimal-war"]
+    monkeypatch.setattr(game, "hint_sentence", lambda round, name: f"hint for {name} on 0.{round.mine}")
+    round_id = _new_decimal_war_round()
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": "mine"}})
+
+    response = client.post(f"/rounds/{round_id}/hint")
+
+    assert response.json() == {"misconception": "longer_is_larger", "hint": "hint for longer_is_larger on 0.45"}
+
+
+def test_a_correct_pick_gets_no_round_hint(tmp_path, monkeypatch):
+    _decimal_war_dealing(tmp_path, monkeypatch, mine="45", robo="8", comparison="shorter_larger")
+    monkeypatch.setattr(main.CURRICULUM_GAMES["decimal-war"], "hint_sentence", _fail_if_called)
+    round_id = _new_decimal_war_round()
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": "robo"}})
+
+    response = client.post(f"/rounds/{round_id}/hint")
+
+    assert response.json() == {"misconception": None, "hint": None}
+
+
+def test_an_undiagnosed_wrong_pick_gets_the_general_hint(tmp_path, monkeypatch):
+    _decimal_war_dealing(
+        tmp_path, monkeypatch, mine="45", robo="405", comparison="interspersed_zero", round_level=3
+    )
+    game = main.CURRICULUM_GAMES["decimal-war"]
+    monkeypatch.setattr(game, "hint_sentence", _fail_if_called)
+    round_id = _new_decimal_war_round()
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": "same"}})
+
+    response = client.post(f"/rounds/{round_id}/hint")
+
+    assert response.json() == {"misconception": None, "hint": game.GENERAL_HINT}

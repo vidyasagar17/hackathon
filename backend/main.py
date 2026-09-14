@@ -8,6 +8,7 @@ from pydantic import BaseModel, ValidationError
 
 from curriculum import CURRICULUM_GAMES
 from db import (
+    get_last_move,
     get_move_history,
     get_round,
     get_summary,
@@ -125,6 +126,13 @@ def _get_curriculum_game(game_id: str):
     return CURRICULUM_GAMES[game_id]
 
 
+def _get_stored_round(round_id: str):
+    stored = get_round(round_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail=f"Unknown round: {round_id}")
+    return stored
+
+
 def _parse_problem(game, data: dict[str, Any]):
     """Validate a client-sent problem; its answer and columns must follow from its own numbers."""
     try:
@@ -230,9 +238,7 @@ def make_move(round_id: str, request: MoveRequest) -> MoveResponse:
 
     A move the game rejects (ValueError) returns 422 and is not logged, so it can't affect the level.
     """
-    stored = get_round(round_id)
-    if stored is None:
-        raise HTTPException(status_code=404, detail=f"Unknown round: {round_id}")
+    stored = _get_stored_round(round_id)
     game = CURRICULUM_GAMES[stored.game]
 
     try:
@@ -248,6 +254,30 @@ def make_move(round_id: str, request: MoveRequest) -> MoveResponse:
         misconception=result.misconception,
         visible_state=game.visible_state(after_computer),
     )
+
+
+@app.post("/rounds/{round_id}/hint")
+def get_round_hint(round_id: str) -> HintResponse:
+    """Phrase a hint for the round's latest move, only when the UI is about to show one.
+
+    Uses the diagnosis the server logged for that move, so the browser can't change it. A wrong
+    move with no diagnosed misconception gets the game's general hint, never an LLM hint.
+    Returns 422 before the round has a move.
+    """
+    stored = _get_stored_round(round_id)
+    last_move = get_last_move(round_id)
+    if last_move is None:
+        raise HTTPException(status_code=422, detail="This round has no move to give a hint for yet.")
+
+    correct, misconception = last_move
+    game = CURRICULUM_GAMES[stored.game]
+    if correct:
+        hint = None
+    elif misconception:
+        hint = game.hint_sentence(game.Round.model_validate(stored.state), misconception)
+    else:
+        hint = game.GENERAL_HINT
+    return HintResponse(misconception=misconception, hint=hint)
 
 
 @app.get("/summary/{session_id}")

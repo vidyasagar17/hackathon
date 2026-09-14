@@ -74,3 +74,14 @@ def test_summary_keeps_same_named_misconceptions_separate_per_game(tmp_path, mon
 
     assert (total_attempts, correct_count) == (4, 1)
     assert rows == [("addition", "no_carry", 2), ("multiplication", "no_carry", 1)]
+
+
+def test_last_move_of_a_round_gives_its_correctness_and_misconception(tmp_path, monkeypatch):
+    _fresh_db(tmp_path, monkeypatch)
+    round_id = db.save_round("s1", "decimal-war", 1, {})
+    assert db.get_last_move(round_id) is None
+
+    db.log_move(round_id, {"pick": "mine"}, False, "longer_is_larger")
+    db.log_move(db.save_round("s1", "decimal-war", 1, {}), {"pick": "robo"}, True, None)
+
+    assert db.get_last_move(round_id) == (False, "longer_is_larger")

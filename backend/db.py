@@ -163,6 +163,20 @@ def log_move(round_id: str, move: dict[str, Any], correct: bool, misconception: 
         conn.commit()
 
 
+def get_last_move(round_id: str) -> tuple[bool, str | None] | None:
+    """Return (correct, misconception) logged for the round's latest move, or None before its first move."""
+    with closing(_connect()) as conn:
+        row = conn.execute(
+            "SELECT correct, misconception FROM moves WHERE round_id = ? ORDER BY id DESC LIMIT 1",
+            (round_id,),
+        ).fetchone()
+
+    if row is None:
+        return None
+    correct, misconception = row
+    return bool(correct), misconception
+
+
 def get_move_history(session_id: str, game: str) -> list[TierAttempt]:
     """Return this session's moves in this curriculum game, oldest first, at each round's level."""
     with closing(_connect()) as conn:

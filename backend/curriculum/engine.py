@@ -8,6 +8,9 @@ Every curriculum game is a package under `curriculum/` exporting:
   Raises ValueError for a move the round doesn't allow; the route answers 422 and logs nothing.
 - `computer_move(round, level) -> Round`: pure and deterministic; returns the round
   unchanged when it isn't the computer's turn.
+- `hint_sentence(round, misconception) -> str`: a code-built sentence from the round's own
+  values, optionally reworded by the LLM under `keeps_facts`.
+- `GENERAL_HINT`: shown for a wrong move with no diagnosed misconception, never an LLM hint.
 """
 
 from pydantic import BaseModel
