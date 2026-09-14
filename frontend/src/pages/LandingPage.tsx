@@ -1,5 +1,7 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import GradePicker from '../components/GradePicker'
+import { getGradeBand, saveGradeBand, type GradeBand } from '../gradeBand'
 
 function SubtractionIcon() {
   return (
@@ -60,63 +62,119 @@ function DivisionIcon() {
   )
 }
 
-type GameCardProps = {
-  icon: ReactNode
+type Game = {
   title: string
   description: string
-  to?: string
+  to: string
+  icon: ReactNode
+  grades: [number, number]
 }
 
-function GameCard({ icon, title, description, to }: GameCardProps) {
-  const content = (
-    <div
-      className={`flex flex-col items-center gap-3 rounded-3xl bg-white p-6 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)] ${
-        to ? 'active:translate-y-1 active:shadow-none' : ''
-      }`}
-    >
-      {icon}
-      <h3 className="font-display text-xl font-bold">{title}</h3>
-      <p className="text-sm">{description}</p>
-      {!to && (
-        <span className="rounded-full bg-ink/10 px-3 py-1 font-display text-xs font-semibold text-ink">
-          Coming soon
-        </span>
-      )}
-    </div>
-  )
+const GAMES: Game[] = [
+  {
+    title: 'Subtraction',
+    description: 'Multi-digit subtraction with borrowing',
+    to: '/practice/subtraction',
+    icon: <SubtractionIcon />,
+    grades: [2, 3],
+  },
+  {
+    title: 'Addition',
+    description: 'Multi-digit addition with carrying',
+    to: '/practice/addition',
+    icon: <AdditionIcon />,
+    grades: [2, 3],
+  },
+  {
+    title: 'Multiplication',
+    description: 'Times tables and multi-digit products',
+    to: '/practice/multiplication',
+    icon: <MultiplicationIcon />,
+    grades: [3, 5],
+  },
+  {
+    title: 'Division',
+    description: 'Splitting numbers into equal groups',
+    to: '/practice/division',
+    icon: <DivisionIcon />,
+    grades: [3, 5],
+  },
+]
 
-  return to ? (
-    <Link to={to} className="block">
-      {content}
+const BAND_GRADES: Record<GradeBand, [number, number]> = {
+  'k-1': [0, 1],
+  '2-3': [2, 3],
+  '4-5': [4, 5],
+}
+
+/** A game fits a band when its grade range overlaps the band's grades (kindergarten is grade 0). */
+function fitsBand(game: Game, band: GradeBand): boolean {
+  const [lowest, highest] = BAND_GRADES[band]
+  return game.grades[0] <= highest && game.grades[1] >= lowest
+}
+
+function GameCard({ game }: { game: Game }) {
+  return (
+    <Link to={game.to} className="block">
+      <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)] active:translate-y-1 active:shadow-none">
+        {game.icon}
+        <h3 className="font-display text-xl font-bold">{game.title}</h3>
+        <p className="text-sm">{game.description}</p>
+      </div>
     </Link>
-  ) : (
-    content
   )
 }
 
-function GameGroup({
-  title,
-  children,
-}: {
-  title: string
-  children: ReactNode
-}) {
+function GameGroup({ title, games }: { title: string; games: Game[] }) {
   return (
     <section className="w-full max-w-3xl">
       <h2 className="mb-4 font-display text-2xl font-bold">{title}</h2>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">{children}</div>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {games.map((game) => (
+          <GameCard key={game.to} game={game} />
+        ))}
+      </div>
     </section>
   )
 }
 
 function LandingPage() {
+  const [band, setBand] = useState<GradeBand | null>(getGradeBand)
+  const [picking, setPicking] = useState(false)
+
+  const pickBand = (chosen: GradeBand) => {
+    saveGradeBand(chosen)
+    setBand(chosen)
+    setPicking(false)
+  }
+
+  if (band === null || picking) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-8">
+        <GradePicker onPick={pickBand} />
+      </div>
+    )
+  }
+
+  const yourGames = GAMES.filter((game) => fitsBand(game, band))
+  const moreGames = GAMES.filter((game) => !fitsBand(game, band))
+
   return (
     <div className="flex min-h-screen flex-col bg-base">
-      <header className="flex items-center justify-between px-6 py-4">
+      <header className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
         <span className="font-display text-2xl font-bold">Number Quest</span>
-        <Link to="/summary" className="font-display font-semibold text-ink-muted">
-          Session summary
-        </Link>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            className="min-h-12 rounded-2xl border-4 border-ink bg-white px-4 font-display font-semibold text-ink"
+          >
+            Change grade
+          </button>
+          <Link to="/summary" className="font-display font-semibold text-ink-muted">
+            Session summary
+          </Link>
+        </div>
       </header>
 
       <main className="flex flex-1 flex-col items-center gap-10 px-4 py-8">
@@ -124,35 +182,15 @@ function LandingPage() {
           What do you want to practice?
         </h1>
 
-        <GameGroup title="Adding & Taking Away">
-          <GameCard
-            icon={<SubtractionIcon />}
-            title="Subtraction"
-            description="Multi-digit subtraction with borrowing"
-            to="/practice/subtraction"
-          />
-          <GameCard
-            icon={<AdditionIcon />}
-            title="Addition"
-            description="Multi-digit addition with carrying"
-            to="/practice/addition"
-          />
-        </GameGroup>
+        {yourGames.length > 0 ? (
+          <GameGroup title="Your grade" games={yourGames} />
+        ) : (
+          <p className="max-w-md text-center text-lg">
+            Games for kindergarten and 1st grade are on the way. Until then, try any game below.
+          </p>
+        )}
 
-        <GameGroup title="Grouping & Sharing">
-          <GameCard
-            icon={<MultiplicationIcon />}
-            title="Multiplication"
-            description="Times tables and multi-digit products"
-            to="/practice/multiplication"
-          />
-          <GameCard
-            icon={<DivisionIcon />}
-            title="Division"
-            description="Splitting numbers into equal groups"
-            to="/practice/division"
-          />
-        </GameGroup>
+        {moreGames.length > 0 && <GameGroup title="More practice" games={moreGames} />}
       </main>
     </div>
   )
