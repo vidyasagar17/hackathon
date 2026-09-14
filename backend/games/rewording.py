@@ -26,7 +26,7 @@ def _ask_llm(system_prompt: str, sentence: str) -> str:
     return response.choices[0].message.content
 
 
-def reword_hint(sentence: str, system_prompt: str, answer: int, banned_words: list[str]) -> str:
+def reword_hint(sentence: str, system_prompt: str, answer: int | None, banned_words: list[str]) -> str:
     """Return a friendlier LLM rewording of a code-built hint sentence, or the sentence itself.
 
     The whole LLM exchange must finish within DEADLINE_SECONDS. `InferenceClient`'s own timeout

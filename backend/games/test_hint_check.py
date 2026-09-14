@@ -130,3 +130,34 @@ def test_keeps_only_the_quoted_hint_after_a_stray_word():
 def test_clean_hint_passes_unchanged():
     hint = 'Remember, when you see "x" between two numbers, it means you need to multiply them.'
     assert vet_hint(hint, 60, ["multiplicand", "multiplier", "algorithm"]) == hint
+
+
+DECIMAL_SENTENCE = (
+    "Give both numbers the same number of digits: 0.45 and 0.80. "
+    "80 hundredths is more than 45 hundredths, so 0.8 is larger."
+)
+
+
+def test_keeps_facts_rejects_a_swapped_decimal_place_name():
+    rewrite = (
+        "Try giving both numbers the same number of digits: 0.45 and 0.80. "
+        "80 tenths is more than 45 hundredths, so 0.8 is larger."
+    )
+    assert not keeps_facts(rewrite, DECIMAL_SENTENCE)
+
+
+def test_keeps_facts_rejects_a_dropped_same():
+    sentence = (
+        "Give both numbers the same number of digits: 0.40 and 0.40. "
+        "40 hundredths is the same as 40 hundredths, so they are the same size."
+    )
+    rewrite = (
+        "Give both numbers the same number of digits: 0.40 and 0.40. "
+        "40 hundredths equals 40 hundredths, so they are equal."
+    )
+    assert not keeps_facts(rewrite, sentence)
+
+
+def test_without_an_answer_numbers_in_the_hint_are_allowed():
+    hint = "0.8 is 8 tenths, which is 80 hundredths."
+    assert vet_hint(hint, None, []) == hint

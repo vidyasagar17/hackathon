@@ -53,3 +53,19 @@ def test_slow_llm_falls_back_at_the_deadline(monkeypatch):
 
     assert result == SENTENCE
     assert elapsed < 1
+
+
+DECIMAL_SENTENCE = (
+    "0.4 is 4 tenths and 0.3 is 3 tenths. 4 tenths is more than 3 tenths, so 0.4 is larger."
+)
+
+
+def test_a_hint_without_an_answer_shows_a_faithful_rewording(monkeypatch):
+    reply = "Good thinking! 0.4 is 4 tenths and 0.3 is 3 tenths. 4 tenths is more than 3 tenths, so 0.4 is larger."
+    _llm_replies(monkeypatch, reply)
+    assert rewording.reword_hint(DECIMAL_SENTENCE, "Reword this hint.", None, []) == reply
+
+
+def test_a_hint_without_an_answer_still_rejects_a_swapped_place_name(monkeypatch):
+    _llm_replies(monkeypatch, "0.4 is 4 hundredths and 0.3 is 3 tenths. 4 tenths is more than 3 tenths, so 0.4 is larger.")
+    assert rewording.reword_hint(DECIMAL_SENTENCE, "Reword this hint.", None, []) == DECIMAL_SENTENCE
