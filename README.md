@@ -113,6 +113,23 @@ npm run dev
 ```
 Then open http://localhost:5173.
 
+**Test on your phone** (phone on the same Wi-Fi as the laptop)
+```
+cd backend
+uv run uvicorn main:app --host 0.0.0.0 --port 8000
+```
+```
+cd frontend
+npm run dev -- --host
+```
+Open the "Network" address Vite prints (e.g. `http://192.168.1.23:5173`) on
+the phone. The frontend calls the API on the same host automatically. Windows
+may ask to allow Python and Node through the firewall the first time.
+
+**Hosted deployment:** build the frontend with `VITE_API_URL` set to the
+backend's URL, and set `ALLOWED_ORIGINS` on the backend to the frontend's URL
+(comma-separated for more than one).
+
 **Tests**
 ```
 cd backend

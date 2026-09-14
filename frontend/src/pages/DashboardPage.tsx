@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { API_URL } from '../api'
 import { formatGameName, formatMisconception } from '../format'
 import { getSessionId } from '../session'
 
@@ -40,7 +41,7 @@ function DashboardPage() {
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/summary/${getSessionId()}`)
+    fetch(`${API_URL}/summary/${getSessionId()}`)
       .then((res) => {
         if (!res.ok) throw new Error('Summary request failed')
         return res.json()

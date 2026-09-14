@@ -1,3 +1,4 @@
+import os
 from typing import Any
 
 from dotenv import load_dotenv
@@ -12,11 +13,29 @@ from tiering import next_tier
 load_dotenv()
 init_db()
 
+DEV_ORIGIN_REGEX = (
+    r"^http://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}"
+    r"|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}):5173$"
+)
+
+
+def _cors_settings() -> dict[str, Any]:
+    """Allow exactly the origins in ALLOWED_ORIGINS (comma-separated) when it is set.
+
+    Otherwise allow the Vite dev server on this machine or on a private home network,
+    so a phone on the same Wi-Fi can use the laptop's API.
+    """
+    origins = os.environ.get("ALLOWED_ORIGINS")
+    if origins:
+        return {"allow_origins": [origin.strip() for origin in origins.split(",")]}
+    return {"allow_origin_regex": DEV_ORIGIN_REGEX}
+
+
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    **_cors_settings(),
     allow_methods=["*"],
     allow_headers=["*"],
 )

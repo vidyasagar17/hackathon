@@ -22,6 +22,29 @@ def _fail_if_called(*args):
     raise AssertionError("generate_hint must not be called")
 
 
+def test_cors_allows_a_frontend_on_the_home_network():
+    origin = "http://192.168.1.23:5173"
+    response = client.get("/health", headers={"Origin": origin})
+    assert response.headers["access-control-allow-origin"] == origin
+
+
+def test_cors_refuses_an_unknown_website():
+    response = client.get("/health", headers={"Origin": "https://evil.example"})
+    assert "access-control-allow-origin" not in response.headers
+
+
+def test_cors_refuses_a_lookalike_of_a_dev_origin():
+    response = client.get("/health", headers={"Origin": "http://localhost:5173.evil.example"})
+    assert "access-control-allow-origin" not in response.headers
+
+
+def test_allowed_origins_env_var_takes_precedence(monkeypatch):
+    monkeypatch.setenv("ALLOWED_ORIGINS", "https://number-quest.onrender.com, https://example.org")
+    assert main._cors_settings() == {
+        "allow_origins": ["https://number-quest.onrender.com", "https://example.org"]
+    }
+
+
 def test_check_diagnoses_without_generating_a_hint(tmp_path, monkeypatch):
     monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
     db.init_db()

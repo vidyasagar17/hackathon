@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import DigitChip from '../components/DigitChip'
 import TutorialOverlay from '../components/TutorialOverlay'
+import { API_URL } from '../api'
 import { borderColor, type Column } from '../columns'
 import { formatMisconception } from '../format'
 import { buildRegroupSteps, PLACE_ORDER, type RegroupStep } from '../regroup'
@@ -202,7 +203,7 @@ function StreakMeter({ filled, total }: { filled: number; total: number }) {
 
 function requestProblem(gameId: string | undefined): Promise<Problem> {
   return fetch(
-    `http://127.0.0.1:8000/games/${gameId}/problem?session_id=${getSessionId()}`,
+    `${API_URL}/games/${gameId}/problem?session_id=${getSessionId()}`,
   ).then((res) => {
     if (!res.ok) throw new Error('Failed to load problem')
     return res.json()
@@ -328,7 +329,7 @@ function PracticePage() {
     firstTyped !== -1 && digits.slice(firstTyped).every((d) => d !== '')
 
   const fetchHint = (submitted_answer: number) => {
-    fetch(`http://127.0.0.1:8000/games/${gameId}/hint`, {
+    fetch(`${API_URL}/games/${gameId}/hint`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ problem, submitted_answer }),
@@ -343,7 +344,7 @@ function PracticePage() {
 
   const checkAnswer = () => {
     const submitted_answer = Number(digits.join(''))
-    fetch(`http://127.0.0.1:8000/games/${gameId}/check`, {
+    fetch(`${API_URL}/games/${gameId}/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
