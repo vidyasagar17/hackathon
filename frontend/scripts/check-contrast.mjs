@@ -42,6 +42,9 @@ const PAIRS = [
   ['ink-muted', 'card', 'diagnosed pattern on the result note'],
   ['ink', 'card', 'hint text on the result note'],
   ['hundreds', 'felt', 'brass "Larger" outline and focus ring on the table', NON_TEXT_MINIMUM],
+  ['ink', 'tenths', 't letter on the tenths band of a playing card'],
+  ['ink', 'hundredths', 'h letter on the hundredths band of a playing card'],
+  ['ink', 'thousandths', 'th letter on the thousandths band of a playing card'],
   ['chalk/60 over felt', 'felt', 'outline marking each seat and "They\'re the same" as buttons', NON_TEXT_MINIMUM],
 ]
 

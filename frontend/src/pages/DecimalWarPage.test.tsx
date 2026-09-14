@@ -91,6 +91,15 @@ test('both numbers are choices and there is no same button below level 3', async
   expect(screen.getByRole('img', { name: '1 of 3 stars' })).toBeTruthy()
 })
 
+test('each card is marked with its decimal place', async () => {
+  renderPage()
+
+  const mine = await screen.findByRole('button', { name: 'Your number, 0.45' })
+  const bands = [...mine.querySelectorAll('[data-place]')]
+  expect(bands.map((band) => band.getAttribute('data-place'))).toEqual(['tenths', 'hundredths'])
+  expect(bands.map((band) => band.textContent)).toEqual(['t', 'h'])
+})
+
 test("level 3 adds They're the same", async () => {
   round = roundPayload(3, ['mine', 'robo', 'same'])
   renderPage()

@@ -45,6 +45,13 @@ function requestRound(): Promise<RoundPayload> {
   return postJson(`/curriculum/decimal-war/rounds?session_id=${getSessionId()}`)
 }
 
+/** Decimal places in card order. Their colors are never the whole-number colors, so tens and tenths can't be confused. */
+const DECIMAL_PLACES = [
+  { name: 'tenths', letter: 't', band: 'bg-tenths' },
+  { name: 'hundredths', letter: 'h', band: 'bg-hundredths' },
+  { name: 'thousandths', letter: 'th', band: 'bg-thousandths' },
+]
+
 /** A number drawn as its digit cards after "0.", so the number of cards is the number of decimal places. */
 function DigitCards({ value }: { value: string }) {
   const digits = value.slice(2).split('')
@@ -54,10 +61,16 @@ function DigitCards({ value }: { value: string }) {
       {digits.map((digit, index) => (
         <span
           key={index}
-          className="relative flex h-24 w-16 items-center justify-center rounded-lg border-2 border-felt-edge bg-card font-display text-5xl font-bold text-ink shadow-[0_4px_0_#163A34]"
+          className="relative flex h-24 w-16 items-center justify-center overflow-hidden rounded-lg border-2 border-felt-edge bg-card pb-4 font-display text-5xl font-bold text-ink shadow-[0_4px_0_#163A34]"
         >
           <span className="absolute left-1.5 top-1 text-sm leading-none">{digit}</span>
           {digit}
+          <span
+            data-place={DECIMAL_PLACES[index].name}
+            className={`absolute inset-x-0 bottom-0 flex h-5 items-center justify-center font-body text-xs font-bold leading-none text-ink ${DECIMAL_PLACES[index].band}`}
+          >
+            {DECIMAL_PLACES[index].letter}
+          </span>
         </span>
       ))}
     </span>
