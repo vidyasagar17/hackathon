@@ -135,3 +135,8 @@ backend's URL, and set `ALLOWED_ORIGINS` on the backend to the frontend's URL
 cd backend
 uv run pytest
 ```
+```
+cd frontend
+npm test
+npm run check:contrast
+```
