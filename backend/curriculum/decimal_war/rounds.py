@@ -9,6 +9,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from .misconceptions import Pick
+
 Comparison = Literal[
     "same_length",
     "shorter_larger",
@@ -30,6 +32,7 @@ class Round(BaseModel):
     comparison: Comparison
     mine: str
     robo: str
+    pick: Pick | None = None
 
 
 def _nonzero_digits(length: int) -> str:

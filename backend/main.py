@@ -226,13 +226,19 @@ def new_round(game_id: str, session_id: str) -> RoundResponse:
 
 @app.post("/rounds/{round_id}/moves")
 def make_move(round_id: str, request: MoveRequest) -> MoveResponse:
-    """Evaluate and log the student's move, then let the computer take its turn, and save the round."""
+    """Evaluate and log the student's move, then let the computer take its turn, and save the round.
+
+    A move the game rejects (ValueError) returns 422 and is not logged, so it can't affect the level.
+    """
     stored = get_round(round_id)
     if stored is None:
         raise HTTPException(status_code=404, detail=f"Unknown round: {round_id}")
     game = CURRICULUM_GAMES[stored.game]
 
-    result = game.evaluate_move(game.Round.model_validate(stored.state), request.move)
+    try:
+        result = game.evaluate_move(game.Round.model_validate(stored.state), request.move)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
     log_move(round_id, request.move, result.correct, result.misconception)
     after_computer = game.computer_move(result.round, stored.level)
     update_round(round_id, after_computer.model_dump())

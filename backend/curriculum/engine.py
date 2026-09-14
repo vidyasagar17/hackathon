@@ -5,6 +5,7 @@ Every curriculum game is a package under `curriculum/` exporting:
 - `new_round(level) -> Round`
 - `visible_state(round) -> dict`: only what the student may see.
 - `evaluate_move(round, move) -> MoveResult`: pure; the diagnosis is rule-based, never an LLM.
+  Raises ValueError for a move the round doesn't allow; the route answers 422 and logs nothing.
 - `computer_move(round, level) -> Round`: pure and deterministic; returns the round
   unchanged when it isn't the computer's turn.
 """

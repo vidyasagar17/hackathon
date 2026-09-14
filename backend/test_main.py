@@ -225,3 +225,59 @@ def test_hint_is_empty_for_a_correct_answer(monkeypatch):
     )
 
     assert response.json() == {"misconception": None, "hint": None}
+
+
+def _decimal_war_dealing(tmp_path, monkeypatch, mine, robo, comparison):
+    """Use a temp database and make Decimal War deal a fixed pair, so results are predictable."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["decimal-war"]
+    monkeypatch.setattr(
+        game,
+        "new_round",
+        lambda level: game.Round(level=level, comparison=comparison, mine=mine, robo=robo),
+    )
+
+
+def test_a_decimal_war_round_is_played_through_the_move_routes(tmp_path, monkeypatch):
+    _decimal_war_dealing(tmp_path, monkeypatch, mine="45", robo="8", comparison="shorter_larger")
+    round_id = client.post("/curriculum/decimal-war/rounds", params={"session_id": "s1"}).json()["round_id"]
+
+    response = client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": "mine"}})
+
+    assert response.json() == {
+        "correct": False,
+        "misconception": "longer_is_larger",
+        "visible_state": {
+            "level": 1,
+            "mine": "0.45",
+            "robo": "0.8",
+            "choices": ["mine", "robo"],
+            "pick": "mine",
+            "correct_pick": "robo",
+        },
+    }
+    assert db.get_move_history("s1", "decimal-war") == [
+        TierAttempt(difficulty=1, correct=False, misconception="longer_is_larger")
+    ]
+
+
+def test_a_second_pick_on_a_judged_round_is_rejected_and_not_logged(tmp_path, monkeypatch):
+    _decimal_war_dealing(tmp_path, monkeypatch, mine="45", robo="8", comparison="shorter_larger")
+    round_id = client.post("/curriculum/decimal-war/rounds", params={"session_id": "s1"}).json()["round_id"]
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": "robo"}})
+
+    response = client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": "mine"}})
+
+    assert response.status_code == 422
+    assert len(db.get_move_history("s1", "decimal-war")) == 1
+
+
+def test_same_at_level_one_is_rejected_and_not_logged(tmp_path, monkeypatch):
+    _decimal_war_dealing(tmp_path, monkeypatch, mine="3", robo="4", comparison="same_length")
+    round_id = client.post("/curriculum/decimal-war/rounds", params={"session_id": "s1"}).json()["round_id"]
+
+    response = client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": "same"}})
+
+    assert response.status_code == 422
+    assert db.get_move_history("s1", "decimal-war") == []
