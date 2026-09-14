@@ -1,7 +1,7 @@
 import re
 
 _FILLER_OPENER = re.compile(
-    r"^\s*(sure|certainly|of course|absolutely|here'?s a hint|here is a hint)\b[\s!,.:]*",
+    r"^\s*(sure thing|sure|certainly|of course|absolutely|here'?s a hint|here is a hint)\b[\s!,.:]*",
     re.IGNORECASE,
 )
 _QUOTED_HINT = re.compile(r'["“]([^"“”]{20,})["”]')

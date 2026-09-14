@@ -66,6 +66,11 @@ def test_strips_filler_opener_from_a_clean_hint():
     assert vet_hint(hint, 22, DIVISION_WORDS) == "Try sharing 66 into 3 equal groups."
 
 
+def test_strips_the_whole_sure_thing_opener():
+    hint = "Sure thing! Let's look at the tens column. First, multiply 3 × 2."
+    assert vet_hint(hint, 78, []) == "Let's look at the tens column. First, multiply 3 × 2."
+
+
 def test_rejects_hint_that_is_only_filler():
     assert vet_hint("Certainly!", 22, DIVISION_WORDS) is None
 

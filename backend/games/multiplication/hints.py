@@ -2,9 +2,10 @@ import os
 
 from huggingface_hub import InferenceClient
 
-from ..hint_check import vet_hint
+from ..hint_check import keeps_facts, vet_hint
 from .misconceptions import MisconceptionName
 from .problems import Problem
+from .sentences import specific_hint
 
 MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
@@ -12,28 +13,15 @@ GENERAL_HINT = "Multiply the ones digit first and write down its ones digit. Car
 
 BANNED_WORDS = ["multiplicand", "multiplier", "algorithm"]
 
-CANNED_HINTS: dict[MisconceptionName, str] = {
-    "added_instead_of_multiplied": "Multiplying means adding a number to itself several times, not adding the two numbers together once.",
-    "no_carry": "When a column's product is 10 or more, write down the last digit and carry the rest over to the next column.",
-    "carry_always": "Only carry a digit to the next column when that column's product is actually 10 or more.",
-    "added_carry_before_multiplying": "Multiply the digit first, then add the number you carried. The carried number is extra tens, so it doesn't get multiplied.",
-    "drops_final_carry": "If the last column's product is 10 or more, you need one more digit at the front of your answer for that carry.",
-}
-
-_MISCONCEPTION_DESCRIPTIONS: dict[MisconceptionName, str] = {
-    "added_instead_of_multiplied": "added the two numbers instead of multiplying them",
-    "no_carry": "multiplied each digit independently and never carried into the next column",
-    "carry_always": "carried a digit into the tens column even when it wasn't needed",
-    "added_carry_before_multiplying": "added the carried digit to the next digit before multiplying, so the carry got multiplied too",
-    "drops_final_carry": "computed every column correctly but dropped the leading digit when the product needed a third digit",
-}
-
 
 def generate_hint(problem: Problem, misconception: MisconceptionName) -> str:
-    """Return an LLM-phrased hint for the diagnosed misconception, or a canned fallback.
+    """Return the misconception's hint sentence, reworded by the LLM only when that is safe.
 
-    The LLM text is shown only if `vet_hint` accepts it (no stated answer, no banned jargon).
+    The sentence is built deterministically from the student's digits. The LLM rewording is
+    shown only if `vet_hint` accepts it and `keeps_facts` confirms it states the same numbers,
+    column names and comparison words in the same order; otherwise the sentence is shown.
     """
+    sentence = specific_hint(problem, misconception)
     try:
         client = InferenceClient(
             token=os.environ["HF_TOKEN"], timeout=5, provider="featherless-ai"
@@ -44,24 +32,18 @@ def generate_hint(problem: Problem, misconception: MisconceptionName) -> str:
                 {
                     "role": "system",
                     "content": (
-                        "You write short, encouraging math hints for a 3rd, "
-                        "4th, or 5th grade student. One or two sentences. No jargon. "
-                        "Never state the answer. "
+                        "You reword a math hint for a 3rd, 4th, or 5th grade student so it "
+                        "sounds friendly and encouraging. Keep every number and every "
+                        "column name (ones, tens, hundreds) exactly as written and in the "
+                        "same order. Do not add numbers, steps, or advice. No jargon. "
                         f"Never use these words: {', '.join(BANNED_WORDS)}."
                     ),
                 },
-                {
-                    "role": "user",
-                    "content": (
-                        f"Problem: {problem.multiplicand} x {problem.multiplier}. "
-                        f"The student {_MISCONCEPTION_DESCRIPTIONS[misconception]}. "
-                        "Write a hint that helps them fix this specific mistake."
-                    ),
-                },
+                {"role": "user", "content": f'Hint to reword: "{sentence}"'},
             ],
-            max_tokens=80,
+            max_tokens=100,
         )
         hint = vet_hint(response.choices[0].message.content, problem.answer, BANNED_WORDS)
-        return hint or CANNED_HINTS[misconception]
     except Exception:
-        return CANNED_HINTS[misconception]
+        return sentence
+    return hint if hint and keeps_facts(hint, sentence) else sentence
