@@ -253,6 +253,7 @@ function PracticePage() {
   const [regroupSteps, setRegroupSteps] = useState<RegroupStep[]>([])
   const [activeStep, setActiveStep] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
+  const [checking, setChecking] = useState(false)
 
   const showProblem = useCallback((data: ProblemPayload) => {
     setProblem(data.problem)
@@ -405,6 +406,7 @@ function PracticePage() {
 
   const checkAnswer = () => {
     const submitted_answer = Number(digits.join(''))
+    setChecking(true)
     fetch(`${API_URL}/games/${gameId}/check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -456,6 +458,7 @@ function PracticePage() {
         },
       )
       .catch(() => setFeedback('error'))
+      .finally(() => setChecking(false))
   }
 
   const fromSteps: Partial<Record<Column, number>> = {}
@@ -471,7 +474,7 @@ function PracticePage() {
     destMarkByTo[s.to] = s.destMark
   })
 
-  const checkDisabled = !readyToCheck || feedback === 'correct'
+  const checkDisabled = !readyToCheck || checking || feedback === 'correct'
 
   return (
     <div className="flex min-h-screen flex-col bg-base">

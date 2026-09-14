@@ -101,6 +101,29 @@ test('a correct answer keeps Correct! on screen with a Next problem button', asy
   expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Check answer' }).disabled).toBe(true)
 })
 
+test('Check answer sends one request even when tapped twice while checking', async () => {
+  let finishCheck = () => {}
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string) => {
+      if (!url.includes('/check')) return fakeApi(url)
+      return new Promise((resolve) => {
+        finishCheck = () => resolve({ ok: true, json: () => Promise.resolve({ correct: true, misconception: null }) })
+      })
+    }),
+  )
+  const user = userEvent.setup()
+  renderPracticePage()
+
+  await answer('584')
+  await user.click(screen.getByRole('button', { name: 'Check answer' }))
+  finishCheck()
+
+  expect(await screen.findByText('Correct!')).toBeTruthy()
+  const checkCalls = vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes('/check'))
+  expect(checkCalls).toHaveLength(1)
+})
+
 test('a correct answer plays the correct sound', async () => {
   checkResult = { correct: true, misconception: null }
   renderPracticePage()
