@@ -5,6 +5,7 @@ import DigitChip from '../components/DigitChip'
 import HomeButton from '../components/HomeButton'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
+import ReadAloudButton from '../components/ReadAloudButton'
 import TutorialOverlay from '../components/TutorialOverlay'
 import { API_URL } from '../api'
 import { borderColor, type Column } from '../columns'
@@ -18,6 +19,7 @@ import { hasSeenTutorial, markTutorialSeen } from '../tutorial'
 type GameConfig = {
   heading: string
   operatorSymbol: string
+  spokenProblem: (problem: Problem) => string
   displayMode: 'columns' | 'expression'
   topDigitField: string
   bottomDigitField: string
@@ -33,6 +35,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
   subtraction: {
     heading: "Let's subtract!",
     operatorSymbol: '−',
+    spokenProblem: (p) => `${p.minuend} minus ${p.subtrahend}`,
     displayMode: 'columns',
     topDigitField: 'minuend_digit',
     bottomDigitField: 'subtrahend_digit',
@@ -45,6 +48,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
   addition: {
     heading: "Let's add!",
     operatorSymbol: '+',
+    spokenProblem: (p) => `${p.addend1} plus ${p.addend2}`,
     displayMode: 'columns',
     topDigitField: 'addend1_digit',
     bottomDigitField: 'addend2_digit',
@@ -57,6 +61,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
   multiplication: {
     heading: "Let's multiply!",
     operatorSymbol: '×',
+    spokenProblem: (p) => `${p.multiplicand} times ${p.multiplier}`,
     displayMode: 'columns',
     topDigitField: 'multiplicand_digit',
     bottomDigitField: 'multiplier_digit',
@@ -70,6 +75,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
   division: {
     heading: "Let's divide!",
     operatorSymbol: '÷',
+    spokenProblem: (p) => `${p.dividend} divided by ${p.divisor}`,
     displayMode: 'expression',
     topDigitField: '',
     bottomDigitField: '',
@@ -429,7 +435,10 @@ function PracticePage() {
       />
 
       <main className="flex flex-1 flex-col items-center justify-center gap-8 px-4 pb-8">
-        <h1 className="font-display text-4xl font-bold">{config.heading}</h1>
+        <div className="flex flex-col items-center gap-3">
+          <h1 className="font-display text-4xl font-bold">{config.heading}</h1>
+          <ReadAloudButton text={config.spokenProblem(problem)} label="Read the problem aloud" />
+        </div>
 
         {progress && (
           <ProgressMeter
@@ -521,7 +530,12 @@ function PracticePage() {
               <p className="font-display text-lg font-semibold text-alert-text">
                 Not quite — try again!
               </p>
-              {revealed && hint && <p className="mt-2">{hint}</p>}
+              {revealed && hint && (
+                <div className="mt-2 flex flex-col items-start gap-2">
+                  <p>{hint}</p>
+                  <ReadAloudButton text={hint} label="Read the hint aloud" />
+                </div>
+              )}
               {revealed && misconception && (
                 <p className="mt-2 text-sm text-ink-muted">
                   Diagnosed pattern: {formatMisconception(misconception)}

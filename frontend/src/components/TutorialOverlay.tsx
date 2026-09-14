@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import DigitChip from './DigitChip'
+import ReadAloudButton from './ReadAloudButton'
 import { borderColor, type Column } from '../columns'
 
 type Highlight = 'digits' | 'answer' | 'hint'
@@ -138,9 +139,10 @@ export default function TutorialOverlay({
         )}
       </div>
 
-      <p className="max-w-sm text-center font-display text-lg">
-        {step.caption}
-      </p>
+      <div className="flex max-w-sm flex-col items-center gap-3">
+        <p className="text-center font-display text-lg">{step.caption}</p>
+        <ReadAloudButton text={step.caption} />
+      </div>
 
       <button
         type="button"

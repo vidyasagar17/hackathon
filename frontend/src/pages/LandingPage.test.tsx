@@ -1,11 +1,15 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, expect, test } from 'vitest'
+import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import LandingPage from './LandingPage'
 
 beforeEach(() => {
   localStorage.clear()
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
 })
 
 function renderLandingPage() {
@@ -25,6 +29,30 @@ test('a first visit asks for the grade before showing games', () => {
 
   expect(screen.getByRole('heading', { name: 'What grade are you in?' })).toBeTruthy()
   expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
+})
+
+test('the grade question and its choices can be read aloud', async () => {
+  const speak = vi.fn()
+  vi.stubGlobal('speechSynthesis', { speak, cancel: vi.fn() })
+  vi.stubGlobal(
+    'SpeechSynthesisUtterance',
+    class {
+      text: string
+      rate = 1
+      lang = ''
+      constructor(text: string) {
+        this.text = text
+      }
+    },
+  )
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: 'Read aloud' }))
+
+  expect(speak.mock.calls[0][0].text).toBe(
+    'What grade are you in? Kindergarten and 1st grade. 2nd and 3rd grade. 4th and 5th grade.',
+  )
 })
 
 test('picking 2nd & 3rd grade saves it and lists subtraction and addition first', async () => {

@@ -158,3 +158,45 @@ test('without reduce motion, the borrow badge slides between chips', async () =>
   await screen.findByText('10')
   expect(animate).toHaveBeenCalled()
 })
+
+function stubSpeech() {
+  const speak = vi.fn()
+  vi.stubGlobal('speechSynthesis', { speak, cancel: vi.fn() })
+  vi.stubGlobal(
+    'SpeechSynthesisUtterance',
+    class {
+      text: string
+      rate = 1
+      lang = ''
+      constructor(text: string) {
+        this.text = text
+      }
+    },
+  )
+  return speak
+}
+
+test('Read the problem aloud says the problem in words', async () => {
+  const speak = stubSpeech()
+  const user = userEvent.setup()
+  renderPracticePage()
+
+  await user.click(await screen.findByRole('button', { name: 'Read the problem aloud' }))
+
+  expect(speak.mock.calls[0][0].text).toBe('742 minus 158')
+})
+
+test('the hint can be read aloud once it appears', async () => {
+  const speak = stubSpeech()
+  checkResult = { correct: false, misconception: 'smaller_from_larger' }
+  const user = userEvent.setup()
+  renderPracticePage()
+
+  await answer('616')
+  await answer('616')
+  await user.click(
+    await screen.findByRole('button', { name: 'Read the hint aloud' }, { timeout: 4000 }),
+  )
+
+  expect(speak.mock.calls[0][0].text).toBe('Borrow from the tens column.')
+})
