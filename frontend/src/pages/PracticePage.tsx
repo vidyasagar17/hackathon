@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import DigitChip from '../components/DigitChip'
 import TutorialOverlay from '../components/TutorialOverlay'
@@ -200,6 +200,15 @@ function StreakMeter({ filled, total }: { filled: number; total: number }) {
   )
 }
 
+function requestProblem(gameId: string | undefined): Promise<Problem> {
+  return fetch(
+    `http://127.0.0.1:8000/games/${gameId}/problem?session_id=${getSessionId()}`,
+  ).then((res) => {
+    if (!res.ok) throw new Error('Failed to load problem')
+    return res.json()
+  })
+}
+
 function PracticePage() {
   const { gameId } = useParams<{ gameId: string }>()
   const config = gameId ? GAME_CONFIGS[gameId] : undefined
@@ -219,32 +228,39 @@ function PracticePage() {
   const [activeStep, setActiveStep] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
 
+  const showProblem = useCallback((data: Problem) => {
+    setProblem(data)
+    setAnswers(EMPTY_ANSWERS)
+    setFeedback(null)
+    setMisconception(null)
+    setHint(null)
+    setAttemptCount(0)
+    setRegroupSteps([])
+    setActiveStep(null)
+    setRevealed(false)
+  }, [])
+
   const fetchProblem = () => {
     setLoadError(false)
-    fetch(
-      `http://127.0.0.1:8000/games/${gameId}/problem?session_id=${getSessionId()}`,
-    )
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed to load problem')
-        return res.json()
-      })
-      .then((data: Problem) => {
-        setProblem(data)
-        setAnswers(EMPTY_ANSWERS)
-        setFeedback(null)
-        setMisconception(null)
-        setHint(null)
-        setAttemptCount(0)
-        setRegroupSteps([])
-        setActiveStep(null)
-        setRevealed(false)
-      })
+    requestProblem(gameId)
+      .then(showProblem)
       .catch(() => setLoadError(true))
   }
 
   useEffect(() => {
-    if (config) fetchProblem()
-  }, [gameId])
+    if (!config) return
+    let stale = false
+    requestProblem(gameId)
+      .then((data) => {
+        if (!stale) showProblem(data)
+      })
+      .catch(() => {
+        if (!stale) setLoadError(true)
+      })
+    return () => {
+      stale = true
+    }
+  }, [gameId, config, showProblem])
 
   useEffect(() => {
     if (activeStep === null || activeStep >= regroupSteps.length) return
