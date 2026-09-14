@@ -3,13 +3,21 @@ import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import DigitChip from '../components/DigitChip'
 import HomeButton from '../components/HomeButton'
+import Keypad from '../components/Keypad'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import TutorialOverlay from '../components/TutorialOverlay'
 import { API_URL } from '../api'
+import {
+  columnEntryOrder,
+  EMPTY_ANSWERS,
+  shiftIntoPlaces,
+  type Answers,
+} from '../answerEntry'
 import { answerFill, type Column } from '../columns'
 import { formatMisconception } from '../format'
+import { getGradeBand } from '../gradeBand'
 import { prefersReducedMotion } from '../motion'
 import { buildRegroupSteps, PLACE_ORDER, type RegroupStep } from '../regroup'
 import { getSessionId } from '../session'
@@ -21,6 +29,7 @@ type GameConfig = {
   operatorSymbol: string
   spokenProblem: (problem: Problem) => string
   displayMode: 'columns' | 'expression'
+  entryMode: 'columns' | 'shift'
   topDigitField: string
   bottomDigitField: string
   regroupField: string
@@ -37,6 +46,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
     operatorSymbol: '−',
     spokenProblem: (p) => `${p.minuend} minus ${p.subtrahend}`,
     displayMode: 'columns',
+    entryMode: 'columns',
     topDigitField: 'minuend_digit',
     bottomDigitField: 'subtrahend_digit',
     regroupField: 'borrows',
@@ -50,6 +60,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
     operatorSymbol: '+',
     spokenProblem: (p) => `${p.addend1} plus ${p.addend2}`,
     displayMode: 'columns',
+    entryMode: 'columns',
     topDigitField: 'addend1_digit',
     bottomDigitField: 'addend2_digit',
     regroupField: 'carries',
@@ -63,6 +74,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
     operatorSymbol: '×',
     spokenProblem: (p) => `${p.multiplicand} times ${p.multiplier}`,
     displayMode: 'columns',
+    entryMode: 'columns',
     topDigitField: 'multiplicand_digit',
     bottomDigitField: 'multiplier_digit',
     regroupField: 'carries',
@@ -77,6 +89,7 @@ const GAME_CONFIGS: Record<string, GameConfig> = {
     operatorSymbol: '÷',
     spokenProblem: (p) => `${p.dividend} divided by ${p.divisor}`,
     displayMode: 'expression',
+    entryMode: 'shift',
     topDigitField: '',
     bottomDigitField: '',
     regroupField: 'regroups',
@@ -107,10 +120,6 @@ type ProblemPayload = {
   problem: Problem
   progress: Progress
 }
-
-type Answers = Record<Column, string>
-
-const EMPTY_ANSWERS: Answers = { thousands: '', hundreds: '', tens: '', ones: '' }
 
 function RegroupTopChip({
   digit,
@@ -191,18 +200,25 @@ function AnswerBox({
   column,
   value,
   onChange,
+  active,
+  onSelect,
+  usesKeypad,
 }: {
   column: Column
   value: string
   onChange: (value: string) => void
+  active: boolean
+  onSelect: () => void
+  usesKeypad: boolean
 }) {
   return (
     <input
       aria-label={`${column.charAt(0).toUpperCase()}${column.slice(1)} digit of your answer`}
-      className={`tap-target h-16 w-16 rounded-2xl border-4 border-ink text-center font-display text-3xl font-bold text-ink focus:outline-none focus:ring-4 focus:ring-helper focus:ring-offset-2 ${answerFill[column]}`}
+      className={`tap-target h-16 w-16 rounded-2xl border-4 border-ink text-center font-display text-3xl font-bold text-ink focus:outline-none focus:ring-4 focus:ring-helper focus:ring-offset-2 ${active ? 'ring-4 ring-helper ring-offset-2' : ''} ${answerFill[column]}`}
       maxLength={1}
-      inputMode="numeric"
+      inputMode={usesKeypad ? 'none' : 'numeric'}
       value={value}
+      onFocus={onSelect}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(-1))}
     />
   )
@@ -222,10 +238,12 @@ function PracticePage() {
   const config = gameId ? GAME_CONFIGS[gameId] : undefined
 
   const [tutorialDone, setTutorialDone] = useState(hasSeenTutorial)
+  const [gradeBand] = useState(getGradeBand)
   const [problem, setProblem] = useState<Problem | null>(null)
   const [progress, setProgress] = useState<Progress | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS)
+  const [activePlace, setActivePlace] = useState<Column | null>(null)
   const [feedback, setFeedback] = useState<
     'correct' | 'incorrect' | 'error' | null
   >(null)
@@ -240,6 +258,7 @@ function PracticePage() {
     setProblem(data.problem)
     setProgress(data.progress)
     setAnswers(EMPTY_ANSWERS)
+    setActivePlace(null)
     setFeedback(null)
     setMisconception(null)
     setHint(null)
@@ -334,10 +353,41 @@ function PracticePage() {
     )
   }
 
-  const digits = problem.answer_places.map((place) => answers[place])
+  const places = problem.answer_places
+  const digits = places.map((place) => answers[place])
   const firstTyped = digits.findIndex((d) => d !== '')
   const readyToCheck =
     firstTyped !== -1 && digits.slice(firstTyped).every((d) => d !== '')
+  const usesKeypad = gradeBand === '2-3'
+  const entryOrder = columnEntryOrder(places)
+  const currentPlace = activePlace ?? entryOrder[0]
+
+  const pressDigit = (digit: string) => {
+    playSound('tap')
+    if (config.entryMode === 'shift') {
+      setAnswers(shiftIntoPlaces(places, digits.join('') + digit))
+      return
+    }
+    setAnswers((a) => ({ ...a, [currentPlace]: digit }))
+    const next = entryOrder[entryOrder.indexOf(currentPlace) + 1]
+    if (next) setActivePlace(next)
+  }
+
+  const pressDelete = () => {
+    playSound('tap')
+    if (config.entryMode === 'shift') {
+      setAnswers(shiftIntoPlaces(places, digits.join('').slice(0, -1)))
+      return
+    }
+    if (answers[currentPlace] !== '') {
+      setAnswers((a) => ({ ...a, [currentPlace]: '' }))
+      return
+    }
+    const previous = entryOrder[entryOrder.indexOf(currentPlace) - 1]
+    if (!previous) return
+    setAnswers((a) => ({ ...a, [previous]: '' }))
+    setActivePlace(previous)
+  }
 
   const fetchHint = (submitted_answer: number) => {
     fetch(`${API_URL}/games/${gameId}/hint`, {
@@ -421,6 +471,8 @@ function PracticePage() {
     destMarkByTo[s.to] = s.destMark
   })
 
+  const checkDisabled = !readyToCheck || feedback === 'correct'
+
   return (
     <div className="flex min-h-screen flex-col bg-base">
       <AppHeader
@@ -497,7 +549,7 @@ function PracticePage() {
             <div
               className={`flex gap-3 ${config.displayMode === 'columns' ? 'self-end' : ''}`}
             >
-              {problem.answer_places.map((place) => (
+              {places.map((place) => (
                 <AnswerBox
                   key={place}
                   column={place}
@@ -505,19 +557,33 @@ function PracticePage() {
                   onChange={(value) =>
                     setAnswers((a) => ({ ...a, [place]: value }))
                   }
+                  active={usesKeypad && config.entryMode === 'columns' && place === currentPlace}
+                  onSelect={() => setActivePlace(place)}
+                  usesKeypad={usesKeypad}
                 />
               ))}
             </div>
           </div>
 
-          <button
-            type="button"
-            disabled={!readyToCheck || feedback === 'correct'}
-            onClick={checkAnswer}
-            className="tap-target mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40"
-          >
-            Check answer
-          </button>
+          {usesKeypad ? (
+            <div className="mt-8 flex justify-center">
+              <Keypad
+                onDigit={pressDigit}
+                onDelete={pressDelete}
+                onCheck={checkAnswer}
+                checkDisabled={checkDisabled}
+              />
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={checkDisabled}
+              onClick={checkAnswer}
+              className="tap-target mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40"
+            >
+              Check answer
+            </button>
+          )}
 
           {feedback === 'correct' && (
             <p className="mt-6 text-center font-display text-lg font-semibold text-success-text">

@@ -208,3 +208,68 @@ test('the hint can be read aloud once it appears', async () => {
 
   expect(speak.mock.calls[0][0].text).toBe('Borrow from the tens column.')
 })
+
+function box(place: 'Hundreds' | 'Tens' | 'Ones') {
+  return screen.getByRole<HTMLInputElement>('textbox', { name: `${place} digit of your answer` })
+}
+
+test('the 2nd & 3rd grade keypad fills boxes from the ones place leftward', async () => {
+  localStorage.setItem('grade_band', '2-3')
+  checkResult = { correct: true, misconception: null }
+  const user = userEvent.setup()
+  renderPracticePage()
+
+  const keypad = await screen.findByRole('group', { name: 'Number keypad' })
+  for (const digit of ['4', '8', '5']) {
+    await user.click(within(keypad).getByRole('button', { name: digit }))
+  }
+
+  expect([box('Hundreds').value, box('Tens').value, box('Ones').value]).toEqual(['5', '8', '4'])
+  await user.click(within(keypad).getByRole('button', { name: 'Check answer' }))
+  expect(await screen.findByText('Correct!')).toBeTruthy()
+})
+
+test('Delete clears the current box, then steps back to the previous one', async () => {
+  localStorage.setItem('grade_band', '2-3')
+  const user = userEvent.setup()
+  renderPracticePage()
+
+  const keypad = await screen.findByRole('group', { name: 'Number keypad' })
+  await user.click(within(keypad).getByRole('button', { name: '4' }))
+  await user.click(within(keypad).getByRole('button', { name: '8' }))
+  await user.click(within(keypad).getByRole('button', { name: 'Delete' }))
+
+  expect([box('Tens').value, box('Ones').value]).toEqual(['', '4'])
+})
+
+test('tapping an answer box chooses where the next keypad digit goes', async () => {
+  localStorage.setItem('grade_band', '2-3')
+  const user = userEvent.setup()
+  renderPracticePage()
+
+  const keypad = await screen.findByRole('group', { name: 'Number keypad' })
+  await user.click(box('Hundreds'))
+  await user.click(within(keypad).getByRole('button', { name: '7' }))
+
+  expect(box('Hundreds').value).toBe('7')
+  expect(box('Ones').value).toBe('')
+})
+
+test('with the keypad, answer boxes do not open the device keyboard', async () => {
+  localStorage.setItem('grade_band', '2-3')
+  renderPracticePage()
+
+  await screen.findByRole('group', { name: 'Number keypad' })
+
+  expect(box('Ones').inputMode).toBe('none')
+})
+
+test('outside 2nd & 3rd grade there is no keypad and boxes use the number keyboard', async () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderPracticePage()
+
+  await screen.findByRole('textbox', { name: 'Ones digit of your answer' })
+
+  expect(screen.queryByRole('group', { name: 'Number keypad' })).toBeNull()
+  expect(box('Ones').inputMode).toBe('numeric')
+})
