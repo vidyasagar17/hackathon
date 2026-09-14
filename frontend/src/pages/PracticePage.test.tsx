@@ -68,6 +68,7 @@ async function answer(digits: string) {
   const user = userEvent.setup()
   const boxes = await screen.findAllByRole('textbox')
   for (let i = 0; i < boxes.length; i++) {
+    await user.clear(boxes[i])
     await user.type(boxes[i], digits[i])
   }
   await user.click(screen.getByRole('button', { name: 'Check answer' }))
@@ -171,7 +172,7 @@ test('with reduce motion on, the borrow badge jumps into place and step marks st
   renderPracticePage()
 
   await answer('616')
-  await answer('616')
+  await answer('617')
 
   const badge = await screen.findByText('10')
   expect(badge.style.transform).toContain('76px')
@@ -184,10 +185,26 @@ test('without reduce motion, the borrow badge slides between chips', async () =>
   renderPracticePage()
 
   await answer('616')
-  await answer('616')
+  await answer('617')
 
   await screen.findByText('10')
   expect(animate).toHaveBeenCalled()
+})
+
+test('after a wrong answer, Check waits until the student changes the answer', async () => {
+  checkResult = { correct: false, misconception: 'smaller_from_larger' }
+  const user = userEvent.setup()
+  renderPracticePage()
+
+  await answer('616')
+  await screen.findByText('Not quite — try again!')
+  const check = screen.getByRole<HTMLButtonElement>('button', { name: 'Check answer' })
+  expect(check.disabled).toBe(true)
+
+  await user.clear(box('Ones'))
+  await user.type(box('Ones'), '7')
+  expect(box('Ones').value).toBe('7')
+  expect(check.disabled).toBe(false)
 })
 
 test('a wrong answer after the hint updates the hint without replaying the animation', async () => {
@@ -203,7 +220,7 @@ test('a wrong answer after the hint updates the hint without replaying the anima
   renderPracticePage()
 
   await answer('616')
-  await answer('616')
+  await answer('617')
   await screen.findByRole('button', { name: 'Next problem' }, { timeout: 4000 })
   expect(await screen.findByText('Hint about smaller_from_larger.')).toBeTruthy()
   const animationsBefore = animate.mock.calls.length
@@ -234,13 +251,13 @@ test('a hint that arrives after Next problem never shows on the new problem', as
   renderPracticePage()
 
   await answer('616')
-  await answer('616')
+  await answer('617')
   await user.click(await screen.findByRole('button', { name: 'Next problem' }, { timeout: 4000 }))
   await screen.findByRole('img', { name: '1 of 3 stars' })
   hintReplies[0]('Hint for the old problem.')
 
   await answer('616')
-  await answer('616')
+  await answer('617')
   await screen.findByRole('button', { name: 'Next problem' }, { timeout: 4000 })
 
   expect(screen.queryByText('Hint for the old problem.')).toBeNull()
@@ -280,7 +297,7 @@ test('the hint can be read aloud once it appears', async () => {
   renderPracticePage()
 
   await answer('616')
-  await answer('616')
+  await answer('617')
   await user.click(
     await screen.findByRole('button', { name: 'Read the hint aloud' }, { timeout: 4000 }),
   )

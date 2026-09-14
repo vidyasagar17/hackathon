@@ -254,10 +254,12 @@ function PracticePage() {
   const [activeStep, setActiveStep] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [checking, setChecking] = useState(false)
+  const [wrongAnswer, setWrongAnswer] = useState<number | null>(null)
   const hintRequest = useRef<AbortController | null>(null)
 
   const showProblem = useCallback((data: ProblemPayload) => {
     hintRequest.current?.abort()
+    setWrongAnswer(null)
     setProblem(data.problem)
     setProgress(data.progress)
     setAnswers(EMPTY_ANSWERS)
@@ -441,6 +443,7 @@ function PracticePage() {
           }
 
           playSound('wrong')
+          setWrongAnswer(submitted_answer)
           setProgress((p) => p && { ...p, correct_in_a_row: 0 })
           const nextAttempt = attemptCount + 1
           setAttemptCount(nextAttempt)
@@ -481,7 +484,11 @@ function PracticePage() {
     destMarkByTo[s.to] = s.destMark
   })
 
-  const checkDisabled = !readyToCheck || checking || feedback === 'correct'
+  const checkDisabled =
+    !readyToCheck ||
+    checking ||
+    feedback === 'correct' ||
+    Number(digits.join('')) === wrongAnswer
 
   return (
     <div className="flex min-h-screen flex-col bg-base">
