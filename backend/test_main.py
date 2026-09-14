@@ -1,11 +1,101 @@
+from types import SimpleNamespace
+
 from fastapi.testclient import TestClient
+from pydantic import BaseModel
 
 import db
 import main
+from curriculum.engine import MoveResult
 from games import GAMES
 from games.subtraction.problems import Problem, compute_columns
+from tiering import TierAttempt
 
 client = TestClient(main.app)
+
+
+class PickRound(BaseModel):
+    """Fake curriculum game for route tests: pick the bigger of two numbers."""
+
+    a: int
+    b: int
+    secret: str
+    computer_turns: int = 0
+
+
+def _pick_evaluate(round: PickRound, move: dict) -> MoveResult:
+    correct = move["pick"] == max(round.a, round.b)
+    return MoveResult(correct=correct, misconception=None if correct else "picked_smaller", round=round)
+
+
+PICK_GAME = SimpleNamespace(
+    Round=PickRound,
+    new_round=lambda level: PickRound(a=3, b=8, secret="hidden"),
+    visible_state=lambda round: {"a": round.a, "b": round.b, "computer_turns": round.computer_turns},
+    evaluate_move=_pick_evaluate,
+    computer_move=lambda round, level: round.model_copy(update={"computer_turns": round.computer_turns + 1}),
+)
+
+
+def _with_pick_game(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    monkeypatch.setitem(main.CURRICULUM_GAMES, "pick", PICK_GAME)
+
+
+def test_new_round_is_saved_and_returns_only_what_the_student_may_see(tmp_path, monkeypatch):
+    _with_pick_game(tmp_path, monkeypatch)
+
+    response = client.post("/curriculum/pick/rounds", params={"session_id": "s1"})
+
+    body = response.json()
+    assert body["visible_state"] == {"a": 3, "b": 8, "computer_turns": 0}
+    assert body["progress"] == {"level": 1, "correct_in_a_row": 0, "needed": 3, "top_level": 3}
+    assert db.get_round(body["round_id"]).state["secret"] == "hidden"
+
+
+def test_new_round_for_an_unknown_curriculum_game_is_404(tmp_path, monkeypatch):
+    _with_pick_game(tmp_path, monkeypatch)
+
+    response = client.post("/curriculum/no-such-game/rounds", params={"session_id": "s1"})
+
+    assert response.status_code == 404
+
+
+def test_a_move_is_evaluated_logged_and_answered_by_the_computer(tmp_path, monkeypatch):
+    _with_pick_game(tmp_path, monkeypatch)
+    round_id = client.post("/curriculum/pick/rounds", params={"session_id": "s1"}).json()["round_id"]
+
+    response = client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": 3}})
+
+    assert response.json() == {
+        "correct": False,
+        "misconception": "picked_smaller",
+        "visible_state": {"a": 3, "b": 8, "computer_turns": 1},
+    }
+    assert db.get_move_history("s1", "pick") == [
+        TierAttempt(difficulty=1, correct=False, misconception="picked_smaller")
+    ]
+    assert db.get_round(round_id).state["computer_turns"] == 1
+
+
+def test_a_move_for_an_unknown_round_is_404(tmp_path, monkeypatch):
+    _with_pick_game(tmp_path, monkeypatch)
+
+    response = client.post(f"/rounds/{'0' * 32}/moves", json={"move": {"pick": 8}})
+
+    assert response.status_code == 404
+
+
+def test_a_new_rounds_level_follows_the_students_move_history(tmp_path, monkeypatch):
+    _with_pick_game(tmp_path, monkeypatch)
+    for _ in range(3):
+        round_id = client.post("/curriculum/pick/rounds", params={"session_id": "s1"}).json()["round_id"]
+        client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": 8}})
+
+    response = client.post("/curriculum/pick/rounds", params={"session_id": "s1"})
+
+    assert response.json()["progress"]["level"] == 2
+    assert db.get_round(response.json()["round_id"]).level == 2
 
 
 def _problem_data() -> dict:
