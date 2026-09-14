@@ -62,10 +62,16 @@ test('picking 2nd & 3rd grade saves it and lists subtraction and addition first'
   await user.click(screen.getByRole('button', { name: '2nd & 3rd grade' }))
 
   expect(localStorage.getItem('grade_band')).toBe('2-3')
-  expect(gameTitlesInOrder()).toEqual(['Subtraction', 'Addition', 'Multiplication', 'Division'])
+  expect(gameTitlesInOrder()).toEqual([
+    'Subtraction',
+    'Addition',
+    'Multiplication',
+    'Division',
+    'Decimal War',
+  ])
 })
 
-test('picking 4th & 5th grade lists multiplication and division first', async () => {
+test('picking 4th & 5th grade lists Decimal War, multiplication and division first', async () => {
   const user = userEvent.setup()
   renderLandingPage()
 
@@ -73,7 +79,13 @@ test('picking 4th & 5th grade lists multiplication and division first', async ()
 
   expect(screen.getByRole('heading', { name: 'Your grade' })).toBeTruthy()
   expect(screen.getByRole('heading', { name: 'More practice' })).toBeTruthy()
-  expect(gameTitlesInOrder()).toEqual(['Multiplication', 'Division', 'Subtraction', 'Addition'])
+  expect(gameTitlesInOrder()).toEqual([
+    'Decimal War',
+    'Multiplication',
+    'Division',
+    'Subtraction',
+    'Addition',
+  ])
 })
 
 test('kindergarten & 1st grade says its games are coming and keeps every game playable', async () => {
@@ -83,7 +95,7 @@ test('kindergarten & 1st grade says its games are coming and keeps every game pl
   await user.click(screen.getByRole('button', { name: 'Kindergarten & 1st grade' }))
 
   expect(screen.getByText(/Games for kindergarten and 1st grade are on the way/)).toBeTruthy()
-  expect(gameTitlesInOrder()).toHaveLength(4)
+  expect(gameTitlesInOrder()).toHaveLength(5)
 })
 
 test('a return visit skips the grade question', () => {
@@ -91,8 +103,16 @@ test('a return visit skips the grade question', () => {
   renderLandingPage()
 
   expect(screen.queryByRole('heading', { name: 'What grade are you in?' })).toBeNull()
-  expect(gameTitlesInOrder()[0]).toBe('Multiplication')
+  expect(gameTitlesInOrder()[0]).toBe('Decimal War')
   expect(screen.getByRole('button', { name: 'Sound on' })).toBeTruthy()
+})
+
+test('the Decimal War card opens its game', () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  const card = screen.getByRole('link', { name: /Decimal War/ })
+  expect(card.getAttribute('href')).toBe('/curriculum/decimal-war')
 })
 
 test('Change grade asks the grade question again', async () => {

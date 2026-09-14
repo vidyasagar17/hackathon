@@ -72,7 +72,33 @@ type Game = {
   grades: [number, number]
 }
 
+function DecimalWarIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <rect x="2" y="6" width="92" height="60" rx="12" className="fill-felt" />
+      <text x="22" y="50" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-chalk font-display">
+        0.
+      </text>
+      <rect x="38" y="16" width="22" height="36" rx="4" className="fill-card" />
+      <rect x="66" y="16" width="22" height="36" rx="4" className="fill-card" />
+      <text x="49" y="42" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+        4
+      </text>
+      <text x="77" y="42" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+        5
+      </text>
+    </svg>
+  )
+}
+
 const GAMES: Game[] = [
+  {
+    title: 'Decimal War',
+    description: 'Judge whose decimal is larger',
+    to: '/curriculum/decimal-war',
+    icon: <DecimalWarIcon />,
+    grades: [4, 5],
+  },
   {
     title: 'Subtraction',
     description: 'Multi-digit subtraction with borrowing',
