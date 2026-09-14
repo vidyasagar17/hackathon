@@ -4,6 +4,7 @@ import AppHeader from '../components/AppHeader'
 import HomeButton from '../components/HomeButton'
 import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
+import PlayerToken from '../components/PlayerToken'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import RoboAvatar from '../components/RoboAvatar'
@@ -85,17 +86,20 @@ function Seat({
       aria-label={label}
       onClick={onPick}
       disabled={disabled}
-      className={`tap-target flex w-full flex-wrap items-center gap-6 rounded-3xl border-4 px-5 py-4 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${isAnswer ? 'border-hundreds' : 'border-chalk/60'}`}
+      className={`tap-target grid w-full grid-cols-1 items-center gap-3 rounded-3xl border-4 px-5 py-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds sm:grid-cols-[6rem_1fr_6rem] ${isAnswer ? 'border-hundreds' : 'border-chalk/60'}`}
     >
-      <span className="flex w-20 flex-col items-center gap-1 font-display text-xl font-semibold text-chalk">
-        {name === 'Robo' && <RoboAvatar />}
+      <span className="flex flex-col items-center gap-1 font-display text-xl font-semibold text-chalk">
+        {name === 'Robo' ? <RoboAvatar /> : <PlayerToken />}
         {name}
       </span>
-      <DigitCards value={value} />
-      <span className="ml-auto flex flex-col items-end gap-2 font-display text-base font-bold">
-        {isAnswer && <span className="rounded-full bg-hundreds px-3 py-1 text-ink">Larger</span>}
-        {isPick && <span className="rounded-full border-2 border-chalk px-3 py-0.5 text-chalk">Your pick</span>}
+      <span className="flex items-center justify-center gap-4">
+        <DigitCards value={value} />
+        <span className="flex w-24 flex-col items-start gap-2 font-display text-base font-bold">
+          {isAnswer && <span className="rounded-full bg-hundreds px-3 py-1 text-ink">Larger</span>}
+          {isPick && <span className="rounded-full border-2 border-chalk px-3 py-0.5 text-chalk">Your pick</span>}
+        </span>
       </span>
+      <span aria-hidden="true" className="hidden sm:block" />
     </button>
   )
 }
