@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { API_URL } from '../api'
 import AppHeader from '../components/AppHeader'
+import MuteToggle from '../components/MuteToggle'
 import { formatGameName, formatMisconception } from '../format'
 import { getSessionId } from '../session'
 
@@ -56,9 +57,12 @@ function DashboardPage() {
       <AppHeader
         left={<span className="font-display text-2xl font-bold">Number Quest</span>}
         right={
-          <Link to="/" className="font-display font-semibold text-ink-muted">
-            Back to games
-          </Link>
+          <>
+            <MuteToggle />
+            <Link to="/" className="font-display font-semibold text-ink-muted">
+              Back to games
+            </Link>
+          </>
         }
       />
 

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import DigitChip from '../components/DigitChip'
 import HomeButton from '../components/HomeButton'
+import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import TutorialOverlay from '../components/TutorialOverlay'
 import { API_URL } from '../api'
@@ -11,6 +12,7 @@ import { formatMisconception } from '../format'
 import { prefersReducedMotion } from '../motion'
 import { buildRegroupSteps, PLACE_ORDER, type RegroupStep } from '../regroup'
 import { getSessionId } from '../session'
+import { playSound } from '../sound'
 import { hasSeenTutorial, markTutorialSeen } from '../tutorial'
 
 type GameConfig = {
@@ -300,7 +302,7 @@ function PracticePage() {
   if (loadError) {
     return (
       <div className="flex min-h-screen flex-col bg-base">
-        <AppHeader left={<HomeButton />} right={null} />
+        <AppHeader left={<HomeButton />} right={<MuteToggle />} />
         <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
           <p className="font-display text-2xl font-bold text-alert-text">
             Couldn't load a problem — try again.
@@ -365,6 +367,7 @@ function PracticePage() {
           misconception: string | null
         }) => {
           if (result.correct) {
+            playSound('correct')
             setFeedback('correct')
             setProgress((p) =>
               p && { ...p, correct_in_a_row: Math.min(p.correct_in_a_row + 1, p.needed) },
@@ -372,6 +375,7 @@ function PracticePage() {
             return
           }
 
+          playSound('wrong')
           setProgress((p) => p && { ...p, correct_in_a_row: 0 })
           const nextAttempt = attemptCount + 1
           setAttemptCount(nextAttempt)
@@ -415,9 +419,12 @@ function PracticePage() {
       <AppHeader
         left={<HomeButton />}
         right={
-          <Link to="/summary" className="font-display font-semibold text-ink-muted">
-            Session summary
-          </Link>
+          <>
+            <MuteToggle />
+            <Link to="/summary" className="font-display font-semibold text-ink-muted">
+              Session summary
+            </Link>
+          </>
         }
       />
 

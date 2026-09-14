@@ -64,6 +64,7 @@ test('a return visit skips the grade question', () => {
 
   expect(screen.queryByRole('heading', { name: 'What grade are you in?' })).toBeNull()
   expect(gameTitlesInOrder()[0]).toBe('Multiplication')
+  expect(screen.getByRole('button', { name: 'Sound on' })).toBeTruthy()
 })
 
 test('Change grade asks the grade question again', async () => {

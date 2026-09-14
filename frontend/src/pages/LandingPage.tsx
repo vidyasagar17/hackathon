@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import GradePicker from '../components/GradePicker'
+import MuteToggle from '../components/MuteToggle'
 import { getGradeBand, saveGradeBand, type GradeBand } from '../gradeBand'
 
 function SubtractionIcon() {
@@ -166,6 +167,7 @@ function LandingPage() {
         left={<span className="font-display text-2xl font-bold">Number Quest</span>}
         right={
           <>
+            <MuteToggle />
             <button
               type="button"
               onClick={() => setPicking(true)}

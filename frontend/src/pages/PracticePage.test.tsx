@@ -2,7 +2,13 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import { playSound } from '../sound'
 import PracticePage from './PracticePage'
+
+vi.mock('../sound', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../sound')>()),
+  playSound: vi.fn(),
+}))
 
 const PROBLEM = {
   minuend: 742,
@@ -37,6 +43,7 @@ beforeEach(() => {
   localStorage.setItem('tutorial_seen', 'true')
   reducedMotion = false
   animate.mockClear()
+  vi.mocked(playSound).mockClear()
   Element.prototype.animate = animate as unknown as Element['animate']
   vi.stubGlobal('fetch', vi.fn(fakeApi))
   vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: reducedMotion })))
@@ -66,11 +73,12 @@ async function answer(digits: string) {
   await user.click(screen.getByRole('button', { name: 'Check answer' }))
 }
 
-test('the practice page header holds Home and Session summary', async () => {
+test('the practice page header holds Home, the sound switch and Session summary', async () => {
   renderPracticePage()
 
   const header = await screen.findByRole('banner')
   expect(within(header).getByRole('button', { name: 'Home' })).toBeTruthy()
+  expect(within(header).getByRole('button', { name: 'Sound on' })).toBeTruthy()
   expect(within(header).getByRole('link', { name: 'Session summary' })).toBeTruthy()
 })
 
@@ -83,6 +91,27 @@ test('a correct answer keeps Correct! on screen with a Next problem button', asy
   expect(await screen.findByText('Correct!')).toBeTruthy()
   expect(screen.getByRole('button', { name: 'Next problem' })).toBeTruthy()
   expect(screen.getByRole<HTMLButtonElement>('button', { name: 'Check answer' }).disabled).toBe(true)
+})
+
+test('a correct answer plays the correct sound', async () => {
+  checkResult = { correct: true, misconception: null }
+  renderPracticePage()
+
+  await answer('584')
+
+  await screen.findByText('Correct!')
+  expect(playSound).toHaveBeenCalledWith('correct')
+  expect(playSound).not.toHaveBeenCalledWith('wrong')
+})
+
+test('a wrong answer plays the soft wrong sound', async () => {
+  checkResult = { correct: false, misconception: 'smaller_from_larger' }
+  renderPracticePage()
+
+  await answer('616')
+
+  await screen.findByText('Not quite — try again!')
+  expect(playSound).toHaveBeenCalledWith('wrong')
 })
 
 test('the progress meter starts from the server and fills a star on a correct answer', async () => {
