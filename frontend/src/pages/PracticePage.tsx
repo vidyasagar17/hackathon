@@ -183,12 +183,12 @@ function RegroupTopChip({
       )}
 
       {(isFromSettled || isFromActive) && (
-        <span className="absolute -right-2 -top-2 rounded-full bg-ones px-1.5 py-0.5 font-display text-[10px] font-bold text-ink">
+        <span className="absolute -right-1 -top-3 rounded-full bg-ones px-1.5 py-0.5 font-display text-xs font-bold leading-none text-ink ring-2 ring-white">
           {config.sourceMark}
         </span>
       )}
       {(isToSettled || isToActive) && (
-        <span className="absolute -left-2 -top-2 rounded-full bg-spark px-1.5 py-0.5 font-display text-[10px] font-bold text-ink">
+        <span className="absolute -left-1 -top-3 rounded-full bg-spark px-1.5 py-0.5 font-display text-xs font-bold leading-none text-ink ring-2 ring-white">
           {step.destMark}
         </span>
       )}
