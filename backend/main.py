@@ -245,7 +245,8 @@ def make_move(round_id: str, request: MoveRequest) -> MoveResponse:
         result = game.evaluate_move(game.Round.model_validate(stored.state), request.move)
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
-    log_move(round_id, request.move, result.correct, result.misconception)
+    if result.counted:
+        log_move(round_id, request.move, result.correct, result.misconception)
     after_computer = game.computer_move(result.round, stored.level)
     update_round(round_id, after_computer.model_dump())
 

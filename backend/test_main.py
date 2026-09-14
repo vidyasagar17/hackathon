@@ -343,3 +343,20 @@ def test_an_undiagnosed_wrong_pick_gets_the_general_hint(tmp_path, monkeypatch):
     response = client.post(f"/rounds/{round_id}/hint")
 
     assert response.json() == {"misconception": None, "hint": game.GENERAL_HINT}
+
+
+def test_a_move_the_game_does_not_count_is_applied_but_not_logged(tmp_path, monkeypatch):
+    _with_pick_game(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        PICK_GAME,
+        "evaluate_move",
+        lambda round, move: MoveResult(correct=True, misconception=None, round=round, counted=False),
+    )
+    round_id = client.post("/curriculum/pick/rounds", params={"session_id": "s1"}).json()["round_id"]
+
+    response = client.post(f"/rounds/{round_id}/moves", json={"move": {"pick": 8}})
+
+    assert response.status_code == 200
+    assert response.json()["visible_state"]["computer_turns"] == 1
+    assert db.get_round(round_id).state["computer_turns"] == 1
+    assert db.get_move_history("s1", "pick") == []

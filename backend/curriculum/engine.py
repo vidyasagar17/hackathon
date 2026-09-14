@@ -17,8 +17,13 @@ from pydantic import BaseModel
 
 
 class MoveResult(BaseModel):
-    """What one student move did: whether it was right, its diagnosed misconception, and the round after it."""
+    """What one student move did: whether it was right, its diagnosed misconception, and the round after it.
+
+    `counted` is False for a move that changes the game but isn't math to grade (e.g. arranging cards
+    or keep/trash); it is applied but not logged, so it doesn't affect levels or the summary.
+    """
 
     correct: bool
     misconception: str | None
     round: BaseModel
+    counted: bool = True
