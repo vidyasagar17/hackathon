@@ -70,7 +70,7 @@ export default function ProgressMeter({
   }, [correct_in_a_row, needed, level, top_level, canCelebrate])
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
       <p className="font-display text-xl font-bold">Level {level}</p>
       <div
         ref={starsRef}

@@ -507,8 +507,8 @@ function PracticePage() {
         }
       />
 
-      <main className="flex flex-1 flex-col items-center justify-center gap-8 px-4 pb-8">
-        <div className="flex flex-col items-center gap-3">
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4 pb-8">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           <h1 className="font-display text-4xl font-bold">{config.heading}</h1>
           <ReadAloudButton text={config.spokenProblem(problem)} label="Read the problem aloud" />
         </div>
@@ -521,6 +521,7 @@ function PracticePage() {
         )}
 
         <div className="rounded-3xl bg-white p-8 pt-12 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
+          <div className={usesKeypad ? 'flex flex-col items-center gap-8 md:flex-row md:justify-center md:gap-12' : ''}>
           <div className="flex flex-col items-center gap-3">
             {config.displayMode === 'expression' ? (
               <p className="font-display text-4xl font-bold">
@@ -583,7 +584,7 @@ function PracticePage() {
           </div>
 
           {usesKeypad ? (
-            <div className="mt-8 flex justify-center">
+            <div className="flex w-full justify-center md:w-80">
               <Keypad
                 onDigit={pressDigit}
                 onDelete={pressDelete}
@@ -601,6 +602,7 @@ function PracticePage() {
               Check answer
             </button>
           )}
+          </div>
 
           {feedback === 'correct' && (
             <p className="mt-6 text-center font-display text-lg font-semibold text-success-text">
