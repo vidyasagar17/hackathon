@@ -3,7 +3,13 @@ import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import GradePicker from '../components/GradePicker'
 import MuteToggle from '../components/MuteToggle'
-import { getGradeBand, saveGradeBand, type GradeBand } from '../gradeBand'
+import {
+  getGradeBand,
+  GRADE_BAND_LABELS,
+  GRADE_BANDS,
+  saveGradeBand,
+  type GradeBand,
+} from '../gradeBand'
 
 function SubtractionIcon() {
   return (
@@ -64,31 +70,33 @@ function DivisionIcon() {
   )
 }
 
+function DecimalWarIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <text x="18" y="54" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
+        0.
+      </text>
+      <rect x="34" y="12" width="26" height="46" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+      <rect x="66" y="12" width="26" height="46" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+      <text x="47" y="43" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+        4
+      </text>
+      <text x="79" y="43" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+        5
+      </text>
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
   to: string
   icon: ReactNode
-  grades: [number, number]
-}
-
-function DecimalWarIcon() {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <rect x="2" y="6" width="92" height="60" rx="12" className="fill-felt" />
-      <text x="22" y="50" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-chalk font-display">
-        0.
-      </text>
-      <rect x="38" y="16" width="22" height="36" rx="4" className="fill-card" />
-      <rect x="66" y="16" width="22" height="36" rx="4" className="fill-card" />
-      <text x="49" y="42" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
-        4
-      </text>
-      <text x="77" y="42" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
-        5
-      </text>
-    </svg>
-  )
+  /** The one shelf the game sits on: its home band in the curriculum catalog. */
+  band: GradeBand
+  /** Curriculum games are played against Robo; skill workshops are solo practice. */
+  kind: 'robo' | 'workshop'
 }
 
 const GAMES: Game[] = [
@@ -97,71 +105,109 @@ const GAMES: Game[] = [
     description: 'Judge whose decimal is larger',
     to: '/curriculum/decimal-war',
     icon: <DecimalWarIcon />,
-    grades: [4, 5],
+    band: '4-5',
+    kind: 'robo',
   },
   {
     title: 'Subtraction',
     description: 'Multi-digit subtraction with borrowing',
     to: '/practice/subtraction',
     icon: <SubtractionIcon />,
-    grades: [2, 3],
+    band: '2-3',
+    kind: 'workshop',
   },
   {
     title: 'Addition',
     description: 'Multi-digit addition with carrying',
     to: '/practice/addition',
     icon: <AdditionIcon />,
-    grades: [2, 3],
+    band: '2-3',
+    kind: 'workshop',
   },
   {
     title: 'Multiplication',
     description: 'Times tables and multi-digit products',
     to: '/practice/multiplication',
     icon: <MultiplicationIcon />,
-    grades: [3, 5],
+    band: '4-5',
+    kind: 'workshop',
   },
   {
     title: 'Division',
     description: 'Splitting numbers into equal groups',
     to: '/practice/division',
     icon: <DivisionIcon />,
-    grades: [3, 5],
+    band: '4-5',
+    kind: 'workshop',
   },
 ]
 
-const BAND_GRADES: Record<GradeBand, [number, number]> = {
-  'k-1': [0, 1],
-  '2-3': [2, 3],
-  '4-5': [4, 5],
-}
-
-/** A game fits a band when its grade range overlaps the band's grades (kindergarten is grade 0). */
-function fitsBand(game: Game, band: GradeBand): boolean {
-  const [lowest, highest] = BAND_GRADES[band]
-  return game.grades[0] <= highest && game.grades[1] >= lowest
-}
-
-function GameCard({ game }: { game: Game }) {
+/** A game box: a felt lid holding the icon on a card-stock tile, then the title and description. */
+function GameBox({ game }: { game: Game }) {
   return (
-    <Link to={game.to} className="tap-target block">
-      <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)] active:translate-y-1 active:shadow-none">
-        {game.icon}
-        <h3 className="font-display text-xl font-bold">{game.title}</h3>
-        <p className="text-sm">{game.description}</p>
+    <Link
+      to={game.to}
+      className="tap-target block overflow-hidden rounded-2xl border-2 border-felt-edge bg-card shadow-[0_6px_0_#163A34] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2 active:translate-y-1 active:shadow-[0_2px_0_#163A34]"
+    >
+      <div className="flex h-24 items-center justify-center bg-felt">
+        <span className="rounded-xl bg-card px-2 py-1">{game.icon}</span>
+      </div>
+      <div className="flex flex-col items-start gap-1 p-4">
+        <h3 className="font-display text-xl font-bold text-ink">{game.title}</h3>
+        <p className="text-sm text-ink">{game.description}</p>
+        {game.kind === 'robo' && (
+          <span className="mt-1 rounded-full bg-hundreds px-3 py-0.5 font-display text-sm font-bold text-ink">
+            vs Robo
+          </span>
+        )}
       </div>
     </Link>
   )
 }
 
-function GameGroup({ title, games }: { title: string; games: Game[] }) {
+function GameGroup({ label, games }: { label: string; games: Game[] }) {
   return (
-    <section className="w-full max-w-3xl">
-      <h2 className="mb-4 font-display text-2xl font-bold">{title}</h2>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+    <div className="flex flex-col gap-3" style={{ flexGrow: games.length, flexBasis: 0 }}>
+      <p className="font-display text-lg font-semibold text-ink-muted">{label}</p>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-6">
         {games.map((game) => (
-          <GameCard key={game.to} game={game} />
+          <GameBox key={game.to} game={game} />
         ))}
       </div>
+    </div>
+  )
+}
+
+/** One grade band's shelf: games against Robo first, then skill workshops. */
+function Shelf({ band, isYours }: { band: GradeBand; isYours: boolean }) {
+  const id = `shelf-${band}`
+  const games = GAMES.filter((game) => game.band === band)
+  const roboGames = games.filter((game) => game.kind === 'robo')
+  const workshops = games.filter((game) => game.kind === 'workshop')
+
+  return (
+    <section aria-labelledby={id} className="w-full max-w-4xl">
+      <div className="mb-4 flex flex-wrap items-center gap-3 border-b-4 border-felt-edge pb-2">
+        <h2 id={id} className="font-display text-2xl font-bold">
+          {GRADE_BAND_LABELS[band]}
+        </h2>
+        {isYours && (
+          <span className="rounded-full bg-felt px-3 py-1 font-display text-sm font-bold text-chalk">
+            Your grade
+          </span>
+        )}
+      </div>
+      {games.length === 0 ? (
+        <p className="rounded-2xl border-2 border-dashed border-felt-edge bg-card p-6 text-lg">
+          Games for kindergarten and 1st grade are on the way. Until then, try any game on the other
+          shelves.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-6 lg:flex-row">
+          {roboGames.length > 0 && <GameGroup label="Games against Robo" games={roboGames} />}
+          {workshops.length > 0 && <GameGroup label="Skill workshops" games={workshops} />}
+        </div>
+      )}
     </section>
   )
 }
@@ -184,8 +230,7 @@ function LandingPage() {
     )
   }
 
-  const yourGames = GAMES.filter((game) => fitsBand(game, band))
-  const moreGames = GAMES.filter((game) => !fitsBand(game, band))
+  const shelves = [band, ...GRADE_BANDS.filter((other) => other !== band)]
 
   return (
     <div className="flex min-h-screen flex-col bg-base">
@@ -212,19 +257,10 @@ function LandingPage() {
       />
 
       <main className="flex flex-1 flex-col items-center gap-10 px-4 py-8">
-        <h1 className="text-center font-display text-4xl font-bold">
-          What do you want to practice?
-        </h1>
-
-        {yourGames.length > 0 ? (
-          <GameGroup title="Your grade" games={yourGames} />
-        ) : (
-          <p className="max-w-md text-center text-lg">
-            Games for kindergarten and 1st grade are on the way. Until then, try any game below.
-          </p>
-        )}
-
-        {moreGames.length > 0 && <GameGroup title="More practice" games={moreGames} />}
+        <h1 className="text-center font-display text-4xl font-bold">What do you want to practice?</h1>
+        {shelves.map((shelfBand) => (
+          <Shelf key={shelfBand} band={shelfBand} isYours={shelfBand === band} />
+        ))}
       </main>
     </div>
   )

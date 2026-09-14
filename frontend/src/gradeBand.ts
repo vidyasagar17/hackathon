@@ -1,7 +1,15 @@
 export type GradeBand = 'k-1' | '2-3' | '4-5'
 
 const GRADE_BAND_KEY = 'grade_band'
-const GRADE_BANDS: GradeBand[] = ['k-1', '2-3', '4-5']
+
+/** Grade bands youngest first. */
+export const GRADE_BANDS: GradeBand[] = ['k-1', '2-3', '4-5']
+
+export const GRADE_BAND_LABELS: Record<GradeBand, string> = {
+  'k-1': 'Kindergarten & 1st grade',
+  '2-3': '2nd & 3rd grade',
+  '4-5': '4th & 5th grade',
+}
 
 /** The grade band this browser picked, or null before the first pick (or if the saved value is unknown). */
 export function getGradeBand(): GradeBand | null {

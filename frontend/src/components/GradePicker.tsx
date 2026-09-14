@@ -1,13 +1,9 @@
-import type { GradeBand } from '../gradeBand'
+import { GRADE_BAND_LABELS, GRADE_BANDS, type GradeBand } from '../gradeBand'
 import ReadAloudButton from './ReadAloudButton'
 
 const QUESTION = 'What grade are you in?'
 
-const CHOICES: { band: GradeBand; label: string }[] = [
-  { band: 'k-1', label: 'Kindergarten & 1st grade' },
-  { band: '2-3', label: '2nd & 3rd grade' },
-  { band: '4-5', label: '4th & 5th grade' },
-]
+const CHOICES = GRADE_BANDS.map((band) => ({ band, label: GRADE_BAND_LABELS[band] }))
 
 const SPOKEN_QUESTION = `${QUESTION} ${CHOICES.map((choice) => choice.label.replace('&', 'and')).join('. ')}.`
 
