@@ -35,6 +35,14 @@ const PAIRS = [
   ['ink', 'ink/10 over white', 'digits in the thousands answer box'],
   ['ink', 'white', 'answer box outline on the problem card', NON_TEXT_MINIMUM],
   ['helper', 'white', 'focus ring around the active answer box', NON_TEXT_MINIMUM],
+  ['chalk', 'felt', 'seat names, "0." and the question on the game table'],
+  ['ink', 'card', 'digits on playing cards'],
+  ['success-text', 'card', '"Correct!" on the result note'],
+  ['alert-text', 'card', '"Not quite" on the result note'],
+  ['ink-muted', 'card', 'diagnosed pattern on the result note'],
+  ['ink', 'card', 'hint text on the result note'],
+  ['hundreds', 'felt', 'brass "Larger" outline and focus ring on the table', NON_TEXT_MINIMUM],
+  ['chalk/60 over felt', 'felt', 'outline marking each seat and "They\'re the same" as buttons', NON_TEXT_MINIMUM],
 ]
 
 const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')

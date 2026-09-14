@@ -19,6 +19,12 @@
   --color-alert-text: #990005;
   --color-helper-text: #3B0DE6;
 
+  /* Game table: felt surface and rim, card stock, and chalk text on the felt. */
+  --color-felt: #1E4A43;
+  --color-felt-edge: #163A34;
+  --color-card: #FBF6EA;
+  --color-chalk: #F4EEDC;
+
   --font-display: "Baloo 2", sans-serif;
   --font-body: "Atkinson Hyperlegible", sans-serif;
 }
