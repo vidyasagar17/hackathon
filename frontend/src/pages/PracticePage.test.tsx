@@ -20,19 +20,26 @@ const PROBLEM = {
 const PROGRESS = { level: 2, correct_in_a_row: 1, needed: 3, top_level: 3 }
 
 let checkResult = { correct: true, misconception: null as string | null }
+let reducedMotion = false
+const animate = vi.fn()
 
 function jsonResponse(body: unknown) {
   return Promise.resolve({ ok: true, json: () => Promise.resolve(body) })
 }
 
+function fakeApi(url: string) {
+  if (url.includes('/check')) return jsonResponse(checkResult)
+  if (url.includes('/hint')) return jsonResponse({ misconception: checkResult.misconception, hint: 'Borrow from the tens column.' })
+  return jsonResponse({ problem: PROBLEM, progress: PROGRESS })
+}
+
 beforeEach(() => {
   localStorage.setItem('tutorial_seen', 'true')
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((url: string) =>
-      jsonResponse(url.includes('/check') ? checkResult : { problem: PROBLEM, progress: PROGRESS }),
-    ),
-  )
+  reducedMotion = false
+  animate.mockClear()
+  Element.prototype.animate = animate as unknown as Element['animate']
+  vi.stubGlobal('fetch', vi.fn(fakeApi))
+  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: reducedMotion })))
 })
 
 afterEach(() => {
@@ -88,4 +95,29 @@ test('a wrong answer empties the stars, matching the level rule', async () => {
   await answer('616')
 
   expect(await screen.findByRole('img', { name: '0 of 3 stars' })).toBeTruthy()
+})
+
+test('with reduce motion on, the borrow badge jumps into place and step marks still appear', async () => {
+  checkResult = { correct: false, misconception: 'smaller_from_larger' }
+  reducedMotion = true
+  renderPracticePage()
+
+  await answer('616')
+  await answer('616')
+
+  const badge = await screen.findByText('10')
+  expect(badge.style.transform).toContain('76px')
+  expect(screen.getByText('−1')).toBeTruthy()
+  expect(animate).not.toHaveBeenCalled()
+})
+
+test('without reduce motion, the borrow badge slides between chips', async () => {
+  checkResult = { correct: false, misconception: 'smaller_from_larger' }
+  renderPracticePage()
+
+  await answer('616')
+  await answer('616')
+
+  await screen.findByText('10')
+  expect(animate).toHaveBeenCalled()
 })

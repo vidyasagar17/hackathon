@@ -7,6 +7,7 @@ import TutorialOverlay from '../components/TutorialOverlay'
 import { API_URL } from '../api'
 import { borderColor, type Column } from '../columns'
 import { formatMisconception } from '../format'
+import { prefersReducedMotion } from '../motion'
 import { buildRegroupSteps, PLACE_ORDER, type RegroupStep } from '../regroup'
 import { getSessionId } from '../session'
 import { hasSeenTutorial, markTutorialSeen } from '../tutorial'
@@ -135,14 +136,16 @@ function RegroupTopChip({
 
   useEffect(() => {
     if (!isFromActive || !badgeRef.current) return
+    const destination = `translate(calc(-50% + ${direction * CHIP_SPACING}px), 0) scale(1)`
+    if (prefersReducedMotion()) {
+      badgeRef.current.style.transform = destination
+      return
+    }
     badgeRef.current.animate(
       [
         { transform: 'translate(-50%, 0) scale(0.6)', opacity: 0 },
         { transform: 'translate(-50%, 0) scale(1)', opacity: 1, offset: 0.25 },
-        {
-          transform: `translate(calc(-50% + ${direction * CHIP_SPACING}px), 0) scale(1)`,
-          opacity: 1,
-        },
+        { transform: destination, opacity: 1 },
       ],
       { duration: 700, easing: 'ease-out', fill: 'forwards' },
     )

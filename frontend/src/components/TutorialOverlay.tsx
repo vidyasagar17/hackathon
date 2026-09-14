@@ -93,7 +93,7 @@ export default function TutorialOverlay({
             </div>
             <div className="h-1 w-full rounded bg-ink/20" />
             <div
-              className={`flex gap-3 rounded-2xl transition-all duration-300 ${
+              className={`flex gap-3 rounded-2xl transition-all duration-300 motion-reduce:transition-none ${
                 step.highlight === 'answer'
                   ? 'ring-4 ring-helper ring-offset-2 ring-offset-white'
                   : ''
@@ -111,7 +111,7 @@ export default function TutorialOverlay({
           <div className="flex flex-col items-center gap-3">
             <p className="font-display text-3xl font-bold">84 ÷ 4</p>
             <div
-              className={`flex gap-3 rounded-2xl transition-all duration-300 ${
+              className={`flex gap-3 rounded-2xl transition-all duration-300 motion-reduce:transition-none ${
                 step.highlight === 'answer'
                   ? 'ring-4 ring-helper ring-offset-2 ring-offset-white'
                   : ''
