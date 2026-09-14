@@ -169,7 +169,7 @@ function GameGroup({ label, games }: { label: string; games: Game[] }) {
   return (
     <div className="flex flex-col gap-3" style={{ flexGrow: games.length, flexBasis: 0 }}>
       <p className="font-display text-lg font-semibold text-ink-muted">{label}</p>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-6">
+      <div className="grid flex-1 grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-6">
         {games.map((game) => (
           <GameBox key={game.to} game={game} />
         ))}
