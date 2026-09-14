@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import DigitChip from '../components/DigitChip'
+import HomeButton from '../components/HomeButton'
 import TutorialOverlay from '../components/TutorialOverlay'
 import { API_URL } from '../api'
 import { borderColor, type Column } from '../columns'
@@ -300,7 +301,8 @@ function PracticePage() {
 
   if (loadError) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-base">
+      <div className="relative flex min-h-screen flex-col items-center justify-center gap-4 bg-base">
+        <HomeButton />
         <p className="font-display text-2xl font-bold text-alert-text">
           Couldn't load a problem — try again.
         </p>
@@ -408,6 +410,7 @@ function PracticePage() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center gap-8 bg-base px-4">
+      <HomeButton />
       <Link
         to="/summary"
         className="absolute right-6 top-4 font-display font-semibold text-ink-muted"
