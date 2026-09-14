@@ -1,7 +1,7 @@
 import random
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 Place = Literal["tens", "ones"]
 AnswerPlace = Literal["hundreds", "tens", "ones"]
@@ -23,6 +23,15 @@ class Problem(BaseModel):
     columns: list[ColumnBreakdown]
     answer_places: list[AnswerPlace] = ANSWER_PLACES
     difficulty: int
+
+    @model_validator(mode="after")
+    def _follows_from_its_numbers(self) -> "Problem":
+        """Reject a problem that isn't an exact division matching its answer and columns."""
+        if self.divisor < 1 or self.dividend != self.divisor * self.answer:
+            raise ValueError("answer does not match dividend / divisor")
+        if [c.place for c in self.columns] != _places_for(self.answer):
+            raise ValueError("columns do not match the answer")
+        return self
 
 
 def _trace(dividend: int, divisor: int) -> tuple[int, int, int, int]:

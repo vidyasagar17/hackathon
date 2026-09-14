@@ -35,6 +35,31 @@ def test_check_diagnoses_without_generating_a_hint(tmp_path, monkeypatch):
     assert response.json() == {"correct": False, "misconception": "smaller_from_larger"}
 
 
+def test_check_rejects_a_tampered_answer_without_logging_it(tmp_path, monkeypatch):
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    tampered = {**_problem_data(), "answer": 616}
+
+    response = client.post(
+        "/games/subtraction/check",
+        json={"session_id": "s1", "problem": tampered, "submitted_answer": 616},
+    )
+
+    assert response.status_code == 422
+    assert db.get_summary("s1") == (0, 0, [])
+
+
+def test_hint_rejects_a_tampered_answer():
+    tampered = {**_problem_data(), "answer": 616}
+
+    response = client.post(
+        "/games/subtraction/hint",
+        json={"problem": tampered, "submitted_answer": 616},
+    )
+
+    assert response.status_code == 422
+
+
 def test_hint_rediagnoses_and_phrases_the_hint(monkeypatch):
     monkeypatch.setattr(
         GAMES["subtraction"], "generate_hint", lambda problem, name: f"hint for {name}"

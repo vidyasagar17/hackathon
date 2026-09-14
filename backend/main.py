@@ -3,7 +3,7 @@ from typing import Any
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from db import get_summary, get_tier_history, init_db, log_attempt
 from games import GAMES
@@ -61,6 +61,16 @@ def _get_game(game_id: str):
     return GAMES[game_id]
 
 
+def _parse_problem(game, data: dict[str, Any]):
+    """Validate a client-sent problem; its answer and columns must follow from its own numbers."""
+    try:
+        return game.Problem.model_validate(data)
+    except ValidationError as error:
+        raise HTTPException(
+            status_code=422, detail=[e["msg"] for e in error.errors()]
+        ) from error
+
+
 def _diagnose(game, problem, submitted_answer: int) -> str | None:
     """Return the diagnosed misconception for a wrong answer, or None for a correct one."""
     if submitted_answer == problem.answer:
@@ -85,7 +95,7 @@ def get_problem(game_id: str, session_id: str) -> dict[str, Any]:
 def check_answer(game_id: str, request: CheckRequest) -> CheckResponse:
     """Log the attempt and return the diagnosis. Never calls the LLM, so it stays fast."""
     game = _get_game(game_id)
-    problem = game.Problem.model_validate(request.problem)
+    problem = _parse_problem(game, request.problem)
     misconception = _diagnose(game, problem, request.submitted_answer)
     correct = request.submitted_answer == problem.answer
 
@@ -110,7 +120,7 @@ def get_hint(game_id: str, request: HintRequest) -> HintResponse:
     never an LLM hint, since the LLM must not guess what went wrong.
     """
     game = _get_game(game_id)
-    problem = game.Problem.model_validate(request.problem)
+    problem = _parse_problem(game, request.problem)
     misconception = _diagnose(game, problem, request.submitted_answer)
     if request.submitted_answer == problem.answer:
         hint = None

@@ -1,7 +1,7 @@
 import random
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 Place = Literal["tens", "ones"]
 AnswerPlace = Literal["hundreds", "tens", "ones"]
@@ -28,6 +28,15 @@ class Problem(BaseModel):
     columns: list[ColumnBreakdown]
     answer_places: list[AnswerPlace] = ANSWER_PLACES
     difficulty: int
+
+    @model_validator(mode="after")
+    def _follows_from_its_numbers(self) -> "Problem":
+        """Reject a problem whose answer or columns don't follow from its multiplicand and multiplier."""
+        if self.answer != self.multiplicand * self.multiplier:
+            raise ValueError("answer does not match multiplicand x multiplier")
+        if self.columns != compute_columns(self.multiplicand, self.multiplier):
+            raise ValueError("columns do not match multiplicand and multiplier")
+        return self
 
 
 def compute_columns(multiplicand: int, multiplier: int) -> list[ColumnBreakdown]:

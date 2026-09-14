@@ -1,7 +1,7 @@
 import random
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 Place = Literal["hundreds", "tens", "ones"]
 AnswerPlace = Literal["thousands", "hundreds", "tens", "ones"]
@@ -27,6 +27,15 @@ class Problem(BaseModel):
     columns: list[ColumnBreakdown]
     answer_places: list[AnswerPlace] = ANSWER_PLACES
     difficulty: int
+
+    @model_validator(mode="after")
+    def _follows_from_its_numbers(self) -> "Problem":
+        """Reject a problem whose answer or columns don't follow from its two addends."""
+        if self.answer != self.addend1 + self.addend2:
+            raise ValueError("answer does not match addend1 + addend2")
+        if self.columns != compute_columns(self.addend1, self.addend2):
+            raise ValueError("columns do not match the addends")
+        return self
 
 
 def compute_columns(addend1: int, addend2: int) -> list[ColumnBreakdown]:
