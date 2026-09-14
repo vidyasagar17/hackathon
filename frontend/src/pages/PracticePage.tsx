@@ -254,8 +254,10 @@ function PracticePage() {
   const [activeStep, setActiveStep] = useState<number | null>(null)
   const [revealed, setRevealed] = useState(false)
   const [checking, setChecking] = useState(false)
+  const hintRequest = useRef<AbortController | null>(null)
 
   const showProblem = useCallback((data: ProblemPayload) => {
+    hintRequest.current?.abort()
     setProblem(data.problem)
     setProgress(data.progress)
     setAnswers(EMPTY_ANSWERS)
@@ -391,10 +393,13 @@ function PracticePage() {
   }
 
   const fetchHint = (submitted_answer: number) => {
+    const request = new AbortController()
+    hintRequest.current = request
     fetch(`${API_URL}/games/${gameId}/hint`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ problem, submitted_answer }),
+      signal: request.signal,
     })
       .then((res) => {
         if (!res.ok) throw new Error('Failed to load hint')

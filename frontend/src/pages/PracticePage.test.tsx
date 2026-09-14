@@ -190,6 +190,35 @@ test('without reduce motion, the borrow badge slides between chips', async () =>
   expect(animate).toHaveBeenCalled()
 })
 
+test('a hint that arrives after Next problem never shows on the new problem', async () => {
+  checkResult = { correct: false, misconception: 'smaller_from_larger' }
+  const hintReplies: ((hint: string) => void)[] = []
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string, init?: RequestInit) => {
+      if (!url.includes('/hint')) return fakeApi(url)
+      return new Promise((resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))
+        hintReplies.push((hint) => resolve({ ok: true, json: () => Promise.resolve({ misconception: 'smaller_from_larger', hint }) }))
+      })
+    }),
+  )
+  const user = userEvent.setup()
+  renderPracticePage()
+
+  await answer('616')
+  await answer('616')
+  await user.click(await screen.findByRole('button', { name: 'Next problem' }, { timeout: 4000 }))
+  await screen.findByRole('img', { name: '1 of 3 stars' })
+  hintReplies[0]('Hint for the old problem.')
+
+  await answer('616')
+  await answer('616')
+  await screen.findByRole('button', { name: 'Next problem' }, { timeout: 4000 })
+
+  expect(screen.queryByText('Hint for the old problem.')).toBeNull()
+}, 15000)
+
 function stubSpeech() {
   const speak = vi.fn()
   vi.stubGlobal('speechSynthesis', { speak, cancel: vi.fn() })
