@@ -289,89 +289,99 @@ function CardWarPage({ game }: { game: GameId }) {
               <p className="font-display text-2xl font-semibold text-chalk">{`Robo has ${state.robo_total}`}</p>
             </div>
 
-            <Hand name="You" cards={state.mine} operation={state.operation} />
+            <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-start md:justify-center">
+              <div className="flex flex-col items-center gap-5">
+                <Hand name="You" cards={state.mine} operation={state.operation} />
 
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              <p className="font-display text-3xl font-bold text-chalk">
-                {state.step === 'answer' ? question : state.step === 'winner' ? 'Who has more?' : RESULTS[state.winner as Winner]}
-              </p>
-              <ReadAloudButton text={spoken} label="Hear it again" />
-            </div>
+                <div className="flex flex-wrap items-center justify-center gap-4">
+                  <p className="font-display text-3xl font-bold text-chalk">
+                    {state.step === 'answer'
+                      ? question
+                      : state.step === 'winner'
+                        ? 'Who has more?'
+                        : RESULTS[state.winner as Winner]}
+                  </p>
+                  <ReadAloudButton text={spoken} label="Hear it again" />
+                </div>
 
-            <div role="group" aria-label="Answer cards" className="flex flex-wrap justify-center gap-4">
-              {state.choices.map((choice) => {
-                const result = pickResult(choice, state.answer_pick, state.my_total)
-                return (
-                  <button
-                    key={choice}
-                    ref={(element) => {
-                      cardRefs.current[choice] = element
-                    }}
-                    type="button"
-                    aria-label={`Answer ${choice}${result === 'right' ? ', the right answer' : ''}`}
-                    data-result={result}
-                    onClick={() => pickAnswer(choice)}
-                    disabled={sending || state.step !== 'answer'}
-                    className={`tap-target rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${result === 'right' ? 'ring-8 ring-hundreds' : ''}`}
-                  >
-                    <PlayingCard digit={choice} />
-                  </button>
-                )
-              })}
-            </div>
+                <div role="group" aria-label="Answer cards" className="flex flex-wrap justify-center gap-4">
+                  {state.choices.map((choice) => {
+                    const result = pickResult(choice, state.answer_pick, state.my_total)
+                    return (
+                      <button
+                        key={choice}
+                        ref={(element) => {
+                          cardRefs.current[choice] = element
+                        }}
+                        type="button"
+                        aria-label={`Answer ${choice}${result === 'right' ? ', the right answer' : ''}`}
+                        data-result={result}
+                        onClick={() => pickAnswer(choice)}
+                        disabled={sending || state.step !== 'answer'}
+                        className={`tap-target rounded-xl focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${result === 'right' ? 'ring-8 ring-hundreds' : ''}`}
+                      >
+                        <PlayingCard digit={choice} />
+                      </button>
+                    )
+                  })}
+                </div>
 
-            {state.my_total !== null && (
-              <p className="font-display text-2xl font-semibold text-chalk">{`You have ${state.my_total}`}</p>
-            )}
-
-            {hint && state.step !== 'answer' && (
-              <p className="max-w-xl rounded-2xl border-2 border-felt-edge bg-card p-4 text-xl text-ink">{hint}</p>
-            )}
-
-            {state.step !== 'answer' && (
-              <div role="group" aria-label="Who has more?" className="flex flex-wrap justify-center gap-4">
-                {WINNER_BUTTONS.map(({ pick, label }) => {
-                  const result = pickResult(pick, state.winner_pick, state.winner)
-                  return (
-                    <button
-                      key={pick}
-                      ref={(element) => {
-                        winnerRefs.current[pick] = element
-                      }}
-                      type="button"
-                      aria-label={label}
-                      data-result={result}
-                      onClick={() => pickWinner(pick)}
-                      disabled={sending || state.step !== 'winner'}
-                      className={`tap-target flex min-w-28 flex-col items-center justify-center gap-1 rounded-2xl border-4 px-5 py-3 font-display text-2xl font-bold text-chalk focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${result === 'right' ? 'border-hundreds ring-4 ring-hundreds' : 'border-chalk/60'}`}
-                    >
-                      {pick === 'mine' ? (
-                        <PlayerToken />
-                      ) : pick === 'robo' ? (
-                        <RoboAvatar />
-                      ) : (
-                        <span aria-hidden="true" className="text-5xl leading-none">
-                          =
-                        </span>
-                      )}
-                      {label}
-                    </button>
-                  )
-                })}
+                {state.my_total !== null && (
+                  <p className="font-display text-2xl font-semibold text-chalk">{`You have ${state.my_total}`}</p>
+                )}
               </div>
-            )}
 
-            {state.step === 'done' && (
-              <button
-                type="button"
-                aria-label="Next hand"
-                onClick={dealNext}
-                className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-10 font-display text-2xl font-bold text-ink"
-              >
-                Next
-                <NextArrow />
-              </button>
-            )}
+              {state.step !== 'answer' && (
+                <div className="flex w-full max-w-xs flex-col items-center gap-4 md:w-80">
+                  {hint && (
+                    <p className="w-full rounded-2xl border-2 border-felt-edge bg-card p-4 text-xl text-ink">{hint}</p>
+                  )}
+
+                  <div role="group" aria-label="Who has more?" className="grid w-full grid-cols-3 gap-3">
+                    {WINNER_BUTTONS.map(({ pick, label }) => {
+                      const result = pickResult(pick, state.winner_pick, state.winner)
+                      return (
+                        <button
+                          key={pick}
+                          ref={(element) => {
+                            winnerRefs.current[pick] = element
+                          }}
+                          type="button"
+                          aria-label={label}
+                          data-result={result}
+                          onClick={() => pickWinner(pick)}
+                          disabled={sending || state.step !== 'winner'}
+                          className={`tap-target flex flex-col items-center justify-center gap-1 rounded-2xl border-4 px-2 py-3 font-display text-2xl font-bold text-chalk focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${result === 'right' ? 'border-hundreds ring-4 ring-hundreds' : 'border-chalk/60'}`}
+                        >
+                          {pick === 'mine' ? (
+                            <PlayerToken />
+                          ) : pick === 'robo' ? (
+                            <RoboAvatar />
+                          ) : (
+                            <span aria-hidden="true" className="text-5xl leading-none">
+                              =
+                            </span>
+                          )}
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {state.step === 'done' && (
+                    <button
+                      type="button"
+                      aria-label="Next hand"
+                      onClick={dealNext}
+                      className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-10 font-display text-2xl font-bold text-ink"
+                    >
+                      Next
+                      <NextArrow />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </GameTable>
 
