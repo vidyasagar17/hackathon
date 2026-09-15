@@ -33,13 +33,13 @@ def test_a_correct_answer_is_correct_and_recorded():
 def test_a_wrong_product_is_diagnosed():
     result = evaluate_move(_round(), {"answer": 48})
     assert not result.correct
-    assert result.misconception == "operand_related"
+    assert result.misconception == "neighboring_fact"
 
 
 def test_a_wrong_quotient_is_diagnosed():
     result = evaluate_move(_round(level=3, fact=_divide(56, 8)), {"answer": 6})
     assert not result.correct
-    assert result.misconception == "quotient_off_by_one"
+    assert result.misconception == "one_group_off"
 
 
 def test_an_unrecognized_wrong_answer_has_no_misconception():

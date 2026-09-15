@@ -467,7 +467,7 @@ def test_a_shootout_turn_is_played_through_the_move_routes(tmp_path, monkeypatch
 
     assert response.json() == {
         "correct": False,
-        "misconception": "operand_related",
+        "misconception": "neighboring_fact",
         "visible_state": {
             "level": 1,
             "fact": {"operation": "multiply", "left": 6, "right": 7},
@@ -479,7 +479,7 @@ def test_a_shootout_turn_is_played_through_the_move_routes(tmp_path, monkeypatch
         },
     }
     assert db.get_move_history("s1", "multiplication-shootout") == [
-        TierAttempt(difficulty=1, correct=False, misconception="operand_related")
+        TierAttempt(difficulty=1, correct=False, misconception="neighboring_fact")
     ]
 
 
@@ -514,7 +514,7 @@ def test_a_diagnosed_wrong_shootout_answer_gets_the_games_hint_sentence(tmp_path
 
     response = client.post(f"/rounds/{round_id}/hint")
 
-    assert response.json() == {"misconception": "operand_related", "hint": "hint for operand_related on 48"}
+    assert response.json() == {"misconception": "neighboring_fact", "hint": "hint for neighboring_fact on 48"}
 
 
 def test_an_undiagnosed_wrong_shootout_answer_gets_the_general_hint(tmp_path, monkeypatch):

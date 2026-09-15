@@ -41,13 +41,13 @@ function fakeApi(url: string, init?: RequestInit) {
       progress: { level: 1, correct_in_a_row: 0, needed: 3, top_level: 3 },
     })
   }
-  if (url.endsWith('/hint')) return jsonResponse({ misconception: 'operand_related', hint: HINT })
+  if (url.endsWith('/hint')) return jsonResponse({ misconception: 'neighboring_fact', hint: HINT })
   if (movesFail) return jsonResponse({ detail: 'nope' }, false)
   const { move } = JSON.parse(String(init?.body))
   const correct = move.answer === correctAnswer(fact)
   return jsonResponse({
     correct,
-    misconception: correct ? null : 'operand_related',
+    misconception: correct ? null : 'neighboring_fact',
     visible_state: {
       level: 1,
       fact,
@@ -191,7 +191,7 @@ test('a wrong answer shows the right one, and the hint with its diagnosis only w
   await userEvent.click(within(table).getByRole('button', { name: 'Show me why' }))
 
   expect(await within(table).findByText(HINT)).toBeTruthy()
-  expect(within(table).getByText('Diagnosed pattern: operand related')).toBeTruthy()
+  expect(within(table).getByText('Diagnosed pattern: neighboring fact')).toBeTruthy()
   expect(within(table).getByRole('button', { name: 'Read the hint aloud' })).toBeTruthy()
 })
 

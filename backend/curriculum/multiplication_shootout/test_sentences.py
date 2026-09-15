@@ -26,13 +26,13 @@ def _divide(dividend: int, divisor: int) -> Fact:
 
 
 def test_zero_with_zero_second():
-    assert specific_hint(_multiply(7, 0), 7, "zero_gives_other_operand") == (
+    assert specific_hint(_multiply(7, 0), 7, "times_zero_is_the_other_number") == (
         "7 + 0 is 7, but 7 × 0 means 7 groups of 0. Every group is empty, so 7 × 0 is 0."
     )
 
 
 def test_zero_with_zero_first():
-    assert specific_hint(_multiply(0, 7), 7, "zero_gives_other_operand") == (
+    assert specific_hint(_multiply(0, 7), 7, "times_zero_is_the_other_number") == (
         "0 + 7 is 7, but 0 × 7 means 0 groups of 7. There are no groups at all, so 0 × 7 is 0."
     )
 
@@ -49,16 +49,16 @@ def test_added_instead_of_multiplied_with_one_group():
     )
 
 
-def test_operand_related_one_more_in_the_second_number():
-    assert specific_hint(_multiply(6, 7), 48, "operand_related") == "48 is 6 × 8. 6 × 7 is 6 less: 48 − 6 = 42."
+def test_neighboring_fact_one_more_in_the_second_number():
+    assert specific_hint(_multiply(6, 7), 48, "neighboring_fact") == "48 is 6 × 8. 6 × 7 is 6 less: 48 − 6 = 42."
 
 
-def test_operand_related_one_less_in_the_first_number():
-    assert specific_hint(_multiply(6, 7), 35, "operand_related") == "35 is 5 × 7. 6 × 7 is 7 more: 35 + 7 = 42."
+def test_neighboring_fact_one_less_in_the_first_number():
+    assert specific_hint(_multiply(6, 7), 35, "neighboring_fact") == "35 is 5 × 7. 6 × 7 is 7 more: 35 + 7 = 42."
 
 
-def test_quotient_off_by_one():
-    assert specific_hint(_divide(56, 8), 6, "quotient_off_by_one") == (
+def test_one_group_off():
+    assert specific_hint(_divide(56, 8), 6, "one_group_off") == (
         "8 × 6 is 48, not 56. 8 × 7 is 56, so 56 ÷ 8 is 7."
     )
 

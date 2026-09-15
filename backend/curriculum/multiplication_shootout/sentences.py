@@ -17,7 +17,7 @@ def _groups(count: int) -> str:
 
 
 def _zero(fact: Fact, answer: int) -> str:
-    """For zero_gives_other_operand: adding's zero rule next to what a group of 0, or 0 groups, means."""
+    """For times_zero_is_the_other_number: adding's zero rule next to what a group of 0, or 0 groups, means."""
     a, b = fact.left, fact.right
     if b == 0:
         why = f"{a} × 0 means {_groups(a)} of 0. Every group is empty"
@@ -33,8 +33,8 @@ def _added(fact: Fact, answer: int) -> str:
     return f"{a} + {b} is {answer}, but {a} × {b} means {_groups(a)} of {b}: {counts}. So {a} × {b} is {a * b}."
 
 
-def _operand_related(fact: Fact, answer: int) -> str:
-    """For operand_related: name the recalled neighbor, then add or take away the one group between."""
+def _neighboring_fact(fact: Fact, answer: int) -> str:
+    """For neighboring_fact: name the recalled neighbor, then add or take away the one group between."""
     a, b = fact.left, fact.right
     correct = a * b
     neighbors = [(a, b + 1, a), (a, b - 1, a), (a + 1, b, b), (a - 1, b, b)]
@@ -44,8 +44,8 @@ def _operand_related(fact: Fact, answer: int) -> str:
     return f"{answer} is {left} × {right}. {a} × {b} is {step} more: {answer} + {step} = {correct}."
 
 
-def _quotient_off_by_one(fact: Fact, answer: int) -> str:
-    """For quotient_off_by_one: the recalled multiplication fact misses the dividend; the right one makes it."""
+def _one_group_off(fact: Fact, answer: int) -> str:
+    """For one_group_off: the recalled multiplication fact misses the dividend; the right one makes it."""
     dividend, divisor = fact.left, fact.right
     quotient = fact.correct_answer
     return (
@@ -55,10 +55,10 @@ def _quotient_off_by_one(fact: Fact, answer: int) -> str:
 
 
 _BUILDERS: dict[MisconceptionName, Callable[[Fact, int], str]] = {
-    "zero_gives_other_operand": _zero,
+    "times_zero_is_the_other_number": _zero,
     "added_instead_of_multiplied": _added,
-    "operand_related": _operand_related,
-    "quotient_off_by_one": _quotient_off_by_one,
+    "neighboring_fact": _neighboring_fact,
+    "one_group_off": _one_group_off,
 }
 
 

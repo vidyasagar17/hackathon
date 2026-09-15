@@ -29,7 +29,7 @@ def test_hint_sentence_rewords_the_code_built_sentence_without_an_answer_check(m
         answer=48,
     )
 
-    assert hints.hint_sentence(round, "operand_related") == "reworded"
+    assert hints.hint_sentence(round, "neighboring_fact") == "reworded"
     assert calls == [
         (
             "48 is 6 × 8. 6 × 7 is 6 less: 48 − 6 = 42.",
