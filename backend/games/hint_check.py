@@ -6,11 +6,13 @@ _FILLER_OPENER = re.compile(
 )
 _QUOTED_HINT = re.compile(r'["“]([^"“”]{20,})["”]')
 _FACT = re.compile(
-    r"\d+|\b(?:ones|tens|hundreds|thousands|tenths?|hundredths?|thousandths?|same"
+    r"\d+|[×÷+−]|\b(?:ones|tens|hundreds|thousands|tenths?|hundredths?|thousandths?|same"
     r"|smaller|bigger|larger|greater|less|more|fewer"
+    r"|times|plus|minus|divided by"
     r"|carr(?:y|ies|ied|ying)|borrow(?:s|ed|ing)?)\b",
     re.IGNORECASE,
 )
+_OPERATION_WORDS = {"×": "times", "÷": "divided by", "+": "plus", "−": "minus"}
 
 
 def vet_hint(text: str, answer: int | None, banned_words: list[str]) -> str | None:
@@ -34,10 +36,10 @@ def vet_hint(text: str, answer: int | None, banned_words: list[str]) -> str | No
 
 
 def _facts(text: str) -> list[str]:
-    """List the text's numbers, place names, "same", comparison words, and carry/borrow verbs, in order."""
+    """List the text's numbers, operations, place names, "same", comparison words, and carry/borrow verbs, in order."""
     facts = []
     for fact in _FACT.findall(text):
-        word = fact.lower()
+        word = _OPERATION_WORDS.get(fact, fact.lower())
         if word.startswith("carr"):
             word = "carry"
         elif word.startswith("borrow"):
@@ -49,9 +51,11 @@ def _facts(text: str) -> list[str]:
 def keeps_facts(rewrite: str, sentence: str) -> bool:
     """True when a reworded hint keeps the sentence's facts in the same order.
 
-    Facts are numbers, place names (including tenths, hundredths, thousandths), "same",
-    comparison words, and any form of "carry" or "borrow". This stops an LLM rewording from
-    inventing numbers, moving a digit to the wrong place, inventing or dropping a comparison,
-    or replacing "carry"/"borrow" with a vaguer verb.
+    Facts are numbers, operations (a sign and its word are the same fact: × and "times",
+    ÷ and "divided by", + and "plus", − and "minus"), place names (including tenths,
+    hundredths, thousandths), "same", comparison words, and any form of "carry" or "borrow".
+    This stops an LLM rewording from inventing numbers, swapping an operation, moving a digit
+    to the wrong place, inventing or dropping a comparison, or replacing "carry"/"borrow"
+    with a vaguer verb. A plain hyphen is not read as minus, so "two-digit" stays a word.
     """
     return _facts(rewrite) == _facts(sentence)

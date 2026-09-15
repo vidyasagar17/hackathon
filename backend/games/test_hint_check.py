@@ -74,6 +74,41 @@ def test_keeps_facts_rejects_swapped_order():
     rewrite = "In the tens column, borrow for the ones column because 2 is smaller than 8."
     assert not keeps_facts(rewrite, SENTENCE)
 
+
+FACT_SENTENCE = "4 + 6 is 10, but 4 × 6 means 4 groups of 6: 6, 12, 18, 24. So 4 × 6 is 24."
+
+
+def test_keeps_facts_rejects_times_reworded_as_plus():
+    rewrite = "4 + 6 is 10, but 4 + 6 means 4 groups of 6: 6, 12, 18, 24. So 4 × 6 is 24."
+    assert not keeps_facts(rewrite, FACT_SENTENCE)
+
+
+def test_keeps_facts_rejects_the_workshops_not_plus_reworded_as_times():
+    sentence = "7 × 3 means 3 groups of 7 added together, not 7 + 3."
+    rewrite = "7 × 3 means 3 groups of 7 added together, not 7 × 3."
+    assert not keeps_facts(rewrite, sentence)
+
+
+def test_keeps_facts_rejects_minus_reworded_as_plus():
+    sentence = "48 is 6 × 8. 6 × 7 is 6 less: 48 − 6 = 42."
+    rewrite = "48 is 6 × 8. 6 × 7 is 6 less: 48 + 6 = 42."
+    assert not keeps_facts(rewrite, sentence)
+
+
+def test_keeps_facts_treats_signs_and_their_words_as_the_same_fact():
+    assert keeps_facts(
+        "4 plus 6 is 10, but 4 times 6 means 4 groups of 6: 6, 12, 18, 24. So 4 times 6 is 24!",
+        FACT_SENTENCE,
+    )
+    assert keeps_facts(
+        "Good try! 8 times 6 is 48, not 56. But 8 times 7 is 56, so 56 divided by 8 is 7.",
+        "8 × 6 is 48, not 56. 8 × 7 is 56, so 56 ÷ 8 is 7.",
+    )
+    assert keeps_facts(
+        "48 is 6 times 8. 6 times 7 is 6 less, so 48 minus 6 = 42.",
+        "48 is 6 × 8. 6 × 7 is 6 less: 48 − 6 = 42.",
+    )
+
 DIVISION_WORDS = ["dividend", "divisor", "quotient", "algorithm"]
 
 
