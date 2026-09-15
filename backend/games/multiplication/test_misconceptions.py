@@ -27,14 +27,34 @@ def test_carry_always():
     assert diagnose(problem, 73) == "carry_always"
 
 
-def test_double_digit_write():
-    problem = _problem(24, 3)
-    assert diagnose(problem, 612) == "double_digit_write"
+def test_no_carry_with_last_column_written_in_full():
+    problem = _problem(47, 6)
+    assert diagnose(problem, 242) == "no_carry"
+
+
+def test_carry_always_with_last_column_written_in_full():
+    problem = _problem(36, 4)
+    assert diagnose(problem, 134) == "carry_always"
+
+
+def test_added_carry_before_multiplying():
+    problem = _problem(47, 6)
+    assert diagnose(problem, 482) == "added_carry_before_multiplying"
 
 
 def test_drops_final_carry():
     problem = _problem(47, 6)
     assert diagnose(problem, 82) == "drops_final_carry"
+
+
+def test_dropped_leading_digit_beats_carry_always():
+    problem = _problem(36, 3)
+    assert diagnose(problem, 8) == "drops_final_carry"
+
+
+def test_dropped_leading_digit_beats_no_carry():
+    problem = _problem(51, 2)
+    assert diagnose(problem, 2) == "drops_final_carry"
 
 
 def test_unrecognized_wrong_answer_returns_none():

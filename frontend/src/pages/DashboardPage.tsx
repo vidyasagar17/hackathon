@@ -1,9 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { formatMisconception } from '../format'
+import { API_URL } from '../api'
+import AppHeader from '../components/AppHeader'
+import MuteToggle from '../components/MuteToggle'
+import { formatGameName, formatMisconception } from '../format'
 import { getSessionId } from '../session'
 
 type MisconceptionCount = {
+  game: string
   name: string
   count: number
 }
@@ -14,12 +18,22 @@ type SessionSummary = {
   misconceptions: MisconceptionCount[]
 }
 
+const NOTE = 'rounded-2xl border-2 border-felt-edge bg-card shadow-[0_6px_0_#163A34]'
+
+function groupByGame(rows: MisconceptionCount[]): [string, MisconceptionCount[]][] {
+  const groups = new Map<string, MisconceptionCount[]>()
+  for (const row of rows) {
+    groups.set(row.game, [...(groups.get(row.game) ?? []), row])
+  }
+  return [...groups]
+}
+
 function MisconceptionItem({ name, count }: MisconceptionCount) {
   return (
-    <div className="flex items-center gap-3 py-3">
+    <div className="flex items-center gap-3 px-4 py-3">
       <span className="h-4 w-4 flex-shrink-0 rounded-full bg-helper" />
       <p className="flex-1 text-left">{formatMisconception(name)}</p>
-      <span className="font-display font-semibold text-ink/60">
+      <span className="font-display font-semibold text-ink-muted">
         {count} {count === 1 ? 'time' : 'times'}
       </span>
     </div>
@@ -31,7 +45,7 @@ function DashboardPage() {
   const [failed, setFailed] = useState(false)
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/summary/${getSessionId()}`)
+    fetch(`${API_URL}/summary/${getSessionId()}`)
       .then((res) => {
         if (!res.ok) throw new Error('Summary request failed')
         return res.json()
@@ -42,43 +56,53 @@ function DashboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-base">
-      <header className="flex items-center justify-between px-6 py-4">
-        <span className="font-display text-2xl font-bold">Number Quest</span>
-        <Link to="/practice/subtraction" className="font-display font-semibold text-ink/70">
-          Back to practice
-        </Link>
-      </header>
+      <AppHeader
+        left={<span className="font-display text-2xl font-bold">Number Quest</span>}
+        right={
+          <>
+            <MuteToggle />
+            <Link to="/" className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted">
+              Back to games
+            </Link>
+          </>
+        }
+      />
 
       <main className="flex flex-1 flex-col items-center gap-6 px-4 py-8">
         <h1 className="font-display text-4xl font-bold">Session summary</h1>
 
         {failed ? (
-          <p className="font-display text-xl text-ones">
+          <p className="font-display text-xl text-alert-text">
             Couldn't load your summary — try again in a moment.
           </p>
         ) : !summary ? (
           <p className="font-display text-xl">Loading summary...</p>
         ) : (
           <>
-            <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)]">
+            <div className={`w-full max-w-md p-8 text-center ${NOTE}`}>
               <p className="font-display text-5xl font-bold">
                 {summary.correct_count} / {summary.total_attempts}
               </p>
-              <p className="mt-1 text-lg">problems correct</p>
+              <p className="mt-1 text-lg">answers correct</p>
             </div>
 
-            <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-[0_8px_0_rgba(0,0,0,0.1)]">
-              <h2 className="mb-2 font-display text-2xl font-bold">
-                Where mistakes happened
-              </h2>
+            <div className={`w-full max-w-md p-6 ${NOTE}`}>
+              <h2 className="mb-4 font-display text-2xl font-bold">Where mistakes happened</h2>
               {summary.misconceptions.length === 0 ? (
-                <p className="py-3 text-ink/60">
-                  No mistakes yet — keep practicing!
-                </p>
+                <p className="py-3 text-ink-muted">No mistakes yet — keep practicing!</p>
               ) : (
-                <div className="divide-y divide-ink/10">
-                  {summary.misconceptions.map((row) => (
-                    <MisconceptionItem key={row.name} {...row} />
+                <div className="flex flex-col gap-4">
+                  {groupByGame(summary.misconceptions).map(([game, rows]) => (
+                    <section key={game} className="overflow-hidden rounded-xl border-2 border-felt-edge">
+                      <h3 className="bg-felt px-4 py-2 font-display text-lg font-semibold text-chalk">
+                        {formatGameName(game)}
+                      </h3>
+                      <div className="divide-y divide-ink/10">
+                        {rows.map((row) => (
+                          <MisconceptionItem key={row.name} {...row} />
+                        ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
               )}
@@ -87,8 +111,8 @@ function DashboardPage() {
         )}
 
         <Link
-          to="/practice/subtraction"
-          className="rounded-2xl bg-ink px-8 py-4 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none"
+          to="/"
+          className="tap-target inline-flex items-center rounded-2xl bg-ink px-8 py-4 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none"
         >
           Practice again
         </Link>

@@ -1,11 +1,13 @@
 import random
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 Place = Literal["tens", "ones"]
+AnswerPlace = Literal["hundreds", "tens", "ones"]
 
 PLACES: list[Place] = ["tens", "ones"]
+ANSWER_PLACES: list[AnswerPlace] = ["hundreds", "tens", "ones"]
 
 MIN_DIFFICULTY = 1
 MAX_DIFFICULTY = 3
@@ -14,8 +16,9 @@ MAX_DIFFICULTY = 3
 class ColumnBreakdown(BaseModel):
     place: Place
     multiplicand_digit: int
-    multiplier_digit: int
+    multiplier_digit: int | None
     carries: bool
+    carry: int
 
 
 class Problem(BaseModel):
@@ -23,26 +26,37 @@ class Problem(BaseModel):
     multiplier: int
     answer: int
     columns: list[ColumnBreakdown]
+    answer_places: list[AnswerPlace] = ANSWER_PLACES
     difficulty: int
+
+    @model_validator(mode="after")
+    def _follows_from_its_numbers(self) -> "Problem":
+        """Reject a problem whose answer or columns don't follow from its multiplicand and multiplier."""
+        if self.answer != self.multiplicand * self.multiplier:
+            raise ValueError("answer does not match multiplicand x multiplier")
+        if self.columns != compute_columns(self.multiplicand, self.multiplier):
+            raise ValueError("columns do not match multiplicand and multiplier")
+        return self
 
 
 def compute_columns(multiplicand: int, multiplier: int) -> list[ColumnBreakdown]:
     """Trace the standard right-to-left carrying algorithm column by column."""
     digits = [int(d) for d in f"{multiplicand:02d}"]
 
-    carries_by_index: dict[int, bool] = {}
+    carry_by_index: dict[int, int] = {}
     carry_in = 0
     for i in (1, 0):
         product = digits[i] * multiplier + carry_in
-        carries_by_index[i] = product >= 10
-        carry_in = 1 if carries_by_index[i] else 0
+        carry_by_index[i] = product // 10
+        carry_in = carry_by_index[i]
 
     return [
         ColumnBreakdown(
             place=PLACES[i],
             multiplicand_digit=digits[i],
-            multiplier_digit=multiplier,
-            carries=carries_by_index[i],
+            multiplier_digit=multiplier if PLACES[i] == "ones" else None,
+            carries=carry_by_index[i] > 0,
+            carry=carry_by_index[i],
         )
         for i in range(2)
     ]

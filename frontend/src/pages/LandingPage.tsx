@@ -1,5 +1,15 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import AppHeader from '../components/AppHeader'
+import GradePicker from '../components/GradePicker'
+import MuteToggle from '../components/MuteToggle'
+import {
+  getGradeBand,
+  GRADE_BAND_LABELS,
+  GRADE_BANDS,
+  saveGradeBand,
+  type GradeBand,
+} from '../gradeBand'
 
 function SubtractionIcon() {
   return (
@@ -60,99 +70,270 @@ function DivisionIcon() {
   )
 }
 
-type GameCardProps = {
-  icon: ReactNode
+function DecimalWarIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <text x="18" y="54" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
+        0.
+      </text>
+      <rect x="34" y="12" width="26" height="46" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+      <rect x="66" y="12" width="26" height="46" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+      <text x="47" y="43" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+        4
+      </text>
+      <text x="79" y="43" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+        5
+      </text>
+    </svg>
+  )
+}
+
+/** 73 − 58 on digit cards: the two numbers a For Keeps hand builds. */
+function ForKeepsIcon() {
+  const cards = [
+    { x: 46, y: 4, digit: 7 },
+    { x: 70, y: 4, digit: 3 },
+    { x: 46, y: 38, digit: 5 },
+    { x: 70, y: 38, digit: 8 },
+  ]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {cards.map(({ x, y, digit }) => (
+        <g key={`${x}-${y}`}>
+          <rect x={x} y={y} width="22" height="30" rx="4" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 11} y={y + 22} textAnchor="middle" fontSize="18" fontWeight="700" className="fill-ink font-display">
+            {digit}
+          </text>
+        </g>
+      ))}
+      <rect x="24" y="51" width="14" height="4" rx="2" className="fill-ink" />
+    </svg>
+  )
+}
+
+/**
+ * Two digit cards with the operation sign between them: the hand an Addition War or Take-Away War
+ * round deals, or a fact Robo calls in Multiplication Shootout.
+ */
+function TwoCardsIcon({ first, sign, second }: { first: number; sign: string; second: number }) {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {[
+        { x: 6, digit: first },
+        { x: 62, digit: second },
+      ].map(({ x, digit }) => (
+        <g key={x}>
+          <rect x={x} y="14" width="28" height="44" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 14} y="44" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+            {digit}
+          </text>
+        </g>
+      ))}
+      <text x="48" y="45" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
+        {sign}
+      </text>
+    </svg>
+  )
+}
+
+type Game = {
   title: string
   description: string
-  to?: string
+  to: string
+  icon: ReactNode
+  /** The one shelf the game sits on: its home band in the curriculum catalog. */
+  band: GradeBand
+  /** Curriculum games are played against Robo; skill workshops are solo practice. */
+  kind: 'robo' | 'workshop'
 }
 
-function GameCard({ icon, title, description, to }: GameCardProps) {
-  const content = (
-    <div
-      className={`flex flex-col items-center gap-3 rounded-3xl bg-white p-6 text-center shadow-[0_8px_0_rgba(0,0,0,0.1)] ${
-        to ? 'active:translate-y-1 active:shadow-none' : 'opacity-60'
-      }`}
+const GAMES: Game[] = [
+  {
+    title: 'Decimal War',
+    description: 'Judge whose decimal is larger',
+    to: '/curriculum/decimal-war',
+    icon: <DecimalWarIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'For Keeps',
+    description: 'Build two numbers, subtract, keep the lowest score',
+    to: '/curriculum/for-keeps',
+    icon: <ForKeepsIcon />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Multiplication Shootout',
+    description: 'Answer times and division facts in turns with Robo',
+    to: '/curriculum/multiplication-shootout',
+    icon: <TwoCardsIcon first={6} sign="×" second={7} />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Addition War',
+    description: 'Add your two cards and see whose hand wins',
+    to: '/curriculum/addition-war',
+    icon: <TwoCardsIcon first={3} sign="+" second={4} />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Take-Away War',
+    description: 'Take the smaller card away and see whose hand wins',
+    to: '/curriculum/take-away-war',
+    icon: <TwoCardsIcon first={8} sign="−" second={3} />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Subtraction',
+    description: 'Multi-digit subtraction with borrowing',
+    to: '/practice/subtraction',
+    icon: <SubtractionIcon />,
+    band: '2-3',
+    kind: 'workshop',
+  },
+  {
+    title: 'Addition',
+    description: 'Multi-digit addition with carrying',
+    to: '/practice/addition',
+    icon: <AdditionIcon />,
+    band: '2-3',
+    kind: 'workshop',
+  },
+  {
+    title: 'Multiplication',
+    description: 'Times tables and multi-digit products',
+    to: '/practice/multiplication',
+    icon: <MultiplicationIcon />,
+    band: '4-5',
+    kind: 'workshop',
+  },
+  {
+    title: 'Division',
+    description: 'Splitting numbers into equal groups',
+    to: '/practice/division',
+    icon: <DivisionIcon />,
+    band: '4-5',
+    kind: 'workshop',
+  },
+]
+
+/** A game box: a felt lid holding the icon on a card-stock tile, then the title and description. */
+function GameBox({ game }: { game: Game }) {
+  return (
+    <Link
+      to={game.to}
+      className="tap-target block overflow-hidden rounded-2xl border-2 border-felt-edge bg-card shadow-[0_6px_0_#163A34] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2 active:translate-y-1 active:shadow-[0_2px_0_#163A34]"
     >
-      {icon}
-      <h3 className="font-display text-xl font-bold">{title}</h3>
-      <p className="text-sm">{description}</p>
-      {!to && (
-        <span className="rounded-full bg-ink/10 px-3 py-1 font-display text-xs font-semibold text-ink/60">
-          Coming soon
-        </span>
-      )}
+      <div className="flex h-24 items-center justify-center bg-felt">
+        <span className="rounded-xl bg-card px-2 py-1">{game.icon}</span>
+      </div>
+      <div className="flex flex-col items-start gap-1 p-4">
+        <h3 className="font-display text-xl font-bold text-ink">{game.title}</h3>
+        <p className="text-sm text-ink">{game.description}</p>
+        {game.kind === 'robo' && (
+          <span className="mt-1 rounded-full bg-hundreds px-3 py-0.5 font-display text-sm font-bold text-ink">
+            vs Robo
+          </span>
+        )}
+      </div>
+    </Link>
+  )
+}
+
+function GameGroup({ label, games }: { label: string; games: Game[] }) {
+  return (
+    <div className="flex flex-col gap-3" style={{ flexGrow: games.length, flexBasis: 0 }}>
+      <p className="font-display text-lg font-semibold text-ink-muted">{label}</p>
+      <div className="grid flex-1 grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-6">
+        {games.map((game) => (
+          <GameBox key={game.to} game={game} />
+        ))}
+      </div>
     </div>
   )
-
-  return to ? (
-    <Link to={to} className="block">
-      {content}
-    </Link>
-  ) : (
-    content
-  )
 }
 
-function GameGroup({
-  title,
-  children,
-}: {
-  title: string
-  children: ReactNode
-}) {
+/** One grade band's shelf: games against Robo first, then skill workshops. */
+function Shelf({ band, isYours }: { band: GradeBand; isYours: boolean }) {
+  const id = `shelf-${band}`
+  const games = GAMES.filter((game) => game.band === band)
+  const roboGames = games.filter((game) => game.kind === 'robo')
+  const workshops = games.filter((game) => game.kind === 'workshop')
+
   return (
-    <section className="w-full max-w-3xl">
-      <h2 className="mb-4 font-display text-2xl font-bold">{title}</h2>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">{children}</div>
+    <section aria-labelledby={id} className="w-full max-w-4xl">
+      <div className="mb-4 flex flex-wrap items-center gap-3 border-b-4 border-felt-edge pb-2">
+        <h2 id={id} className="font-display text-2xl font-bold">
+          {GRADE_BAND_LABELS[band]}
+        </h2>
+        {isYours && (
+          <span className="rounded-full bg-felt px-3 py-1 font-display text-sm font-bold text-chalk">
+            Your grade
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col gap-6 lg:flex-row">
+        {roboGames.length > 0 && <GameGroup label="Games against Robo" games={roboGames} />}
+        {workshops.length > 0 && <GameGroup label="Skill workshops" games={workshops} />}
+      </div>
     </section>
   )
 }
 
 function LandingPage() {
+  const [band, setBand] = useState<GradeBand | null>(getGradeBand)
+  const [picking, setPicking] = useState(false)
+
+  const pickBand = (chosen: GradeBand) => {
+    saveGradeBand(chosen)
+    setBand(chosen)
+    setPicking(false)
+  }
+
+  if (band === null || picking) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-8">
+        <GradePicker onPick={pickBand} />
+      </div>
+    )
+  }
+
+  const shelves = [band, ...GRADE_BANDS.filter((other) => other !== band)]
+
   return (
     <div className="flex min-h-screen flex-col bg-base">
-      <header className="flex items-center justify-between px-6 py-4">
-        <span className="font-display text-2xl font-bold">Number Quest</span>
-        <Link to="/summary" className="font-display font-semibold text-ink/70">
-          Session summary
-        </Link>
-      </header>
+      <AppHeader
+        left={<span className="font-display text-2xl font-bold">Number Quest</span>}
+        right={
+          <>
+            <MuteToggle />
+            <button
+              type="button"
+              onClick={() => setPicking(true)}
+              className="tap-target rounded-2xl border-4 border-ink bg-white px-4 font-display font-semibold text-ink"
+            >
+              Change grade
+            </button>
+            <Link
+              to="/summary"
+              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+            >
+              Session summary
+            </Link>
+          </>
+        }
+      />
 
       <main className="flex flex-1 flex-col items-center gap-10 px-4 py-8">
-        <h1 className="text-center font-display text-4xl font-bold">
-          What do you want to practice?
-        </h1>
-
-        <GameGroup title="Adding & Taking Away">
-          <GameCard
-            icon={<SubtractionIcon />}
-            title="Subtraction"
-            description="Multi-digit subtraction with borrowing"
-            to="/practice/subtraction"
-          />
-          <GameCard
-            icon={<AdditionIcon />}
-            title="Addition"
-            description="Multi-digit addition with carrying"
-            to="/practice/addition"
-          />
-        </GameGroup>
-
-        <GameGroup title="Grouping & Sharing">
-          <GameCard
-            icon={<MultiplicationIcon />}
-            title="Multiplication"
-            description="Times tables and multi-digit products"
-            to="/practice/multiplication"
-          />
-          <GameCard
-            icon={<DivisionIcon />}
-            title="Division"
-            description="Splitting numbers into equal groups"
-            to="/practice/division"
-          />
-        </GameGroup>
+        <h1 className="text-center font-display text-4xl font-bold">What do you want to practice?</h1>
+        {shelves.map((shelfBand) => (
+          <Shelf key={shelfBand} band={shelfBand} isYours={shelfBand === band} />
+        ))}
       </main>
     </div>
   )

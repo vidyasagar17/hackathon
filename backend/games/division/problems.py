@@ -1,9 +1,12 @@
 import random
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 Place = Literal["tens", "ones"]
+AnswerPlace = Literal["hundreds", "tens", "ones"]
+
+ANSWER_PLACES: list[AnswerPlace] = ["hundreds", "tens", "ones"]
 
 MIN_DIFFICULTY = 1
 MAX_DIFFICULTY = 3
@@ -18,7 +21,17 @@ class Problem(BaseModel):
     divisor: int
     answer: int
     columns: list[ColumnBreakdown]
+    answer_places: list[AnswerPlace] = ANSWER_PLACES
     difficulty: int
+
+    @model_validator(mode="after")
+    def _follows_from_its_numbers(self) -> "Problem":
+        """Reject a problem that isn't an exact division matching its answer and columns."""
+        if self.divisor < 1 or self.dividend != self.divisor * self.answer:
+            raise ValueError("answer does not match dividend / divisor")
+        if [c.place for c in self.columns] != _places_for(self.answer):
+            raise ValueError("columns do not match the answer")
+        return self
 
 
 def _trace(dividend: int, divisor: int) -> tuple[int, int, int, int]:
@@ -39,10 +52,8 @@ def classify_difficulty(dividend: int, divisor: int) -> int:
     return 3 if r1 > 0 else 2
 
 
-def _columns_for(answer: int) -> list[ColumnBreakdown]:
-    if answer < 10:
-        return [ColumnBreakdown(place="ones")]
-    return [ColumnBreakdown(place="tens"), ColumnBreakdown(place="ones")]
+def _places_for(answer: int) -> list[Place]:
+    return ["ones"] if answer < 10 else ["tens", "ones"]
 
 
 def generate_problem(difficulty: int = MIN_DIFFICULTY) -> Problem:
@@ -63,6 +74,6 @@ def generate_problem(difficulty: int = MIN_DIFFICULTY) -> Problem:
                 dividend=dividend,
                 divisor=divisor,
                 answer=quotient,
-                columns=_columns_for(quotient),
+                columns=[ColumnBreakdown(place=p) for p in _places_for(quotient)],
                 difficulty=difficulty,
             )
