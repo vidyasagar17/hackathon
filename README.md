@@ -12,9 +12,11 @@ It has two kinds of game, grouped on the home screen by grade band
 - **Games against Robo** — card games from a K-5 game curriculum, played on
   one device against a computer opponent: **Decimal War** (grades 4–5), judge
   whose decimal is larger; **For Keeps** (grades 2–3), build two 2-digit
-  numbers from four cards, subtract, and keep the lowest scores; and
+  numbers from four cards, subtract, and keep the lowest scores;
   **Multiplication Shootout** (grades 2–3), take turns with Robo answering
-  times and division facts.
+  times and division facts; and **Addition War** and **Take-Away War**
+  (grades K–1), flip two cards, add them or take the smaller away, and say
+  whose hand wins.
 
 ## How diagnosis works
 
@@ -98,6 +100,28 @@ cutoff (12, 49, 54 — right on about 70%, 80% and 91% of each level's facts)
 by answering the fact one step down, and a wrong Robo answer always shows
 the right one.
 
+**Addition War and Take-Away War.** Everyday Mathematics' *Addition Top-It*,
+one hand at a time: the student and Robo each flip two cards, Robo's total is
+shown, the student taps their own total from four answer cards, then taps whose
+hand wins (You, Robo or Same). Take-Away War takes the smaller card from the
+larger. Every wrong answer card comes from a researched mistake:
+
+| Diagnosis | Wrong answer card |
+|---|---|
+| `one_more_than_second` | one more than the second card, when it is the larger (3 + 4 → 5) — the most frequent preschool error in Siegler, R. S., & Shrager, J. (1984), *A model of strategy choice* |
+| `counted_on_from_start` | counting on while saying the start number again (3 + 4 → 6) — Secada, W. G., Fuson, K. C., & Hall, J. W. (1983), *The transition from counting-all to counting-on in addition* |
+| `subtracted_instead` | the difference instead of the sum (3 + 4 → 1) |
+| `counted_down_off_by_one` | counting back ends one step early or late (8 take away 3 → 4 or 6) — Fuson, K. C. (1984, 1986) |
+| `added_instead` | the sum instead of the difference (8 take away 3 → 11) |
+
+When two mistakes give the same number, the nearest numbers that are not
+researched mistakes fill the row to four cards and are not diagnosed. Only the
+answer tap is graded and logged; the winner tap is checked on screen but not
+logged, so an undiagnosed move never sits between two answer mistakes in the
+level rule. Levels follow the standards: cards 0–5 (K.OA.A.5), then 0–10
+(K.OA.A.2; addition sums within 10), then sums to 20 or a teen card minus a card
+to 10 (1.OA.C.6).
+
 ## Adaptive difficulty
 
 `backend/tiering.py` moves a student up a level after 3 correct in a row and
@@ -133,6 +157,11 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   appears only when the student presses "Robo's turn", and the duel's result
   only on "See who won", so one new thing shows at a time; a win gets one
   short ring pulse, skipped under reduced motion.
+- **Addition War and Take-Away War (K–1):** hints are never reworded by the
+  LLM — they are read aloud to pre-readers and the counting sequence is the
+  whole hint (e.g. *"Start at 4 and count on 3 more: 5, 6, 7."*). A wrong
+  answer card wobbles once, the right card is outlined, and the hint is shown
+  and spoken; there is no red text.
 
 ## The move engine (games against Robo)
 
@@ -157,6 +186,10 @@ The session summary counts workshop attempts and moves together, per game.
   read-aloud buttons, soft sound effects with a mute switch, reduced motion
   respected, and an on-screen keypad for grades 2–3 (always shown in For
   Keeps).
+- **K–1 games:** card and picture taps only, no typing; each step's words are
+  spoken automatically once the browser allows it, with a "Hear it again"
+  button; after answering, the hint, winner buttons and Next sit beside the
+  answer cards so nothing falls below the table.
 - **Game-table design:** games are played on a felt table with real-looking
   digit cards; the home screen is a set of grade-band shelves of game boxes.
   Animation is used only for the math itself (the carry/borrow badge) and
@@ -188,12 +221,16 @@ backend/
                          sentences.py, hints.py (+ tests)
     for_keeps/           the same files: dealing, two-digit detectors,
                          moves and Robo, hint sentences (+ tests)
+    card_war/            shared Addition War / Take-Away War rules: the
+                         same files, with answer cards from mistakes
+    addition_war/        fixes card_war to adding for the engine
+    take_away_war/       fixes card_war to taking away for the engine
   tiering.py             adaptive levels
   db.py                  SQLite: attempts, rounds, moves, summary
   main.py                FastAPI routes
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
-                         DashboardPage
+                         CardWarPage, DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
                          ProgressMeter, HundredthsGrid, ...
   regroup.ts             borrow/carry animation steps
