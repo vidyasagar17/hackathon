@@ -71,6 +71,8 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
     'For Keeps',
     'Subtraction',
     'Addition',
+    'Addition War',
+    'Take-Away War',
     'Decimal War',
     'Multiplication',
     'Division',
@@ -92,6 +94,8 @@ test('picking 4th & 5th grade puts its shelf first with games against Robo befor
     'Decimal War',
     'Multiplication',
     'Division',
+    'Addition War',
+    'Take-Away War',
     'For Keeps',
     'Subtraction',
     'Addition',
@@ -108,7 +112,7 @@ test('only the student’s shelf says Your grade', async () => {
   expect(within(screen.getByRole('region', { name: '2nd & 3rd grade' })).queryByText('Your grade')).toBeNull()
 })
 
-test('kindergarten & 1st grade shows an on-the-way box and keeps every game playable', async () => {
+test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo and keeps every game playable', async () => {
   const user = userEvent.setup()
   renderLandingPage()
 
@@ -116,8 +120,15 @@ test('kindergarten & 1st grade shows an on-the-way box and keeps every game play
 
   expect(shelvesInOrder()[0]).toBe('Kindergarten & 1st grade')
   const shelf = screen.getByRole('region', { name: 'Kindergarten & 1st grade' })
-  expect(within(shelf).getByText(/Games for kindergarten and 1st grade are on the way/)).toBeTruthy()
-  expect(gameTitlesInOrder()).toHaveLength(6)
+  expect(within(shelf).getByText('Games against Robo')).toBeTruthy()
+  const additionWar = within(shelf).getByRole('link', { name: /Addition War/ })
+  const takeAwayWar = within(shelf).getByRole('link', { name: /Take-Away War/ })
+  expect(additionWar.getAttribute('href')).toBe('/curriculum/addition-war')
+  expect(takeAwayWar.getAttribute('href')).toBe('/curriculum/take-away-war')
+  expect(within(additionWar).getByText('vs Robo')).toBeTruthy()
+  expect(within(takeAwayWar).getByText('vs Robo')).toBeTruthy()
+  expect(screen.queryByText(/on the way/)).toBeNull()
+  expect(gameTitlesInOrder()).toHaveLength(8)
 })
 
 test('only games against Robo carry the vs Robo tag', () => {

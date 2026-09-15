@@ -111,6 +111,28 @@ function ForKeepsIcon() {
   )
 }
 
+/** Two digit cards with the operation sign between them: the hand an Addition War or Take-Away War round deals. */
+function TwoCardsIcon({ first, sign, second }: { first: number; sign: string; second: number }) {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {[
+        { x: 6, digit: first },
+        { x: 62, digit: second },
+      ].map(({ x, digit }) => (
+        <g key={x}>
+          <rect x={x} y="14" width="28" height="44" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 14} y="44" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+            {digit}
+          </text>
+        </g>
+      ))}
+      <text x="48" y="45" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
+        {sign}
+      </text>
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -137,6 +159,22 @@ const GAMES: Game[] = [
     to: '/curriculum/for-keeps',
     icon: <ForKeepsIcon />,
     band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Addition War',
+    description: 'Add your two cards and see whose hand wins',
+    to: '/curriculum/addition-war',
+    icon: <TwoCardsIcon first={3} sign="+" second={4} />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Take-Away War',
+    description: 'Take the smaller card away and see whose hand wins',
+    to: '/curriculum/take-away-war',
+    icon: <TwoCardsIcon first={8} sign="−" second={3} />,
+    band: 'k-1',
     kind: 'robo',
   },
   {
@@ -228,17 +266,10 @@ function Shelf({ band, isYours }: { band: GradeBand; isYours: boolean }) {
           </span>
         )}
       </div>
-      {games.length === 0 ? (
-        <p className="rounded-2xl border-2 border-dashed border-felt-edge bg-card p-6 text-lg">
-          Games for kindergarten and 1st grade are on the way. Until then, try any game on the other
-          shelves.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-6 lg:flex-row">
-          {roboGames.length > 0 && <GameGroup label="Games against Robo" games={roboGames} />}
-          {workshops.length > 0 && <GameGroup label="Skill workshops" games={workshops} />}
-        </div>
-      )}
+      <div className="flex flex-col gap-6 lg:flex-row">
+        {roboGames.length > 0 && <GameGroup label="Games against Robo" games={roboGames} />}
+        {workshops.length > 0 && <GameGroup label="Skill workshops" games={workshops} />}
+      </div>
     </section>
   )
 }
