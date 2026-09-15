@@ -69,6 +69,7 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
   expect(shelvesInOrder()).toEqual(['2nd & 3rd grade', 'Kindergarten & 1st grade', '4th & 5th grade'])
   expect(gameTitlesInOrder()).toEqual([
     'For Keeps',
+    'Multiplication Shootout',
     'Subtraction',
     'Addition',
     'Decimal War',
@@ -93,6 +94,7 @@ test('picking 4th & 5th grade puts its shelf first with games against Robo befor
     'Multiplication',
     'Division',
     'For Keeps',
+    'Multiplication Shootout',
     'Subtraction',
     'Addition',
   ])
@@ -117,7 +119,7 @@ test('kindergarten & 1st grade shows an on-the-way box and keeps every game play
   expect(shelvesInOrder()[0]).toBe('Kindergarten & 1st grade')
   const shelf = screen.getByRole('region', { name: 'Kindergarten & 1st grade' })
   expect(within(shelf).getByText(/Games for kindergarten and 1st grade are on the way/)).toBeTruthy()
-  expect(gameTitlesInOrder()).toHaveLength(6)
+  expect(gameTitlesInOrder()).toHaveLength(7)
 })
 
 test('only games against Robo carry the vs Robo tag', () => {
@@ -125,7 +127,7 @@ test('only games against Robo carry the vs Robo tag', () => {
   renderLandingPage()
 
   expect(within(screen.getByRole('link', { name: /Decimal War/ })).getByText('vs Robo')).toBeTruthy()
-  expect(within(screen.getByRole('link', { name: /Multiplication/ })).queryByText('vs Robo')).toBeNull()
+  expect(within(screen.getByRole('link', { name: /Times tables/ })).queryByText('vs Robo')).toBeNull()
 })
 
 test('a return visit skips the grade question', () => {
@@ -154,6 +156,17 @@ test('the For Keeps box sits on the 2nd & 3rd grade shelf, opens its game and is
   expect(box.getAttribute('href')).toBe('/curriculum/for-keeps')
   expect(within(box).getByText('vs Robo')).toBeTruthy()
   expect(within(shelf).getByText('Games against Robo')).toBeTruthy()
+})
+
+test('the Multiplication Shootout box sits on the 2nd & 3rd grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', '2-3')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: '2nd & 3rd grade' })
+  const box = within(shelf).getByRole('link', { name: /Multiplication Shootout/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/multiplication-shootout')
+  expect(within(box).getByText('Answer times and division facts in turns with Robo')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
 })
 
 test('Change grade asks the grade question again', async () => {

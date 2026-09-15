@@ -111,6 +111,29 @@ function ForKeepsIcon() {
   )
 }
 
+/** 6 × 7 on two digit cards: a fact Robo calls in Multiplication Shootout. */
+function MultiplicationShootoutIcon() {
+  const cards = [
+    { x: 8, digit: 6 },
+    { x: 62, digit: 7 },
+  ]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {cards.map(({ x, digit }) => (
+        <g key={x}>
+          <rect x={x} y="14" width="26" height="44" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 13} y="44" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+            {digit}
+          </text>
+        </g>
+      ))}
+      <text x="48" y="45" textAnchor="middle" fontSize="26" fontWeight="700" className="fill-ink font-display">
+        ×
+      </text>
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -136,6 +159,14 @@ const GAMES: Game[] = [
     description: 'Build two numbers, subtract, keep the lowest score',
     to: '/curriculum/for-keeps',
     icon: <ForKeepsIcon />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Multiplication Shootout',
+    description: 'Answer times and division facts in turns with Robo',
+    to: '/curriculum/multiplication-shootout',
+    icon: <MultiplicationShootoutIcon />,
     band: '2-3',
     kind: 'robo',
   },

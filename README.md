@@ -11,8 +11,10 @@ It has two kinds of game, grouped on the home screen by grade band
   division**, one problem at a time.
 - **Games against Robo** — card games from a K-5 game curriculum, played on
   one device against a computer opponent: **Decimal War** (grades 4–5), judge
-  whose decimal is larger; and **For Keeps** (grades 2–3), build two 2-digit
-  numbers from four cards, subtract, and keep the lowest scores.
+  whose decimal is larger; **For Keeps** (grades 2–3), build two 2-digit
+  numbers from four cards, subtract, and keep the lowest scores; and
+  **Multiplication Shootout** (grades 2–3), take turns with Robo answering
+  times and division facts.
 
 ## How diagnosis works
 
@@ -72,6 +74,30 @@ keeps any difference under 30; levels 2–3 build the smallest difference and
 keep under 20 and under 10. When a keep or trash is forced (every player ends
 with exactly two keeps), the other button is disabled and the reason shown.
 
+**Multiplication Shootout.** A duel of ten turns: Robo calls a single-digit
+fact, the student answers it on the keypad, then Robo answers a fact of its
+own. Level 1 deals ×0, ×1, ×2 and ×5 facts; level 2 facts with both numbers
+3–9; level 3 any fact, about a third of them as division facts. The detectors
+follow fact-retrieval error research — LeFevre, J., et al. (1996), *Multiple
+routes to solution of single-digit multiplication problems* (72–76% of errors
+share a number with the correct fact, and errors on ×0 facts answer with the
+other number), and Campbell, J. I. D. (1997), *On the relation between skilled
+performance of simple division and multiplication* (division is solved
+through the multiplication fact):
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `times_zero_is_the_other_number` | answers with the other number on a ×0 fact (7 × 0 → 7) |
+| `added_instead_of_multiplied` | adds the two numbers (4 × 6 → 10) |
+| `neighboring_fact` | gives the answer to the fact one step away (6 × 7 → 48) |
+| `one_group_off` | a division answer one away from the right one (56 ÷ 8 → 6) |
+
+When two diagnoses fit, zero wins, then adding (on small facts most slips are
+addition, LeFevre et al.). Robo misses every fact above its level's size
+cutoff (12, 49, 54 — right on about 70%, 80% and 91% of each level's facts)
+by answering the fact one step down, and a wrong Robo answer always shows
+the right one.
+
 ## Adaptive difficulty
 
 `backend/tiering.py` moves a student up a level after 3 correct in a row and
@@ -85,9 +111,10 @@ Hints start as a sentence **built by code from the student's own numbers**
 digits: 0.45 and 0.80. 80 hundredths is more than 45 hundredths, so 0.8 is
 larger."* An LLM (Qwen2.5-7B-Instruct via Hugging Face) may only **reword**
 it to sound friendlier, within a 4-second total deadline, and the rewording
-is shown only if it keeps every number, place name (including tenths,
-hundredths, thousandths), comparison word, "same", and carry/borrow word in
-order, and uses no banned jargon (`backend/games/hint_check.py`). Otherwise
+is shown only if it keeps every number, operation (× ÷ + −, or the words
+times, divided by, plus, minus), place name (including tenths, hundredths,
+thousandths), comparison word, "same", and carry/borrow word in order, and
+uses no banned jargon (`backend/games/hint_check.py`). Otherwise
 the student sees the code-built sentence. A hand review of live LLM-written
 hints found wrong advice in 6 of 32 samples, which is why the LLM phrases but
 never reasons. A wrong answer with no diagnosis gets a fixed general hint.
@@ -101,6 +128,11 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
 - **For Keeps:** a wrong difference shows the right one and "Show me why"; the
   hint and diagnosed pattern appear in a panel beside the numbers, next to
   Keep it / Trash it, so nothing the student needs falls below the table.
+- **Multiplication Shootout:** a wrong answer shows the right one and "Show me
+  why" (e.g. *"48 is 6 × 8. 6 × 7 is 6 less: 48 − 6 = 42."*). Robo's own turn
+  appears only when the student presses "Robo's turn", and the duel's result
+  only on "See who won", so one new thing shows at a time; a win gets one
+  short ring pulse, skipped under reduced motion.
 
 ## The move engine (games against Robo)
 
