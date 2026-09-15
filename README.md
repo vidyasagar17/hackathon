@@ -10,8 +10,9 @@ It has two kinds of game, grouped on the home screen by grade band
 - **Skill workshops** — column **subtraction, addition, multiplication and
   division**, one problem at a time.
 - **Games against Robo** — card games from a K-5 game curriculum, played on
-  one device against a computer opponent. The first is **Decimal War**
-  (grades 4–5): judge whose decimal is larger.
+  one device against a computer opponent: **Decimal War** (grades 4–5), judge
+  whose decimal is larger; and **For Keeps** (grades 2–3), build two 2-digit
+  numbers from four cards, subtract, and keep the lowest scores.
 
 ## How diagnosis works
 
@@ -49,6 +50,28 @@ Each level deals only the comparison types that reveal its misconceptions
 (level 1 same length, level 2 different lengths, level 3 zeros and equal
 pairs with a "They're the same" choice).
 
+**For Keeps.** Four hands; in each, the student arranges four digit cards into
+two 2-digit numbers, types the difference, then keeps or trashes it. Each
+player keeps exactly two scores and the lowest total wins (rules from Kristin
+Raia, "5 Rich Math Activities," Edutopia, learned from Jennifer Bay-Williams
+and Dan Meyer). Only the typed difference is graded, against two-digit versions
+of the subtraction workshop's buggy procedures (Brown & Burton, 1978);
+arranging and keep/trash change the game but are not logged, so they never
+affect levels or the summary.
+
+| Diagnosis | Wrong difference |
+|---|---|
+| `zero_minus_digit_gives_digit` | writes the bottom digit under a 0 (40 − 23 → 23) |
+| `smaller_from_larger` | takes the smaller digit from the larger in each column (73 − 58 → 25) |
+| `borrowed_without_decrementing` | borrows but leaves the tens digit unchanged (62 − 38 → 34) |
+| `always_borrow` | borrows even when the ones don't need it (57 − 32 → 15) |
+
+A kept score is always the correct difference, so a wrong answer never lowers
+a total. Robo plays by level: level 1 pairs its cards in the order dealt and
+keeps any difference under 30; levels 2–3 build the smallest difference and
+keep under 20 and under 10. When a keep or trash is forced (every player ends
+with exactly two keeps), the other button is disabled and the reason shown.
+
 ## Adaptive difficulty
 
 `backend/tiering.py` moves a student up a level after 3 correct in a row and
@@ -75,13 +98,18 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
 - **Decimal War:** a wrong pick outlines the larger number and offers
   "Show me why", which draws both numbers on hundredths grids beside the hint
   and diagnosed pattern. The hint is only fetched when the student asks.
+- **For Keeps:** a wrong difference shows the right one and "Show me why"; the
+  hint and diagnosed pattern appear in a panel beside the numbers, next to
+  Keep it / Trash it, so nothing the student needs falls below the table.
 
 ## The move engine (games against Robo)
 
 Curriculum games register in `backend/curriculum/` and provide `new_round`,
 `visible_state`, `evaluate_move`, `computer_move`, `hint_sentence` and a
 general hint. The server keeps each round (so hidden cards never reach the
-browser) and logs every move with its diagnosis:
+browser) and logs every graded move with its diagnosis; a move the game marks
+as not graded (`MoveResult.counted`, e.g. arranging cards) is applied but not
+logged:
 
 - `POST /curriculum/{game_id}/rounds` — start a round at the student's level
 - `POST /rounds/{round_id}/moves` — evaluate, log and answer a move (422 for a
@@ -95,7 +123,8 @@ The session summary counts workshop attempts and moves together, per game.
 - Grade-band picker on first visit; every game stays playable.
 - Large tap targets (64 px), AAA text contrast (`npm run check:contrast`),
   read-aloud buttons, soft sound effects with a mute switch, reduced motion
-  respected, and an on-screen keypad for grades 2–3.
+  respected, and an on-screen keypad for grades 2–3 (always shown in For
+  Keeps).
 - **Game-table design:** games are played on a felt table with real-looking
   digit cards; the home screen is a set of grade-band shelves of game boxes.
   Animation is used only for the math itself (the carry/borrow badge) and
@@ -125,12 +154,16 @@ backend/
     engine.py            MoveResult and the game contract
     decimal_war/         rounds.py, misconceptions.py, moves.py,
                          sentences.py, hints.py (+ tests)
+    for_keeps/           the same files: dealing, two-digit detectors,
+                         moves and Robo, hint sentences (+ tests)
   tiering.py             adaptive levels
   db.py                  SQLite: attempts, rounds, moves, summary
   main.py                FastAPI routes
 frontend/src/
-  pages/                 LandingPage, PracticePage, DecimalWarPage, DashboardPage
-  components/            DigitChip, Keypad, ProgressMeter, HundredthsGrid, ...
+  pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
+                         DashboardPage
+  components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
+                         ProgressMeter, HundredthsGrid, ...
   regroup.ts             borrow/carry animation steps
 ```
 
