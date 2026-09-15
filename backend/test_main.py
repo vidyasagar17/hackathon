@@ -6,6 +6,8 @@ from pydantic import BaseModel
 import db
 import main
 from curriculum.engine import MoveResult
+from curriculum.for_keeps import hints as for_keeps_hints
+from curriculum.for_keeps.rounds import Hand, Round as ForKeepsRound
 from games import GAMES
 from games.subtraction.problems import Problem, compute_columns
 from tiering import TierAttempt
@@ -360,3 +362,77 @@ def test_a_move_the_game_does_not_count_is_applied_but_not_logged(tmp_path, monk
     assert response.json()["visible_state"]["computer_turns"] == 1
     assert db.get_round(round_id).state["computer_turns"] == 1
     assert db.get_move_history("s1", "pick") == []
+
+
+def _for_keeps_dealing(tmp_path, monkeypatch):
+    """Use a temp database and deal For Keeps hands of 7 3 5 8 to both players; rewording returns the sentence."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["for-keeps"]
+    hands = [Hand(my_cards=[7, 3, 5, 8], robo_cards=[7, 3, 5, 8]) for _ in range(4)]
+    monkeypatch.setattr(game, "new_round", lambda level: ForKeepsRound(level=level, hands=hands))
+    monkeypatch.setattr(for_keeps_hints, "reword_hint", lambda sentence, *args: sentence)
+    return client.post("/curriculum/for-keeps/rounds", params={"session_id": "s1"}).json()["round_id"]
+
+
+def _for_keeps_move(round_id, move):
+    return client.post(f"/rounds/{round_id}/moves", json={"move": move})
+
+
+def test_a_for_keeps_hand_is_played_and_only_the_difference_is_logged(tmp_path, monkeypatch):
+    round_id = _for_keeps_dealing(tmp_path, monkeypatch)
+
+    arranged = _for_keeps_move(round_id, {"type": "arrange", "cards": [7, 3, 5, 8]})
+    answered = _for_keeps_move(round_id, {"type": "difference", "answer": 25})
+    kept = _for_keeps_move(round_id, {"type": "keep", "keep": True})
+
+    assert arranged.json()["visible_state"]["step"] == "difference"
+    assert answered.json()["misconception"] == "smaller_from_larger"
+    assert answered.json()["visible_state"]["hands"][0]["difference"] == 15
+    state = kept.json()["visible_state"]
+    assert (state["hand_number"], state["step"], state["my_total"]) == (2, "arrange", 15)
+    assert (state["hands"][0]["robo_numbers"], state["hands"][0]["robo_kept"]) == ([73, 58], True)
+    assert db.get_move_history("s1", "for-keeps") == [
+        TierAttempt(difficulty=1, correct=False, misconception="smaller_from_larger")
+    ]
+
+
+def test_a_for_keeps_arrangement_with_other_cards_is_rejected_and_not_logged(tmp_path, monkeypatch):
+    round_id = _for_keeps_dealing(tmp_path, monkeypatch)
+
+    response = _for_keeps_move(round_id, {"type": "arrange", "cards": [7, 3, 5, 9]})
+
+    assert response.status_code == 422
+    assert db.get_round(round_id).state["step"] == "arrange"
+    assert db.get_move_history("s1", "for-keeps") == []
+
+
+def test_a_for_keeps_hint_before_any_difference_is_rejected(tmp_path, monkeypatch):
+    round_id = _for_keeps_dealing(tmp_path, monkeypatch)
+    _for_keeps_move(round_id, {"type": "arrange", "cards": [7, 3, 5, 8]})
+
+    assert client.post(f"/rounds/{round_id}/hint").status_code == 422
+
+
+def test_a_for_keeps_hint_describes_the_last_difference_after_the_hand_moves_on(tmp_path, monkeypatch):
+    round_id = _for_keeps_dealing(tmp_path, monkeypatch)
+    _for_keeps_move(round_id, {"type": "arrange", "cards": [7, 3, 5, 8]})
+    _for_keeps_move(round_id, {"type": "difference", "answer": 25})
+    _for_keeps_move(round_id, {"type": "keep", "keep": True})
+
+    response = client.post(f"/rounds/{round_id}/hint")
+
+    assert response.json() == {
+        "misconception": "smaller_from_larger",
+        "hint": "In the ones column, 3 is smaller than 8, so you can't subtract yet: borrow from the tens column.",
+    }
+
+
+def test_an_undiagnosed_for_keeps_difference_gets_the_general_hint(tmp_path, monkeypatch):
+    round_id = _for_keeps_dealing(tmp_path, monkeypatch)
+    _for_keeps_move(round_id, {"type": "arrange", "cards": [7, 3, 5, 8]})
+    _for_keeps_move(round_id, {"type": "difference", "answer": 99})
+
+    response = client.post(f"/rounds/{round_id}/hint")
+
+    assert response.json() == {"misconception": None, "hint": for_keeps_hints.GENERAL_HINT}
