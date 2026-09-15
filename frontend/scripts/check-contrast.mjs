@@ -49,6 +49,8 @@ const PAIRS = [
   ['ink', 'hundredths', 'h letter on the hundredths band of a playing card'],
   ['ink', 'thousandths', 'th letter on the thousandths band of a playing card'],
   ['chalk/60 over felt', 'felt', 'outline marking each seat and "They\'re the same" as buttons', NON_TEXT_MINIMUM],
+  ['ink', 'tens/25 over card', 'T letter in an empty For Keeps tens slot'],
+  ['ink', 'ones/25 over card', 'O letter in an empty For Keeps ones slot'],
 ]
 
 const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')

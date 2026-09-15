@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import AnswerBox from '../components/AnswerBox'
 import AppHeader from '../components/AppHeader'
 import DigitChip from '../components/DigitChip'
 import HomeButton from '../components/HomeButton'
@@ -15,7 +16,7 @@ import {
   shiftIntoPlaces,
   type Answers,
 } from '../answerEntry'
-import { answerFill, type Column } from '../columns'
+import { type Column } from '../columns'
 import { formatMisconception } from '../format'
 import { getGradeBand } from '../gradeBand'
 import { prefersReducedMotion } from '../motion'
@@ -193,37 +194,6 @@ function RegroupTopChip({
         </span>
       )}
     </div>
-  )
-}
-
-function AnswerBox({
-  column,
-  value,
-  onChange,
-  active,
-  onSelect,
-  usesKeypad,
-}: {
-  column: Column
-  value: string
-  onChange: (value: string) => void
-  active: boolean
-  onSelect: () => void
-  usesKeypad: boolean
-}) {
-  return (
-    <input
-      aria-label={`${column.charAt(0).toUpperCase()}${column.slice(1)} digit of your answer`}
-      className={`tap-target h-16 w-16 rounded-2xl border-4 border-ink text-center font-display text-3xl font-bold text-ink focus:outline-none focus:ring-4 focus:ring-helper focus:ring-offset-2 ${active ? 'ring-4 ring-helper ring-offset-2' : ''} ${answerFill[column]}`}
-      inputMode={usesKeypad ? 'none' : 'numeric'}
-      value={value}
-      onFocus={onSelect}
-      onChange={(e) => {
-        // No maxLength, so typing into a filled box works; keep only the digit just typed.
-        const digits = e.target.value.replace(/\D/g, '')
-        onChange((value && digits.length > value.length ? digits.replace(value, '') : digits).slice(-1))
-      }}
-    />
   )
 }
 

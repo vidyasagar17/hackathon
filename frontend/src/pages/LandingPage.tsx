@@ -88,6 +88,29 @@ function DecimalWarIcon() {
   )
 }
 
+/** 73 − 58 on digit cards: the two numbers a For Keeps hand builds. */
+function ForKeepsIcon() {
+  const cards = [
+    { x: 46, y: 4, digit: 7 },
+    { x: 70, y: 4, digit: 3 },
+    { x: 46, y: 38, digit: 5 },
+    { x: 70, y: 38, digit: 8 },
+  ]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {cards.map(({ x, y, digit }) => (
+        <g key={`${x}-${y}`}>
+          <rect x={x} y={y} width="22" height="30" rx="4" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 11} y={y + 22} textAnchor="middle" fontSize="18" fontWeight="700" className="fill-ink font-display">
+            {digit}
+          </text>
+        </g>
+      ))}
+      <rect x="24" y="51" width="14" height="4" rx="2" className="fill-ink" />
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -106,6 +129,14 @@ const GAMES: Game[] = [
     to: '/curriculum/decimal-war',
     icon: <DecimalWarIcon />,
     band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'For Keeps',
+    description: 'Build two numbers, subtract, keep the lowest score',
+    to: '/curriculum/for-keeps',
+    icon: <ForKeepsIcon />,
+    band: '2-3',
     kind: 'robo',
   },
   {

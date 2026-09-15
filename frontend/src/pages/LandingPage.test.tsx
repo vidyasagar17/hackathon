@@ -67,7 +67,14 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
 
   expect(localStorage.getItem('grade_band')).toBe('2-3')
   expect(shelvesInOrder()).toEqual(['2nd & 3rd grade', 'Kindergarten & 1st grade', '4th & 5th grade'])
-  expect(gameTitlesInOrder()).toEqual(['Subtraction', 'Addition', 'Decimal War', 'Multiplication', 'Division'])
+  expect(gameTitlesInOrder()).toEqual([
+    'For Keeps',
+    'Subtraction',
+    'Addition',
+    'Decimal War',
+    'Multiplication',
+    'Division',
+  ])
 })
 
 test('picking 4th & 5th grade puts its shelf first with games against Robo before workshops', async () => {
@@ -81,7 +88,14 @@ test('picking 4th & 5th grade puts its shelf first with games against Robo befor
   expect(within(shelf).getByText('Your grade')).toBeTruthy()
   expect(within(shelf).getByText('Games against Robo')).toBeTruthy()
   expect(within(shelf).getByText('Skill workshops')).toBeTruthy()
-  expect(gameTitlesInOrder()).toEqual(['Decimal War', 'Multiplication', 'Division', 'Subtraction', 'Addition'])
+  expect(gameTitlesInOrder()).toEqual([
+    'Decimal War',
+    'Multiplication',
+    'Division',
+    'For Keeps',
+    'Subtraction',
+    'Addition',
+  ])
 })
 
 test('only the student’s shelf says Your grade', async () => {
@@ -103,7 +117,7 @@ test('kindergarten & 1st grade shows an on-the-way box and keeps every game play
   expect(shelvesInOrder()[0]).toBe('Kindergarten & 1st grade')
   const shelf = screen.getByRole('region', { name: 'Kindergarten & 1st grade' })
   expect(within(shelf).getByText(/Games for kindergarten and 1st grade are on the way/)).toBeTruthy()
-  expect(gameTitlesInOrder()).toHaveLength(5)
+  expect(gameTitlesInOrder()).toHaveLength(6)
 })
 
 test('only games against Robo carry the vs Robo tag', () => {
@@ -129,6 +143,17 @@ test('the Decimal War box opens its game', () => {
 
   const box = screen.getByRole('link', { name: /Decimal War/ })
   expect(box.getAttribute('href')).toBe('/curriculum/decimal-war')
+})
+
+test('the For Keeps box sits on the 2nd & 3rd grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', '2-3')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: '2nd & 3rd grade' })
+  const box = within(shelf).getByRole('link', { name: /For Keeps/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/for-keeps')
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+  expect(within(shelf).getByText('Games against Robo')).toBeTruthy()
 })
 
 test('Change grade asks the grade question again', async () => {
