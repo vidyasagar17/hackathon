@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 import db
 import main
+from curriculum.card_war.rounds import Round as CardWarRound
 from curriculum.engine import MoveResult
 from curriculum.for_keeps import hints as for_keeps_hints
 from curriculum.for_keeps.rounds import Hand, Round as ForKeepsRound
@@ -527,3 +528,80 @@ def test_an_undiagnosed_wrong_shootout_answer_gets_the_general_hint(tmp_path, mo
     response = client.post(f"/rounds/{round_id}/hint")
 
     assert response.json() == {"misconception": None, "hint": game.GENERAL_HINT}
+
+
+def _card_war_dealing(tmp_path, monkeypatch, game_id, operation, mine, robo):
+    """Use a temp database and deal a fixed hand in Addition War or Take-Away War; returns the round id."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES[game_id]
+    monkeypatch.setattr(
+        game, "new_round", lambda level: CardWarRound(operation=operation, level=level, mine=mine, robo=robo)
+    )
+    return client.post(f"/curriculum/{game_id}/rounds", params={"session_id": "s1"}).json()["round_id"]
+
+
+def _card_war_move(round_id, move_type, pick):
+    return client.post(f"/rounds/{round_id}/moves", json={"move": {"type": move_type, "pick": pick}})
+
+
+def test_an_addition_war_hand_logs_the_answer_but_not_the_winner_pick(tmp_path, monkeypatch):
+    round_id = _card_war_dealing(tmp_path, monkeypatch, "addition-war", "add", (3, 4), (5, 1))
+
+    answered = _card_war_move(round_id, "answer", 6)
+    judged = _card_war_move(round_id, "winner", "robo")
+
+    assert (answered.json()["correct"], answered.json()["misconception"]) == (False, "counted_on_from_start")
+    assert answered.json()["visible_state"]["choices"] == [1, 5, 6, 7]
+    assert (judged.json()["correct"], judged.json()["visible_state"]["winner"]) == (False, "mine")
+    assert db.get_move_history("s1", "addition-war") == [
+        TierAttempt(difficulty=1, correct=False, misconception="counted_on_from_start")
+    ]
+    assert db.get_move_history("s1", "take-away-war") == []
+
+
+def test_an_addition_war_answer_that_is_not_a_card_is_rejected_and_not_logged(tmp_path, monkeypatch):
+    round_id = _card_war_dealing(tmp_path, monkeypatch, "addition-war", "add", (3, 4), (5, 1))
+
+    assert _card_war_move(round_id, "answer", 9).status_code == 422
+    assert db.get_move_history("s1", "addition-war") == []
+
+
+def test_an_addition_war_hint_counts_on_from_the_students_cards(tmp_path, monkeypatch):
+    round_id = _card_war_dealing(tmp_path, monkeypatch, "addition-war", "add", (3, 4), (5, 1))
+    _card_war_move(round_id, "answer", 6)
+
+    response = client.post(f"/rounds/{round_id}/hint")
+
+    assert response.json() == {
+        "misconception": "counted_on_from_start",
+        "hint": "When you count on from 4, the first number you say is 5: 5, 6, 7.",
+    }
+
+
+def test_an_addition_war_filler_answer_gets_the_addition_general_hint(tmp_path, monkeypatch):
+    round_id = _card_war_dealing(tmp_path, monkeypatch, "addition-war", "add", (4, 3), (5, 1))
+    _card_war_move(round_id, "answer", 8)
+
+    response = client.post(f"/rounds/{round_id}/hint")
+
+    assert response.json() == {
+        "misconception": None,
+        "hint": "Start at the bigger card and count on the smaller card's number.",
+    }
+
+
+def test_take_away_war_hints_use_its_own_sentences_and_general_hint(tmp_path, monkeypatch):
+    added = _card_war_dealing(tmp_path, monkeypatch, "take-away-war", "take_away", (3, 8), (9, 2))
+    _card_war_move(added, "answer", 11)
+    filler = _card_war_dealing(tmp_path, monkeypatch, "take-away-war", "take_away", (5, 5), (9, 2))
+    _card_war_move(filler, "answer", 2)
+
+    assert client.post(f"/rounds/{added}/hint").json() == {
+        "misconception": "added_instead",
+        "hint": "Take the smaller card away from the bigger one: 8 take away 3 is 5.",
+    }
+    assert client.post(f"/rounds/{filler}/hint").json() == {
+        "misconception": None,
+        "hint": "Start at the bigger card and count back the smaller card's number.",
+    }
