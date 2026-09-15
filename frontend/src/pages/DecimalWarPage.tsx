@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
+import GameTable from '../components/GameTable'
 import HomeButton from '../components/HomeButton'
 import HundredthsGrid from '../components/HundredthsGrid'
 import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
-import PlayerToken from '../components/PlayerToken'
+import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
-import RoboAvatar from '../components/RoboAvatar'
-import { API_URL } from '../api'
+import SeatName from '../components/SeatName'
+import { postJson } from '../api'
 import { formatMisconception } from '../format'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
@@ -29,27 +30,15 @@ type RoundPayload = { round_id: string; visible_state: VisibleState; progress: P
 
 type MoveResult = { correct: boolean; misconception: string | null; visible_state: VisibleState }
 
-function postJson<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
-  return fetch(`${API_URL}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal,
-  }).then((res) => {
-    if (!res.ok) throw new Error(`Request to ${path} failed`)
-    return res.json()
-  })
-}
-
 function requestRound(): Promise<RoundPayload> {
   return postJson(`/curriculum/decimal-war/rounds?session_id=${getSessionId()}`)
 }
 
 /** Decimal places in card order. Their colors are never the whole-number colors, so tens and tenths can't be confused. */
 const DECIMAL_PLACES = [
-  { name: 'tenths', letter: 't', band: 'bg-tenths' },
-  { name: 'hundredths', letter: 'h', band: 'bg-hundredths' },
-  { name: 'thousandths', letter: 'th', band: 'bg-thousandths' },
+  { name: 'tenths', letter: 't', className: 'bg-tenths' },
+  { name: 'hundredths', letter: 'h', className: 'bg-hundredths' },
+  { name: 'thousandths', letter: 'th', className: 'bg-thousandths' },
 ]
 
 /** A number drawn as its digit cards after "0.", so the number of cards is the number of decimal places. */
@@ -59,19 +48,7 @@ function DigitCards({ value }: { value: string }) {
     <span aria-hidden="true" className="flex items-end gap-2">
       <span className="pb-1 font-display text-5xl font-bold text-chalk">0.</span>
       {digits.map((digit, index) => (
-        <span
-          key={index}
-          className="relative flex h-24 w-16 items-center justify-center overflow-hidden rounded-lg border-2 border-felt-edge bg-card pb-4 font-display text-5xl font-bold text-ink shadow-[0_4px_0_#163A34]"
-        >
-          <span className="absolute left-1.5 top-1 text-sm leading-none">{digit}</span>
-          {digit}
-          <span
-            data-place={DECIMAL_PLACES[index].name}
-            className={`absolute inset-x-0 bottom-0 flex h-5 items-center justify-center font-body text-xs font-bold leading-none text-ink ${DECIMAL_PLACES[index].band}`}
-          >
-            {DECIMAL_PLACES[index].letter}
-          </span>
-        </span>
+        <PlayingCard key={index} digit={digit} band={DECIMAL_PLACES[index]} />
       ))}
     </span>
   )
@@ -102,10 +79,7 @@ function Seat({
       disabled={disabled}
       className={`tap-target grid w-full grid-cols-1 items-center gap-3 rounded-3xl border-4 px-5 py-4 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds sm:grid-cols-[6rem_1fr_6rem] ${isAnswer ? 'border-hundreds' : 'border-chalk/60'}`}
     >
-      <span className="flex flex-col items-center gap-1 font-display text-xl font-semibold text-chalk">
-        {name === 'Robo' ? <RoboAvatar /> : <PlayerToken />}
-        {name}
-      </span>
+      <SeatName name={name} />
       <span className="flex items-center justify-center gap-4">
         <DigitCards value={value} />
         <span className="flex w-24 flex-col items-start gap-2 font-display text-base font-bold">
@@ -262,10 +236,7 @@ function DecimalWarPage() {
 
         <ProgressMeter progress={progress} canCelebrate />
 
-        <section
-          aria-label="Game table"
-          className="w-full max-w-3xl rounded-[2rem] border-[12px] border-felt-edge bg-felt p-4 sm:p-6"
-        >
+        <GameTable>
           <div className="flex flex-col gap-3">
             <Seat
               label={`Robo's number, ${state.robo}`}
@@ -299,7 +270,7 @@ function DecimalWarPage() {
               </button>
             )}
           </div>
-        </section>
+        </GameTable>
 
         {moveError && (
           <p className="font-display text-lg font-semibold text-alert-text">
