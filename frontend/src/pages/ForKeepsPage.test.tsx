@@ -345,11 +345,12 @@ function button(name: string) {
   return screen.getByRole('button', { name }) as HTMLButtonElement
 }
 
-test('after the difference the student can keep or trash it', async () => {
+test('after the difference the student can keep or trash it, with no extra prompt line on the table', async () => {
   await answerCorrectly()
 
   expect(button('Keep it').disabled).toBe(false)
   expect(button('Trash it').disabled).toBe(false)
+  expect(screen.queryByText('Keep this score or trash it?')).toBeNull()
 })
 
 test('a forced choice greys out the other button and says why', async () => {

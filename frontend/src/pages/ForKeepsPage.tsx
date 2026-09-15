@@ -477,9 +477,7 @@ function ForKeepsPage() {
                 <span>{totals}</span>
               </p>
               {arranging && <p className="text-2xl font-semibold">Make two numbers with your cards.</p>}
-              {state.step === 'difference' && <p className="text-2xl font-semibold">Find the difference.</p>}
-              {state.step === 'keep' && <p className="text-2xl font-semibold">Keep this score or trash it?</p>}
-            </div>
+              {state.step === 'difference' && <p className="text-2xl font-semibold">Find the difference.</p>}            </div>
             <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-center md:justify-center">
               <div className="flex items-center gap-4">
                 <SeatName name="You" />
