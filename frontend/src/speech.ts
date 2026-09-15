@@ -16,3 +16,13 @@ export function speak(text: string): void {
   utterance.lang = 'en-US'
   window.speechSynthesis.speak(utterance)
 }
+
+/**
+ * Speak without a tap of its own, but only once the browser allows it: after the student has tapped
+ * or typed on the site. Browsers without `navigator.userActivation` are allowed to try.
+ */
+export function speakWhenAllowed(text: string): void {
+  const activation = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation
+  if (activation && !activation.hasBeenActive) return
+  speak(text)
+}
