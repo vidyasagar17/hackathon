@@ -9,6 +9,7 @@ node_modules/
 dist/
 .env
 plan.md
+plan-shootout.md
 CLAUDE.md
 backend_review.md
 

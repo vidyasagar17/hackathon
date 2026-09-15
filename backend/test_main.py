@@ -360,3 +360,94 @@ def test_a_move_the_game_does_not_count_is_applied_but_not_logged(tmp_path, monk
     assert response.json()["visible_state"]["computer_turns"] == 1
     assert db.get_round(round_id).state["computer_turns"] == 1
     assert db.get_move_history("s1", "pick") == []
+
+
+def _shootout_dealing(tmp_path, monkeypatch):
+    """Use a temp database and make Multiplication Shootout deal 6 x 7 to the student and 3 x 4 to Robo."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["multiplication-shootout"]
+    monkeypatch.setattr(
+        game,
+        "new_round",
+        lambda level: game.Round(
+            level=level,
+            fact={"operation": "multiply", "left": 6, "right": 7},
+            robo_fact={"operation": "multiply", "left": 3, "right": 4},
+        ),
+    )
+
+
+def _new_shootout_round() -> dict:
+    return client.post("/curriculum/multiplication-shootout/rounds", params={"session_id": "s1"}).json()
+
+
+def test_a_shootout_turn_is_played_through_the_move_routes(tmp_path, monkeypatch):
+    _shootout_dealing(tmp_path, monkeypatch)
+    new_round = _new_shootout_round()
+    assert new_round["visible_state"]["robo_fact"] is None
+
+    response = client.post(f"/rounds/{new_round['round_id']}/moves", json={"move": {"answer": 48}})
+
+    assert response.json() == {
+        "correct": False,
+        "misconception": "operand_related",
+        "visible_state": {
+            "level": 1,
+            "fact": {"operation": "multiply", "left": 6, "right": 7},
+            "answer": 48,
+            "correct_answer": 42,
+            "robo_fact": {"operation": "multiply", "left": 3, "right": 4},
+            "robo_answer": 12,
+            "robo_correct_answer": 12,
+        },
+    }
+    assert db.get_move_history("s1", "multiplication-shootout") == [
+        TierAttempt(difficulty=1, correct=False, misconception="operand_related")
+    ]
+
+
+def test_a_second_answer_to_a_shootout_fact_is_rejected_and_not_logged(tmp_path, monkeypatch):
+    _shootout_dealing(tmp_path, monkeypatch)
+    round_id = _new_shootout_round()["round_id"]
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"answer": 42}})
+
+    response = client.post(f"/rounds/{round_id}/moves", json={"move": {"answer": 42}})
+
+    assert response.status_code == 422
+    assert len(db.get_move_history("s1", "multiplication-shootout")) == 1
+
+
+def test_a_shootout_answer_that_is_not_a_whole_number_to_100_is_rejected_and_not_logged(tmp_path, monkeypatch):
+    _shootout_dealing(tmp_path, monkeypatch)
+    round_id = _new_shootout_round()["round_id"]
+
+    for answer in ["42", 101]:
+        response = client.post(f"/rounds/{round_id}/moves", json={"move": {"answer": answer}})
+        assert response.status_code == 422
+
+    assert db.get_move_history("s1", "multiplication-shootout") == []
+
+
+def test_a_diagnosed_wrong_shootout_answer_gets_the_games_hint_sentence(tmp_path, monkeypatch):
+    _shootout_dealing(tmp_path, monkeypatch)
+    game = main.CURRICULUM_GAMES["multiplication-shootout"]
+    monkeypatch.setattr(game, "hint_sentence", lambda round, name: f"hint for {name} on {round.answer}")
+    round_id = _new_shootout_round()["round_id"]
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"answer": 48}})
+
+    response = client.post(f"/rounds/{round_id}/hint")
+
+    assert response.json() == {"misconception": "operand_related", "hint": "hint for operand_related on 48"}
+
+
+def test_an_undiagnosed_wrong_shootout_answer_gets_the_general_hint(tmp_path, monkeypatch):
+    _shootout_dealing(tmp_path, monkeypatch)
+    game = main.CURRICULUM_GAMES["multiplication-shootout"]
+    monkeypatch.setattr(game, "hint_sentence", _fail_if_called)
+    round_id = _new_shootout_round()["round_id"]
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"answer": 43}})
+
+    response = client.post(f"/rounds/{round_id}/hint")
+
+    assert response.json() == {"misconception": None, "hint": game.GENERAL_HINT}

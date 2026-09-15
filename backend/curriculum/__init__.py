@@ -5,8 +5,9 @@ The four workshops are separate and live in `games`.
 
 from types import ModuleType
 
-from . import decimal_war
+from . import decimal_war, multiplication_shootout
 
 CURRICULUM_GAMES: dict[str, ModuleType] = {
     "decimal-war": decimal_war,
+    "multiplication-shootout": multiplication_shootout,
 }
