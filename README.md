@@ -15,7 +15,9 @@ It has two kinds of game, grouped on the home screen by grade band
   numbers from four cards, subtract, and keep the lowest scores;
   **Multiplication Shootout** (grades 2–3), take turns with Robo answering
   times and division facts; **Fraction Spoons** (grades 4–5), draw and
-  discard to collect four equal fractions and win a spoon; and **Addition
+  discard to collect four equal fractions and win a spoon; **The 24 Game**
+  (grades 4–5), use all four cards with + − × ÷ and parentheses to make 24;
+  and **Addition
   War** and **Take-Away War** (grades K–1), flip two cards, add them or take
   the smaller away, and say whose hand wins.
 
@@ -147,6 +149,27 @@ adds non-unit fractions, fifths and sixths, and one-part-only cards
 Robo is never wrong: it collects what it holds most of, and the level only
 sets how close to a set its starting hand is.
 
+**The 24 Game.** The classroom 24 Game (Robert Sun, 1988) made turn-based: a
+duel of five hands. Each hand the student taps their four cards, + − × ÷ and
+parentheses into an expression (each card once) and presses **Check**; the
+server works it out exactly and shows what it makes, step by step by the
+order of operations (5.OA.A.1). Every check is graded, and the student can
+edit and check again or press **Show me a way** (not graded, no point). Then
+Robo shows its own hand. A wrong check is diagnosed only when the student's
+expression makes 24 under a mistaken order:
+
+| Diagnosis | Wrong expression |
+|---|---|
+| `left_to_right` | works every operation in the order written: 3 + 5 × 3 × 1 as if it were (3 + 5) × 3 × 1 — Bye, J. K., et al. (2024), *Perceiving precedence: Order of operations errors are predicted by perception of equivalent expressions* (15–22% of 837 middle schoolers kept going left to right); Blando et al. (1989); Tabak (2019) |
+| `pemdas_letter_order` | does × before ÷ or + before −: 6 × 8 ÷ 1 × 2 as if it were 6 × 8 ÷ (1 × 2) — Glidden, P. L. (2008), *Prospective elementary teachers' understanding of order of operations* (38.0% multiplied before dividing) |
+
+Hands are dealt by what their ways to 24 need, one new idea per level: level 1
+a way with no parentheses and no ÷, level 2 parentheses but no ÷, level 3 ÷
+(cards 1–9, then 1–10). Every way the game shows uses whole-number steps.
+Robo finds 24 with only the kinds of way its level allows (no parentheses; at
+most one pair and no ÷; at most one pair) — about 48%, 91% and 97% of its
+hands — and never shows wrong math.
+
 ## Adaptive difficulty
 
 `backend/tiering.py` moves a student up a level after 3 correct in a row and
@@ -194,6 +217,11 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   line where the Collecting card's shading ends: equal fractions reach it,
   2/3 passes 1/2. The server picks both cards, so the picture always matches
   the sentence.
+- **The 24 Game:** hints are never reworded by the LLM (a moved parenthesis
+  changes the math). A wrong check always lists its steps by the rule; "Show
+  me why" adds the rule that was missed and the parentheses that make the
+  student's order work, e.g. *"In 3 + 5 × 3 × 1, × and ÷ come before + and −,
+  so it makes 18. Parentheses show the order you used: (3 + 5) × 3 × 1 = 24."*
 
 ## The move engine (games against Robo)
 
@@ -261,17 +289,21 @@ backend/
     take_away_war/       fixes card_war to taking away for the engine
     fraction_spoons/     the same files: dealing with mistake cards,
                          fit and claim detectors, moves and Robo, hints
+    twenty_four/         expressions.py (work out tokens under any order),
+                         the same files: solver and dealing, detectors,
+                         moves and Robo, hints
   tiering.py             adaptive levels
   db.py                  SQLite: attempts, rounds, moves, summary
   main.py                FastAPI routes
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
                          CardWarPage, MultiplicationShootoutPage,
-                         FractionSpoonsPage, DashboardPage
+                         FractionSpoonsPage, TwentyFourPage, DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
                          ProgressMeter, HundredthsGrid, FractionCard,
                          FractionBars, ...
   regroup.ts             borrow/carry animation steps
+  expressionEntry.ts     which 24 Game tile can be tapped next
 ```
 
 ## Running locally

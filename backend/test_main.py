@@ -12,6 +12,8 @@ from curriculum.for_keeps.rounds import Hand, Round as ForKeepsRound
 from curriculum.fraction_spoons import hints as fraction_spoons_hints
 from curriculum.fraction_spoons.misconceptions import Card as SpoonsCard
 from curriculum.fraction_spoons.rounds import Hand as SpoonsHand, Round as SpoonsRound
+from curriculum.twenty_four import hints as twenty_four_hints
+from curriculum.twenty_four.rounds import Round as TwentyFourRound
 from games import GAMES
 from games.subtraction.problems import Problem, compute_columns
 from tiering import TierAttempt
@@ -724,3 +726,68 @@ def test_a_wrong_fraction_spoons_claim_hint_carries_the_collecting_card_and_the_
     assert (claimed.json()["correct"], claimed.json()["misconception"]) == (False, "same_difference_means_equal")
     assert client.post(f"/rounds/{round_id}/hint").json()["cards"] == [{"top": 1, "bottom": 2}, {"top": 2, "bottom": 3}]
 
+
+def _twenty_four_dealing(tmp_path, monkeypatch):
+    """Use a temp database and deal the student 3, 5, 3, 1 and Robo 1, 2, 7, 7 at the session's level."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["the-24-game"]
+    monkeypatch.setattr(
+        game, "new_round", lambda level: TwentyFourRound(level=level, cards=[3, 5, 3, 1], robo_cards=[1, 2, 7, 7])
+    )
+    return client.post("/curriculum/the-24-game/rounds", params={"session_id": "s1"}).json()
+
+
+def _twenty_four_check(round_id, *tokens):
+    return client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "check", "tokens": list(tokens)}})
+
+
+def test_a_24_game_hand_is_checked_diagnosed_hinted_and_then_robo_plays(tmp_path, monkeypatch):
+    dealt = _twenty_four_dealing(tmp_path, monkeypatch)
+    round_id = dealt["round_id"]
+    assert dealt["visible_state"]["cards"] == [3, 5, 3, 1]
+    assert dealt["visible_state"]["robo_cards"] is None
+
+    wrong = _twenty_four_check(round_id, 0, "+", 1, "*", 2, "*", 3).json()
+    assert (wrong["correct"], wrong["misconception"]) == (False, "left_to_right")
+    assert wrong["visible_state"]["last_check"]["value"] == "18"
+    assert wrong["visible_state"]["robo_cards"] is None
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": "left_to_right",
+        "hint": (
+            "In 3 + 5 × 3 × 1, × and ÷ come before + and −, so it makes 18. "
+            "Parentheses show the order you used: (3 + 5) × 3 × 1 = 24."
+        ),
+        "cards": None,
+    }
+
+    right = _twenty_four_check(round_id, "(", 0, "+", 1, ")", "*", 2, "*", 3).json()
+    assert right["correct"]
+    state = right["visible_state"]
+    assert state["done"] and state["robo_cards"] == [1, 2, 7, 7]
+    assert state["robo_way"] is None
+    assert db.get_move_history("s1", "the-24-game") == [
+        TierAttempt(difficulty=1, correct=False, misconception="left_to_right"),
+        TierAttempt(difficulty=1, correct=True, misconception=None),
+    ]
+
+
+def test_showing_a_24_game_way_is_not_logged_and_a_bad_check_is_rejected(tmp_path, monkeypatch):
+    round_id = _twenty_four_dealing(tmp_path, monkeypatch)["round_id"]
+
+    assert _twenty_four_check(round_id, 0, "+", 1).status_code == 422
+    shown = client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "show_way"}}).json()
+
+    assert shown["visible_state"]["shown_way"]["text"] == "(3 + 5) × 3 × 1"
+    assert db.get_move_history("s1", "the-24-game") == []
+
+
+def test_an_undiagnosed_wrong_24_game_check_gets_the_general_hint(tmp_path, monkeypatch):
+    round_id = _twenty_four_dealing(tmp_path, monkeypatch)["round_id"]
+    _twenty_four_check(round_id, 0, "+", 1, "+", 2, "+", 3)
+
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": None,
+        "hint": twenty_four_hints.GENERAL_HINT,
+        "cards": None,
+    }

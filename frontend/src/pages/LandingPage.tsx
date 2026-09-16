@@ -162,6 +162,21 @@ function FractionSpoonsIcon() {
   )
 }
 
+/** The target 24 on a card over the four signs a 24 Game expression uses. */
+function TwentyFourIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <rect x="26" y="4" width="44" height="40" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+      <text x="48" y="35" textAnchor="middle" fontSize="26" fontWeight="700" className="fill-ink font-display">
+        24
+      </text>
+      <text x="48" y="66" textAnchor="middle" fontSize="18" fontWeight="700" className="fill-ink font-display">
+        + − × ÷
+      </text>
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -187,6 +202,14 @@ const GAMES: Game[] = [
     description: 'Collect four equal fractions to win a spoon',
     to: '/curriculum/fraction-spoons',
     icon: <FractionSpoonsIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'The 24 Game',
+    description: 'Use all four cards with + − × ÷ to make 24',
+    to: '/curriculum/the-24-game',
+    icon: <TwentyFourIcon />,
     band: '4-5',
     kind: 'robo',
   },

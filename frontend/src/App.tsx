@@ -7,6 +7,7 @@ import FractionSpoonsPage from './pages/FractionSpoonsPage'
 import LandingPage from './pages/LandingPage'
 import MultiplicationShootoutPage from './pages/MultiplicationShootoutPage'
 import PracticePage from './pages/PracticePage'
+import TwentyFourPage from './pages/TwentyFourPage'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/curriculum/decimal-war" element={<DecimalWarPage />} />
         <Route path="/curriculum/for-keeps" element={<ForKeepsPage />} />
         <Route path="/curriculum/fraction-spoons" element={<FractionSpoonsPage />} />
+        <Route path="/curriculum/the-24-game" element={<TwentyFourPage />} />
         <Route path="/curriculum/multiplication-shootout" element={<MultiplicationShootoutPage />} />
         <Route path="/curriculum/addition-war" element={<CardWarPage game="addition-war" />} />
         <Route path="/curriculum/take-away-war" element={<CardWarPage game="take-away-war" />} />
