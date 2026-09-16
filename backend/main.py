@@ -86,6 +86,12 @@ class HintResponse(BaseModel):
     hint: str | None
 
 
+class RoundHintResponse(HintResponse):
+    """`cards` are the two fractions a hint picture compares, from games that draw one (Fraction Spoons)."""
+
+    cards: list[dict[str, int]] | None
+
+
 class RoundResponse(BaseModel):
     round_id: str
     visible_state: dict[str, Any]
@@ -258,12 +264,13 @@ def make_move(round_id: str, request: MoveRequest) -> MoveResponse:
 
 
 @app.post("/rounds/{round_id}/hint")
-def get_round_hint(round_id: str) -> HintResponse:
+def get_round_hint(round_id: str) -> RoundHintResponse:
     """Phrase a hint for the round's latest move, only when the UI is about to show one.
 
     Uses the diagnosis the server logged for that move, so the browser can't change it. A wrong
     move with no diagnosed misconception gets the game's general hint, never an LLM hint.
-    Returns 422 before the round has a move.
+    A diagnosed hint also carries the game's `hint_cards` when it has them, so the picture
+    matches the sentence. Returns 422 before the round has a move.
     """
     stored = _get_stored_round(round_id)
     last_move = get_last_move(round_id)
@@ -272,13 +279,17 @@ def get_round_hint(round_id: str) -> HintResponse:
 
     correct, misconception = last_move
     game = CURRICULUM_GAMES[stored.game]
+    cards = None
     if correct:
         hint = None
     elif misconception:
-        hint = game.hint_sentence(game.Round.model_validate(stored.state), misconception)
+        round = game.Round.model_validate(stored.state)
+        hint = game.hint_sentence(round, misconception)
+        if hasattr(game, "hint_cards"):
+            cards = [card.model_dump() for card in game.hint_cards(round, misconception)]
     else:
         hint = game.GENERAL_HINT
-    return HintResponse(misconception=misconception, hint=hint)
+    return RoundHintResponse(misconception=misconception, hint=hint, cards=cards)
 
 
 @app.get("/summary/{session_id}")

@@ -136,6 +136,32 @@ function TwoCardsIcon({ first, sign, second }: { first: number; sign: string; se
   )
 }
 
+/** 1/2 = 2/4 on two fraction cards: a match Fraction Spoons asks the student to spot. */
+function FractionSpoonsIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {[
+        { x: 6, top: 1, bottom: 2 },
+        { x: 62, top: 2, bottom: 4 },
+      ].map(({ x, top, bottom }) => (
+        <g key={x}>
+          <rect x={x} y="6" width="28" height="60" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 14} y="30" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+            {top}
+          </text>
+          <rect x={x + 7} y="35" width="14" height="3" rx="1.5" className="fill-ink" />
+          <text x={x + 14} y="58" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+            {bottom}
+          </text>
+        </g>
+      ))}
+      <text x="48" y="45" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
+        =
+      </text>
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -153,6 +179,14 @@ const GAMES: Game[] = [
     description: 'Judge whose decimal is larger',
     to: '/curriculum/decimal-war',
     icon: <DecimalWarIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'Fraction Spoons',
+    description: 'Collect four equal fractions to win a spoon',
+    to: '/curriculum/fraction-spoons',
+    icon: <FractionSpoonsIcon />,
     band: '4-5',
     kind: 'robo',
   },

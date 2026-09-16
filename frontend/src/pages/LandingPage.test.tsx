@@ -75,6 +75,7 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
     'Addition War',
     'Take-Away War',
     'Decimal War',
+    'Fraction Spoons',
     'Multiplication',
     'Division',
   ])
@@ -93,6 +94,7 @@ test('picking 4th & 5th grade puts its shelf first with games against Robo befor
   expect(within(shelf).getByText('Skill workshops')).toBeTruthy()
   expect(gameTitlesInOrder()).toEqual([
     'Decimal War',
+    'Fraction Spoons',
     'Multiplication',
     'Division',
     'Addition War',
@@ -130,7 +132,7 @@ test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo
   expect(within(additionWar).getByText('vs Robo')).toBeTruthy()
   expect(within(takeAwayWar).getByText('vs Robo')).toBeTruthy()
   expect(screen.queryByText(/on the way/)).toBeNull()
-  expect(gameTitlesInOrder()).toHaveLength(9)
+  expect(gameTitlesInOrder()).toHaveLength(10)
 })
 
 test('only games against Robo carry the vs Robo tag', () => {
@@ -177,6 +179,17 @@ test('the Multiplication Shootout box sits on the 2nd & 3rd grade shelf, opens i
   const box = within(shelf).getByRole('link', { name: /Multiplication Shootout/ })
   expect(box.getAttribute('href')).toBe('/curriculum/multiplication-shootout')
   expect(within(box).getByText('Answer times and division facts in turns with Robo')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+})
+
+test('the Fraction Spoons box sits on the 4th & 5th grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: '4th & 5th grade' })
+  const box = within(shelf).getByRole('link', { name: /Fraction Spoons/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/fraction-spoons')
+  expect(within(box).getByText('Collect four equal fractions to win a spoon')).toBeTruthy()
   expect(within(box).getByText('vs Robo')).toBeTruthy()
 })
 

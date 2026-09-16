@@ -14,9 +14,10 @@ It has two kinds of game, grouped on the home screen by grade band
   whose decimal is larger; **For Keeps** (grades 2–3), build two 2-digit
   numbers from four cards, subtract, and keep the lowest scores;
   **Multiplication Shootout** (grades 2–3), take turns with Robo answering
-  times and division facts; and **Addition War** and **Take-Away War**
-  (grades K–1), flip two cards, add them or take the smaller away, and say
-  whose hand wins.
+  times and division facts; **Fraction Spoons** (grades 4–5), draw and
+  discard to collect four equal fractions and win a spoon; and **Addition
+  War** and **Take-Away War** (grades K–1), flip two cards, add them or take
+  the smaller away, and say whose hand wins.
 
 ## How diagnosis works
 
@@ -122,6 +123,30 @@ level rule. Levels follow the standards: cards 0–5 (K.OA.A.5), then 0–10
 (K.OA.A.2; addition sums within 10), then sums to 20 or a teen card minus a card
 to 10 (1.OA.C.6).
 
+**Fraction Spoons.** The classroom *Spoons* game (Games 4 Gains) made
+turn-based, with no grabbing race: the student and Robo each hold four
+fraction cards, and a hand is won by the first correct claim that all four
+equal the card being collected; first to 3 spoons wins. Each turn the student
+picks a Collecting card, draws, taps **Fits** or **Doesn't fit** for the
+drawn card, discards one card, then takes the spoon or hands the turn to
+Robo. The fit tap and the claim are graded; picking and discarding are
+strategy and not logged. Every set is a simple fraction times 1–4 (1/3, 2/6,
+3/9, 4/12), and the deck adds mistake cards built from the student's own
+Collecting cards:
+
+| Diagnosis | Wrong move |
+|---|---|
+| `same_difference_means_equal` | says 2/3 fits with 1/2 (top and bottom 1 apart in both) — "gap thinking", Mitchell, A., & Horne, M. (2010), *Gap thinking in fraction pair comparisons*; adding the same number to top and bottom always makes this card, so additive scaling is the same diagnosis |
+| `changed_only_top_or_bottom` | says 1/4 or 2/2 fits with 1/2 (only one part × 2) — Biber, Tuna & Aktaş (2013) |
+| `bigger_numbers_not_equal` | says 4/8 doesn't fit with 1/2 — Braithwaite, D. W., & Siegler, R. S. (2018), *Developmental changes in the whole number bias* (the fraction with larger numbers judged larger 62.7% of the time) |
+
+A wrong claim names the mistake most of its odd cards show. Level 1 deals
+sets from 1/2, 1/3 and 1/4 with same-difference cards (3.NF.A.3.b); level 2
+adds non-unit fractions, fifths and sixths, and one-part-only cards
+(4.NF.A.1); level 3 skips multipliers and reaches hundredths (3/4 = 75/100).
+Robo is never wrong: it collects what it holds most of, and the level only
+sets how close to a set its starting hand is.
+
 ## Adaptive difficulty
 
 `backend/tiering.py` moves a student up a level after 3 correct in a row and
@@ -162,20 +187,29 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   whole hint (e.g. *"Start at 4 and count on 3 more: 5, 6, 7."*). A wrong
   answer card wobbles once, the right card is outlined, and the hint is shown
   and spoken; there is no red text.
+- **Fraction Spoons:** hints are never reworded by the LLM (live rewordings
+  of its size relations failed the fact check or read misleadingly). "Show
+  me why" draws the Collecting card and the card the hint is about as two
+  fraction bars of the same length, each cut into its parts, with a dashed
+  line where the Collecting card's shading ends: equal fractions reach it,
+  2/3 passes 1/2. The server picks both cards, so the picture always matches
+  the sentence.
 
 ## The move engine (games against Robo)
 
 Curriculum games register in `backend/curriculum/` and provide `new_round`,
 `visible_state`, `evaluate_move`, `computer_move`, `hint_sentence` and a
-general hint. The server keeps each round (so hidden cards never reach the
-browser) and logs every graded move with its diagnosis; a move the game marks
+general hint, and optionally `hint_cards` for a hint picture. The server keeps
+each round (so hidden cards never reach the browser) and logs every graded move
+with its diagnosis; a move the game marks
 as not graded (`MoveResult.counted`, e.g. arranging cards) is applied but not
 logged:
 
 - `POST /curriculum/{game_id}/rounds` — start a round at the student's level
 - `POST /rounds/{round_id}/moves` — evaluate, log and answer a move (422 for a
   move the game rejects, which is not logged)
-- `POST /rounds/{round_id}/hint` — hint for the round's latest move
+- `POST /rounds/{round_id}/hint` — hint for the round's latest move, with the
+  two cards the hint compares when the game provides them
 
 The session summary counts workshop attempts and moves together, per game.
 
@@ -225,14 +259,18 @@ backend/
                          same files, with answer cards from mistakes
     addition_war/        fixes card_war to adding for the engine
     take_away_war/       fixes card_war to taking away for the engine
+    fraction_spoons/     the same files: dealing with mistake cards,
+                         fit and claim detectors, moves and Robo, hints
   tiering.py             adaptive levels
   db.py                  SQLite: attempts, rounds, moves, summary
   main.py                FastAPI routes
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
-                         CardWarPage, DashboardPage
+                         CardWarPage, MultiplicationShootoutPage,
+                         FractionSpoonsPage, DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
-                         ProgressMeter, HundredthsGrid, ...
+                         ProgressMeter, HundredthsGrid, FractionCard,
+                         FractionBars, ...
   regroup.ts             borrow/carry animation steps
 ```
 
