@@ -51,6 +51,7 @@ const PAIRS = [
   ['chalk/60 over felt', 'felt', 'outline marking each seat and "They\'re the same" as buttons', NON_TEXT_MINIMUM],
   ['ink', 'tens/25 over card', 'T letter in an empty For Keeps tens slot'],
   ['ink', 'ones/25 over card', 'O letter in an empty For Keeps ones slot'],
+  ['chalk', 'felt-edge', 'numbers on shut tiles in Shut the Box'],
 ]
 
 const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')

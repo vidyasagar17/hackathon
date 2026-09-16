@@ -74,6 +74,7 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
     'Addition',
     'Addition War',
     'Take-Away War',
+    'Shut the Box',
     'Decimal War',
     'Fraction Spoons',
     'The 24 Game',
@@ -101,6 +102,7 @@ test('picking 4th & 5th grade puts its shelf first with games against Robo befor
     'Division',
     'Addition War',
     'Take-Away War',
+    'Shut the Box',
     'For Keeps',
     'Multiplication Shootout',
     'Subtraction',
@@ -134,7 +136,7 @@ test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo
   expect(within(additionWar).getByText('vs Robo')).toBeTruthy()
   expect(within(takeAwayWar).getByText('vs Robo')).toBeTruthy()
   expect(screen.queryByText(/on the way/)).toBeNull()
-  expect(gameTitlesInOrder()).toHaveLength(11)
+  expect(gameTitlesInOrder()).toHaveLength(12)
 })
 
 test('only games against Robo carry the vs Robo tag', () => {
@@ -203,6 +205,17 @@ test('The 24 Game box sits on the 4th & 5th grade shelf, opens its game and is p
   const box = within(shelf).getByRole('link', { name: /The 24 Game/ })
   expect(box.getAttribute('href')).toBe('/curriculum/the-24-game')
   expect(within(box).getByText('Use all four cards with + − × ÷ to make 24')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+})
+
+test('the Shut the Box box sits on the kindergarten & 1st grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', 'k-1')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: 'Kindergarten & 1st grade' })
+  const box = within(shelf).getByRole('link', { name: /Shut the Box/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/shut-the-box')
+  expect(within(box).getByText('Roll two dice, add the dots, and shut tiles that make that many')).toBeTruthy()
   expect(within(box).getByText('vs Robo')).toBeTruthy()
 })
 

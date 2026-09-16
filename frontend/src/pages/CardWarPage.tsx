@@ -3,6 +3,7 @@ import AppHeader from '../components/AppHeader'
 import GameTable from '../components/GameTable'
 import HomeButton from '../components/HomeButton'
 import MuteToggle from '../components/MuteToggle'
+import NextArrow from '../components/NextArrow'
 import PlayerToken from '../components/PlayerToken'
 import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
@@ -10,10 +11,10 @@ import ReadAloudButton from '../components/ReadAloudButton'
 import RoboAvatar from '../components/RoboAvatar'
 import SeatName from '../components/SeatName'
 import { postJson } from '../api'
-import { prefersReducedMotion } from '../motion'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 import { speakWhenAllowed } from '../speech'
+import { wobble } from '../wobble'
 
 type GameId = 'addition-war' | 'take-away-war'
 
@@ -60,17 +61,6 @@ const RESULTS: Record<Winner, string> = {
   same: "Same! It's a tie.",
 }
 
-/** A short side-to-side wobble on a wrong pick (decision 1: at most 500 ms, only on the student's tap). */
-const WOBBLE: Keyframe[] = [
-  { transform: 'translateX(0)' },
-  { transform: 'translateX(-8px)' },
-  { transform: 'translateX(8px)' },
-  { transform: 'translateX(-4px)' },
-  { transform: 'translateX(0)' },
-]
-
-const WOBBLE_MS = 400
-
 /** Cards in reading order: as dealt for adding; bigger card first for taking away, as in Subtraction Top-It. */
 function readingOrder(cards: Cards, operation: Operation): Cards {
   return operation === 'add' ? cards : [Math.max(...cards), Math.min(...cards)]
@@ -95,10 +85,6 @@ function pickResult<T>(option: T, pick: T | null, right: T | null): PickResult {
   if (pick === null) return undefined
   if (option === right) return 'right'
   return option === pick ? 'picked-wrong' : undefined
-}
-
-function wobble(element: HTMLElement | null | undefined) {
-  if (!prefersReducedMotion()) element?.animate(WOBBLE, { duration: WOBBLE_MS })
 }
 
 function requestRound(game: GameId): Promise<RoundPayload> {
@@ -126,14 +112,6 @@ function Hand({ name, cards, operation }: { name: 'You' | 'Robo'; cards: Cards; 
         </span>
       </span>
     </div>
-  )
-}
-
-function NextArrow() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="3">
-      <path d="M4 12h15M13 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   )
 }
 

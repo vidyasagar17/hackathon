@@ -17,9 +17,10 @@ It has two kinds of game, grouped on the home screen by grade band
   times and division facts; **Fraction Spoons** (grades 4–5), draw and
   discard to collect four equal fractions and win a spoon; **The 24 Game**
   (grades 4–5), use all four cards with + − × ÷ and parentheses to make 24;
-  and **Addition
-  War** and **Take-Away War** (grades K–1), flip two cards, add them or take
-  the smaller away, and say whose hand wins.
+  **Addition War** and **Take-Away War** (grades K–1), flip two cards, add
+  them or take the smaller away, and say whose hand wins; and **Shut the Box**
+  (grades K–1), roll two dice, add the dots, and shut tiles that make that
+  many.
 
 ## How diagnosis works
 
@@ -125,6 +126,28 @@ level rule. Levels follow the standards: cards 0–5 (K.OA.A.5), then 0–10
 (K.OA.A.2; addition sums within 10), then sums to 20 or a teen card minus a card
 to 10 (1.OA.C.6).
 
+**Shut the Box.** The classic dice game (tiles 1–9; roll two dice and shut
+open tiles that add up to the roll; fewer tiles left is better), played box
+against box with Robo. A student turn is three taps: **Roll**, pick how many
+dots in all from four answer cards, then tap tiles and **Shut**. Both the
+total and the shut are graded, one try each. Adding the dice reuses Addition
+War's three detectors with the dice as the two cards; shutting tiles has two
+more:
+
+| Diagnosis | Wrong tiles |
+|---|---|
+| `tiles_counted_on_from_start` | 5 and 4 for an 8: counting on while saying the start number again ("5, 6, 7, 8") — Secada, Fuson & Hall (1983) |
+| `added_the_total_tile` | the 8 tile with the 2 for an 8: making a number from parts read as a plain addition — Lindvall, C. M., & Ibarra, C. G. (1980), *Incorrect procedures used by primary grade pupils in solving open addition and subtraction sentences* |
+
+A wrong total outlines the right card and goes on with the right total; a
+wrong shut shuts a right way (fewest, highest tiles) so the student sees one.
+When no open tiles make the total, that box is done; the game ends when both
+boxes are done or one is empty, and fewest open tiles wins (counting, not
+adding up to nine numbers). Level 1 uses dice with 1–3 dots and tiles 1–6
+(K.OA.A.5), level 2 standard dice and tiles 1–9 (1.OA.C.6), level 3 tiles
+1–12. Robo never adds or shuts wrongly; at level 1 it shuts the most tiles it
+can (a weaker way), at levels 2–3 the fewest, highest tiles.
+
 **Fraction Spoons.** The classroom *Spoons* game (Games 4 Gains) made
 turn-based, with no grabbing race: the student and Robo each hold four
 fraction cards, and a hand is won by the first correct claim that all four
@@ -210,6 +233,10 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   whole hint (e.g. *"Start at 4 and count on 3 more: 5, 6, 7."*). A wrong
   answer card wobbles once, the right card is outlined, and the hint is shown
   and spoken; there is no red text.
+- **Shut the Box (K–1):** hints are never reworded by the LLM and are read
+  aloud. A wrong total gets Addition War's counting sentence; a wrong shut
+  counts the picked tiles on, e.g. *"Start at 5 and count on: 6, 7, 8, 9. 5
+  and 4 make 9. You need 8."*
 - **Fraction Spoons:** hints are never reworded by the LLM (live rewordings
   of its size relations failed the fact check or read misleadingly). "Show
   me why" draws the Collecting card and the card the hint is about as two
@@ -287,6 +314,9 @@ backend/
                          same files, with answer cards from mistakes
     addition_war/        fixes card_war to adding for the engine
     take_away_war/       fixes card_war to taking away for the engine
+    shut_the_box/        the same files: dealing with rolls made in advance,
+                         total and shut detectors (reusing card_war's),
+                         moves and Robo, hints
     fraction_spoons/     the same files: dealing with mistake cards,
                          fit and claim detectors, moves and Robo, hints
     twenty_four/         expressions.py (work out tokens under any order),
@@ -297,13 +327,15 @@ backend/
   main.py                FastAPI routes
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
-                         CardWarPage, MultiplicationShootoutPage,
-                         FractionSpoonsPage, TwentyFourPage, DashboardPage
+                         CardWarPage, ShutTheBoxPage,
+                         MultiplicationShootoutPage, FractionSpoonsPage,
+                         TwentyFourPage, DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
-                         ProgressMeter, HundredthsGrid, FractionCard,
+                         ProgressMeter, HundredthsGrid, FractionCard, DiceFace,
                          FractionBars, ...
   regroup.ts             borrow/carry animation steps
   expressionEntry.ts     which 24 Game tile can be tapped next
+  wobble.ts              the K–1 wrong-tap wobble
 ```
 
 ## Running locally

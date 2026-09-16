@@ -177,6 +177,26 @@ function TwentyFourIcon() {
   )
 }
 
+/** Two dice showing 3 and 5: the roll a Shut the Box turn adds up. */
+function ShutTheBoxIcon() {
+  const pips = [
+    { x: 4, dots: [[15, 22], [26, 36], [37, 50]] },
+    { x: 50, dots: [[61, 22], [83, 22], [72, 36], [61, 50], [83, 50]] },
+  ]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {pips.map(({ x, dots }) => (
+        <g key={x}>
+          <rect x={x} y="11" width="42" height="50" rx="7" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          {dots.map(([cx, cy]) => (
+            <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="4" className="fill-ink" />
+          ))}
+        </g>
+      ))}
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -242,6 +262,14 @@ const GAMES: Game[] = [
     description: 'Take the smaller card away and see whose hand wins',
     to: '/curriculum/take-away-war',
     icon: <TwoCardsIcon first={8} sign="−" second={3} />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Shut the Box',
+    description: 'Roll two dice, add the dots, and shut tiles that make that many',
+    to: '/curriculum/shut-the-box',
+    icon: <ShutTheBoxIcon />,
     band: 'k-1',
     kind: 'robo',
   },

@@ -7,6 +7,7 @@ import FractionSpoonsPage from './pages/FractionSpoonsPage'
 import LandingPage from './pages/LandingPage'
 import MultiplicationShootoutPage from './pages/MultiplicationShootoutPage'
 import PracticePage from './pages/PracticePage'
+import ShutTheBoxPage from './pages/ShutTheBoxPage'
 import TwentyFourPage from './pages/TwentyFourPage'
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <Route path="/curriculum/multiplication-shootout" element={<MultiplicationShootoutPage />} />
         <Route path="/curriculum/addition-war" element={<CardWarPage game="addition-war" />} />
         <Route path="/curriculum/take-away-war" element={<CardWarPage game="take-away-war" />} />
+        <Route path="/curriculum/shut-the-box" element={<ShutTheBoxPage />} />
         <Route path="/summary" element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>

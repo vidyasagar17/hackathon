@@ -12,6 +12,8 @@ from curriculum.for_keeps.rounds import Hand, Round as ForKeepsRound
 from curriculum.fraction_spoons import hints as fraction_spoons_hints
 from curriculum.fraction_spoons.misconceptions import Card as SpoonsCard
 from curriculum.fraction_spoons.rounds import Hand as SpoonsHand, Round as SpoonsRound
+from curriculum.shut_the_box import hints as shut_the_box_hints
+from curriculum.shut_the_box.rounds import Round as ShutTheBoxRound
 from curriculum.twenty_four import hints as twenty_four_hints
 from curriculum.twenty_four.rounds import Round as TwentyFourRound
 from games import GAMES
@@ -789,5 +791,70 @@ def test_an_undiagnosed_wrong_24_game_check_gets_the_general_hint(tmp_path, monk
     assert client.post(f"/rounds/{round_id}/hint").json() == {
         "misconception": None,
         "hint": twenty_four_hints.GENERAL_HINT,
+        "cards": None,
+    }
+
+
+def _shut_the_box_dealing(tmp_path, monkeypatch):
+    """Use a temp database and deal a level-rolled game: the student rolls 3 and 5, Robo rolls 2 and 6."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["shut-the-box"]
+    monkeypatch.setattr(
+        game,
+        "new_round",
+        lambda level: ShutTheBoxRound(
+            level=level,
+            my_rolls=[(3, 5)] * 6,
+            robo_rolls=[(2, 6)] * 6,
+            my_open=list(range(1, 10)),
+            robo_open=list(range(1, 10)),
+        ),
+    )
+    return client.post("/curriculum/shut-the-box/rounds", params={"session_id": "s1"}).json()["round_id"]
+
+
+def _shut_the_box_move(round_id, move):
+    return client.post(f"/rounds/{round_id}/moves", json={"move": move}).json()
+
+
+def test_a_shut_the_box_turn_logs_only_the_total_and_the_shut_and_each_gets_its_hint(tmp_path, monkeypatch):
+    round_id = _shut_the_box_dealing(tmp_path, monkeypatch)
+
+    assert _shut_the_box_move(round_id, {"type": "roll"})["visible_state"]["choices"] == [2, 6, 7, 8]
+    total = _shut_the_box_move(round_id, {"type": "total", "pick": 7})
+    assert (total["correct"], total["misconception"]) == (False, "counted_on_from_start")
+    assert client.post(f"/rounds/{round_id}/hint").json()["hint"] == (
+        "When you count on from 5, the first number you say is 6: 6, 7, 8."
+    )
+
+    shut = _shut_the_box_move(round_id, {"type": "shut", "tiles": [8, 2]})
+    assert (shut["correct"], shut["misconception"]) == (False, "added_the_total_tile")
+    assert shut["visible_state"]["shut_tiles"] == [8]
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": "added_the_total_tile",
+        "hint": "The 8 tile is 8 all by itself. 8 and 2 make 10.",
+        "cards": None,
+    }
+
+    robo = _shut_the_box_move(round_id, {"type": "robo_turn"})["visible_state"]
+    # A new session plays at level 1, where Robo shuts the most tiles it can.
+    assert robo["robo_last"] == {"dice": [2, 6], "shut": [1, 3, 4]}
+    assert robo["step"] == "roll"
+    assert db.get_move_history("s1", "shut-the-box") == [
+        TierAttempt(difficulty=1, correct=False, misconception="counted_on_from_start"),
+        TierAttempt(difficulty=1, correct=False, misconception="added_the_total_tile"),
+    ]
+
+
+def test_an_undiagnosed_wrong_shut_gets_the_shut_the_box_general_hint(tmp_path, monkeypatch):
+    round_id = _shut_the_box_dealing(tmp_path, monkeypatch)
+    _shut_the_box_move(round_id, {"type": "roll"})
+    _shut_the_box_move(round_id, {"type": "total", "pick": 8})
+    _shut_the_box_move(round_id, {"type": "shut", "tiles": [7]})
+
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": None,
+        "hint": shut_the_box_hints.GENERAL_HINT,
         "cards": None,
     }
