@@ -14,6 +14,8 @@ from curriculum.for_keeps.rounds import Hand, Round as ForKeepsRound
 from curriculum.fraction_spoons import hints as fraction_spoons_hints
 from curriculum.fraction_spoons.misconceptions import Card as SpoonsCard
 from curriculum.fraction_spoons.rounds import Hand as SpoonsHand, Round as SpoonsRound
+from curriculum.clock_match import hints as clock_hints
+from curriculum.clock_match.rounds import Round as ClockRound
 from curriculum.coordinate_battleship import hints as battleship_hints
 from curriculum.cover_the_number import hints as cover_hints
 from curriculum.cover_the_number.rounds import Roll as CoverRoll, Round as CoverRound
@@ -1226,5 +1228,49 @@ def test_an_undiagnosed_cover_the_number_tap_gets_the_general_hint(tmp_path, mon
     assert client.post(f"/rounds/{round_id}/hint").json() == {
         "misconception": None,
         "hint": cover_hints.GENERAL_HINT,
+        "cards": None,
+    }
+
+
+def _clock_dealing(tmp_path, monkeypatch, kind="read"):
+    """Use a temp database and deal a level-3 card: 2:50 to read (or set); Robo's card 7:45, known."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["clock-match"]
+    monkeypatch.setattr(
+        game,
+        "new_round",
+        lambda level: ClockRound(level=3, kind=kind, time=(2, 50), robo_kind="set", robo_time=(7, 45), robo_knows=True),
+    )
+    return client.post("/curriculum/clock-match/rounds", params={"session_id": "s1"}).json()
+
+
+def test_a_clock_match_reading_is_logged_diagnosed_and_hinted(tmp_path, monkeypatch):
+    dealt = _clock_dealing(tmp_path, monkeypatch)
+    round_id = dealt["round_id"]
+    assert dealt["visible_state"]["time"] is None
+    choice = dealt["visible_state"]["choices"].index([3, 50])
+
+    picked = client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "pick", "choice": choice}}).json()
+    assert (picked["correct"], picked["misconception"]) == (False, "read_the_next_hour")
+    assert picked["visible_state"]["robo"]["time"] == [7, 45]
+    assert client.post(f"/rounds/{round_id}/hint").json()["hint"].startswith("The minute hand on the 10 means 50 minutes")
+    assert [attempt.misconception for attempt in db.get_move_history("s1", "clock-match")] == ["read_the_next_hour"]
+
+
+def test_a_second_clock_match_pick_is_refused_and_not_logged(tmp_path, monkeypatch):
+    round_id = _clock_dealing(tmp_path, monkeypatch, kind="set")["round_id"]
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "pick", "choice": 0}})
+    assert client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "pick", "choice": 1}}).status_code == 422
+    assert len(db.get_move_history("s1", "clock-match")) == 1
+
+
+def test_an_undiagnosed_clock_match_pick_gets_the_general_hint(tmp_path, monkeypatch):
+    dealt = _clock_dealing(tmp_path, monkeypatch, kind="set")
+    choice = dealt["visible_state"]["choices"].index([230, 50])
+    client.post(f"/rounds/{dealt['round_id']}/moves", json={"move": {"type": "pick", "choice": choice}})
+    assert client.post(f"/rounds/{dealt['round_id']}/hint").json() == {
+        "misconception": None,
+        "hint": clock_hints.GENERAL_HINT,
         "cards": None,
     }

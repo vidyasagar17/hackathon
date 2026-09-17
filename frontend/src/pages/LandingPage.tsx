@@ -349,6 +349,21 @@ function CoverTheNumberIcon() {
   )
 }
 
+/** A small clock showing 2:50, the hour hand almost at the 3. */
+function ClockMatchIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <circle cx="48" cy="36" r="30" strokeWidth="2.5" className="fill-white stroke-ink" />
+      {[0, 90, 180, 270].map((angle) => (
+        <line key={angle} x1="48" y1="9" x2="48" y2="14" strokeWidth="2" transform={`rotate(${angle} 48 36)`} className="stroke-ink" />
+      ))}
+      <line x1="48" y1="36" x2="48" y2="20" strokeWidth="4" strokeLinecap="round" transform="rotate(85 48 36)" className="stroke-ink" />
+      <line x1="48" y1="36" x2="48" y2="12" strokeWidth="2" strokeLinecap="round" transform="rotate(300 48 36)" className="stroke-ink" />
+      <circle cx="48" cy="36" r="2.5" className="fill-ink" />
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -430,6 +445,14 @@ const GAMES: Game[] = [
     description: 'Add and take away cards one step at a time to make the target',
     to: '/curriculum/target-number',
     icon: <TargetNumberIcon />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Clock Match',
+    description: 'Read clocks and find the clock for a time',
+    to: '/curriculum/clock-match',
+    icon: <ClockMatchIcon />,
     band: '2-3',
     kind: 'robo',
   },

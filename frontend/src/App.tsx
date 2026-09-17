@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import CardWarPage from './pages/CardWarPage'
+import ClockMatchPage from './pages/ClockMatchPage'
 import CoordinateBattleshipPage from './pages/CoordinateBattleshipPage'
 import CoverTheNumberPage from './pages/CoverTheNumberPage'
 import DashboardPage from './pages/DashboardPage'
@@ -26,6 +27,7 @@ function App() {
         <Route path="/curriculum/for-keeps" element={<ForKeepsPage />} />
         <Route path="/curriculum/dont-break-the-bank" element={<DontBreakTheBankPage />} />
         <Route path="/curriculum/target-number" element={<TargetNumberPage />} />
+        <Route path="/curriculum/clock-match" element={<ClockMatchPage />} />
         <Route path="/curriculum/fraction-spoons" element={<FractionSpoonsPage />} />
         <Route path="/curriculum/the-24-game" element={<TwentyFourPage />} />
         <Route path="/curriculum/coordinate-plane-battleship" element={<CoordinateBattleshipPage />} />

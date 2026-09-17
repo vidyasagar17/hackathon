@@ -16,7 +16,8 @@ It has two kinds of game, grouped on the home screen by grade band
   **Multiplication Shootout** (grades 2–3), take turns with Robo answering
   times and division facts; **Don't Break the Bank** (grades 2–3), place
   rolled digits into numbers, add them, and get close to 1000 without going
-  over; **Target Number** (grades 2–3), add and take away cards one mental
+  over; **Clock Match** (grades 2–3), read analog clocks and pick the clock
+  for a time; **Target Number** (grades 2–3), add and take away cards one mental
   step at a time to make a target, then fill in an equation; **Fraction
   Spoons** (grades 4–5), draw and
   discard to collect four equal fractions and win a spoon; **The 24 Game**
@@ -155,6 +156,21 @@ layer and 4 layers: 4 × 6 = 24."*), and never builds a box with an edge of 1:
 at level 1 it only halves one edge and doubles another, at level 2 it keeps
 one edge, at level 3 it tries every box (it finds one about 47%, 79% and 94%
 of the time).
+
+**Clock Match.** A duel of eight turns. Each turn is either a clock to read
+(pick its time from four cards) or a time to set (pick its clock from four
+clocks); the wrong choices are built from the mistakes below. Level 1 is o'clock
+and half past, level 2 five-minute times from :05 to :25, level 3 from :35 to
+:55, where the hour hand is almost at the next numeral. Robo is never shown a
+wrong time: it knows its card 50%, 65% or 80% of the time by level, or says it
+wasn't sure.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `read_the_next_hour` | reads 2:50 as 3:50, the hour hand being close to the 3 — Williams (2012), via Earnest, D., Gonzales, A. C., & Plant, A. M. (2018), *Time as a measure: Elementary students positioning the hands of an analog clock* |
+| `hour_hand_on_the_numeral` | picks a clock for 2:50 with the hour hand right on the 2 — Earnest et al. (2018): the hour hand was set right far less often than the minute hand, and matching it to the hour's numeral was the most common approach |
+| `swapped_the_hands` | reads the long hand as the hour and the short hand as the minutes (3:10 as 2:15), or picks the clock with them swapped — Mutlu, Y., & Korkmaz, E. (2020), *Investigating clock reading skills of third graders with and without dyscalculia risk* |
+| `minute_numeral_as_minutes` / `minute_hand_on_the_minutes_numeral` | reads 10:10 as 10:02, or points the minute hand at the 10 for 10 minutes — the same number matching, for the minute hand |
 
 **Target Number.** Illustrative Mathematics' "Hitting the Target Number"
 (2.OA.B.2) as a duel of five hands. The student starts with a card, then taps
@@ -378,6 +394,11 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   hidden behind and under them. The top layer has 4 × 3 = 12 cubes, and 2
   layers make 2 × 12 = 24."* Never reworded by the LLM: the fact check
   protects numbers but not "top", "hidden" or "layer".
+- **Clock Match:** a wrong pick outlines the right card and "Show me why" gives
+  the hint and diagnosed pattern, e.g. *"The minute hand on the 10 means 50
+  minutes, so it isn't 3 o'clock yet. The hour hand is almost at the 3 but still
+  after the 2: 2:50."* Never reworded by the LLM: the fact check can't protect
+  "hour hand", "short" or "almost".
 - **Target Number:** a wrong step total or equation answer shows the right one
   and "Show me why" in the panel, e.g. *"42 has only 2 ones, so use a ten: 42 is
   30 and 12. 12 − 8 = 4, so 42 − 8 = 34."* or *"1 + 15 = 16 is only the left
@@ -492,6 +513,8 @@ backend/
     shut_the_box/        the same files: dealing with rolls made in advance,
                          total and shut detectors (reusing card_war's),
                          moves and Robo, hints
+    clock_match/         the same files: reading and setting detectors, time
+                         and clock choices, moves, hints
     target_number/       the same files: step and equation detectors, a
                          way finder for dealing and Robo, moves, hints
     volume_builder/      the same files: box detectors for counting and
@@ -509,13 +532,13 @@ frontend/src/
                          CardWarPage, ShutTheBoxPage, FourInARowPage,
                          CoverTheNumberPage,
                          DontBreakTheBankPage,
-                         TargetNumberPage,
+                         TargetNumberPage, ClockMatchPage,
                          MultiplicationShootoutPage, FractionSpoonsPage,
                          TwentyFourPage, CoordinateBattleshipPage,
                          VolumeBuilderPage, DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
                          ProgressMeter, HundredthsGrid, FractionCard, DiceFace,
-                         FractionBars, CubeBox, DotCard, ...
+                         FractionBars, CubeBox, DotCard, ClockFace, ...
   regroup.ts             borrow/carry animation steps
   expressionEntry.ts     which 24 Game tile can be tapped next
   wobble.ts              the K–1 wrong-tap wobble
