@@ -5,7 +5,17 @@ The four workshops are separate and live in `games`.
 
 from types import ModuleType
 
-from . import addition_war, decimal_war, for_keeps, fraction_spoons, multiplication_shootout, shut_the_box, take_away_war, twenty_four
+from . import (
+    addition_war,
+    decimal_war,
+    dont_break_the_bank,
+    for_keeps,
+    fraction_spoons,
+    multiplication_shootout,
+    shut_the_box,
+    take_away_war,
+    twenty_four,
+)
 
 CURRICULUM_GAMES: dict[str, ModuleType] = {
     "decimal-war": decimal_war,
@@ -16,4 +26,5 @@ CURRICULUM_GAMES: dict[str, ModuleType] = {
     "fraction-spoons": fraction_spoons,
     "the-24-game": twenty_four,
     "shut-the-box": shut_the_box,
+    "dont-break-the-bank": dont_break_the_bank,
 }

@@ -12,6 +12,8 @@ from curriculum.for_keeps.rounds import Hand, Round as ForKeepsRound
 from curriculum.fraction_spoons import hints as fraction_spoons_hints
 from curriculum.fraction_spoons.misconceptions import Card as SpoonsCard
 from curriculum.fraction_spoons.rounds import Hand as SpoonsHand, Round as SpoonsRound
+from curriculum.dont_break_the_bank import hints as bank_hints
+from curriculum.dont_break_the_bank.rounds import Round as BankRound
 from curriculum.shut_the_box import hints as shut_the_box_hints
 from curriculum.shut_the_box.rounds import Round as ShutTheBoxRound
 from curriculum.twenty_four import hints as twenty_four_hints
@@ -858,3 +860,85 @@ def test_an_undiagnosed_wrong_shut_gets_the_shut_the_box_general_hint(tmp_path, 
         "hint": shut_the_box_hints.GENERAL_HINT,
         "cards": None,
     }
+
+
+def _bank_dealing(tmp_path, monkeypatch, rolls):
+    """Use a temp database and deal a Don't Break the Bank game at the session's level with fixed rolls."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["dont-break-the-bank"]
+    monkeypatch.setattr(
+        game,
+        "new_round",
+        lambda level: BankRound(level=level, rolls=rolls, my_board=[None] * len(rolls), robo_board=[None] * len(rolls)),
+    )
+    monkeypatch.setattr(bank_hints, "reword_hint", lambda sentence, prompt, answer, banned: sentence)
+    return client.post("/curriculum/dont-break-the-bank/rounds", params={"session_id": "s1"}).json()
+
+
+def _bank_move(round_id, move):
+    return client.post(f"/rounds/{round_id}/moves", json={"move": move}).json()
+
+
+def test_a_level_1_bank_game_logs_only_the_sum_and_distance_and_hints_each(tmp_path, monkeypatch):
+    dealt = _bank_dealing(tmp_path, monkeypatch, [4, 6, 3, 8])
+    round_id = dealt["round_id"]
+    assert (dealt["visible_state"]["bank"], dealt["visible_state"]["roll"]) == (100, 4)
+
+    for spot in range(4):
+        placed = _bank_move(round_id, {"type": "place", "spot": spot})
+    state = placed["visible_state"]
+    assert (state["step"], state["my_numbers"]) == ("sum", [46, 38])
+    assert None not in state["robo_board"]
+
+    summed = _bank_move(round_id, {"type": "sum", "answer": 74})
+    assert (summed["correct"], summed["misconception"]) == (False, "no_carry")
+    assert client.post(f"/rounds/{round_id}/hint").json()["hint"] == (
+        "In the ones column, 6 + 8 makes 14, so write 4 and carry 1 to the tens column."
+    )
+
+    distance = _bank_move(round_id, {"type": "distance", "answer": 116})
+    assert (distance["correct"], distance["misconception"]) == (False, "borrow_across_zero_failure")
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": "borrow_across_zero_failure",
+        "hint": (
+            "A 0 has nothing to lend until it borrows from the column to its left: 100 is 9 tens and 10 ones, "
+            "so 100 − 84 = 16. Or count up: 84 + 6 = 90, and 90 + 10 = 100."
+        ),
+        "cards": None,
+    }
+
+    over = _bank_move(round_id, {"type": "robo_turn"})["visible_state"]
+    assert over["step"] == "over"
+    assert over["robo_total"] == sum(over["robo_numbers"])
+    assert db.get_move_history("s1", "dont-break-the-bank") == [
+        TierAttempt(difficulty=1, correct=False, misconception="no_carry"),
+        TierAttempt(difficulty=1, correct=False, misconception="borrow_across_zero_failure"),
+    ]
+
+
+def test_a_bank_sum_over_the_bank_skips_the_distance_and_a_wrong_step_is_rejected(tmp_path, monkeypatch):
+    round_id = _bank_dealing(tmp_path, monkeypatch, [6, 6, 6, 6])["round_id"]
+    assert client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "sum", "answer": 132}}).status_code == 422
+    for spot in range(4):
+        _bank_move(round_id, {"type": "place", "spot": spot})
+
+    summed = _bank_move(round_id, {"type": "sum", "answer": 132})
+
+    assert summed["correct"] and summed["visible_state"]["broke"] is True
+    assert summed["visible_state"]["step"] == "pass"
+    assert client.post(f"/rounds/{round_id}/hint").json() == {"misconception": None, "hint": None, "cards": None}
+
+
+def test_an_undiagnosed_wrong_bank_sum_gets_the_general_hint(tmp_path, monkeypatch):
+    round_id = _bank_dealing(tmp_path, monkeypatch, [4, 6, 3, 8])["round_id"]
+    for spot in range(4):
+        _bank_move(round_id, {"type": "place", "spot": spot})
+    _bank_move(round_id, {"type": "sum", "answer": 85})
+
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": None,
+        "hint": bank_hints.GENERAL_HINT,
+        "cards": None,
+    }
+

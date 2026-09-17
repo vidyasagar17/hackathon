@@ -197,6 +197,36 @@ function ShutTheBoxIcon() {
   )
 }
 
+/** 456 + 365 + 163 stacked in place columns over a line: the three numbers a Don't Break the Bank game adds. */
+function DontBreakTheBankIcon() {
+  const rows = ['456', '365', '163']
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {rows.map((row, index) => (
+        <text
+          key={row}
+          x="62"
+          y={18 + index * 17}
+          textAnchor="middle"
+          fontSize="17"
+          fontWeight="700"
+          letterSpacing="3"
+          className="fill-ink font-display"
+        >
+          {row}
+        </text>
+      ))}
+      <text x="22" y="52" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+        +
+      </text>
+      <rect x="30" y="58" width="62" height="3" rx="1.5" className="fill-ink" />
+      <text x="62" y="71" textAnchor="middle" fontSize="10" fontWeight="700" className="fill-ink font-display">
+        under 1000
+      </text>
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -246,6 +276,14 @@ const GAMES: Game[] = [
     description: 'Answer times and division facts in turns with Robo',
     to: '/curriculum/multiplication-shootout',
     icon: <TwoCardsIcon first={6} sign="×" second={7} />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: "Don't Break the Bank",
+    description: 'Place rolled digits, add your numbers, and get close to 1000 without going over',
+    to: '/curriculum/dont-break-the-bank',
+    icon: <DontBreakTheBankIcon />,
     band: '2-3',
     kind: 'robo',
   },

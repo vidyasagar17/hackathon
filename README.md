@@ -14,7 +14,9 @@ It has two kinds of game, grouped on the home screen by grade band
   whose decimal is larger; **For Keeps** (grades 2–3), build two 2-digit
   numbers from four cards, subtract, and keep the lowest scores;
   **Multiplication Shootout** (grades 2–3), take turns with Robo answering
-  times and division facts; **Fraction Spoons** (grades 4–5), draw and
+  times and division facts; **Don't Break the Bank** (grades 2–3), place
+  rolled digits into numbers, add them, and get close to 1000 without going
+  over; **Fraction Spoons** (grades 4–5), draw and
   discard to collect four equal fractions and win a spoon; **The 24 Game**
   (grades 4–5), use all four cards with + − × ÷ and parentheses to make 24;
   **Addition War** and **Take-Away War** (grades K–1), flip two cards, add
@@ -103,6 +105,26 @@ addition, LeFevre et al.). Robo misses every fact above its level's size
 cutoff (12, 49, 54 — right on about 70%, 80% and 91% of each level's facts)
 by answering the fact one step down, and a wrong Robo answer always shows
 the right one.
+
+**Don't Break the Bank.** Math for Love's place-value game: the same rolls
+of a die go to the student and Robo, and each roll is placed for good in a
+hundreds, tens or ones spot of three numbers. Then the student types the sum
+and, when it isn't over the bank, how far it is from the bank; placing is
+strategy and not graded. Closest to the bank without going over wins.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `no_carry`, `carry_always`, `reversed_carry`, `carry_drops_at_second_column`, `drops_final_carry` | the addition workshop's carrying bugs, worked on three numbers column by column (Brown & Burton, 1978) |
+| `wrote_column_sums_side_by_side` | 456 + 365 + 163 → 81714: each column's whole sum written next to the others — Price, P. (2002), *"Face-value" and "independent-place" constructs* |
+| `added_digits_as_ones` | 456 + 365 + 163 → 39: every digit added as ones — face-value thinking (Ross, 1989) |
+| `stops_borrow_at_zero`, `borrow_across_zero_failure`, `zero_minus_digit_gives_digit`, `zero_minus_digit_gives_zero` | 1000 − 687 → 1423, 413, 1687 or 1000: borrowing across the bank's zeros — Burton, R. R. (1982), *Diagnosing bugs in a simple procedural skill* |
+
+Level 1 is two 2-digit numbers under 100, level 2 the classic three 3-digit
+numbers under 1000 with a 1–6 die, level 3 the same with a 0–9 die. Robo
+never adds wrongly; at level 1 it places each roll where its expected total
+lands nearest an aim, and at levels 2–3 it looks ahead, finishing its board
+40 times with made-up rolls and keeping the best spot (it breaks the bank in
+about 14% and 21% of games, against 30% and 42% for the aim rule).
 
 **Addition War and Take-Away War.** Everyday Mathematics' *Addition Top-It*,
 one hand at a time: the student and Robo each flip two cards, Robo's total is
@@ -233,6 +255,13 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   whole hint (e.g. *"Start at 4 and count on 3 more: 5, 6, 7."*). A wrong
   answer card wobbles once, the right card is outlined, and the hint is shown
   and spoken; there is no red text.
+- **Don't Break the Bank:** a wrong sum or distance shows the right one and
+  "Show me why" in the panel where the keypad was. Hints name the column the
+  mistake got wrong (e.g. *"In the ones column, 6 + 5 + 3 makes 14, so write 4
+  and carry 1 to the tens column."*), or trade the bank into smaller places
+  and count up (*"1000 is 9 hundreds, 9 tens and 10 ones, so 1000 − 687 = 313.
+  Or count up: 687 + 13 = 700, and 700 + 300 = 1000."*); they may be reworded
+  by the LLM under the fact check, as in For Keeps.
 - **Shut the Box (K–1):** hints are never reworded by the LLM and are read
   aloud. A wrong total gets Addition War's counting sentence; a wrong shut
   counts the picked tiles on, e.g. *"Start at 5 and count on: 6, 7, 8, 9. 5
@@ -314,6 +343,9 @@ backend/
                          same files, with answer cards from mistakes
     addition_war/        fixes card_war to adding for the engine
     take_away_war/       fixes card_war to taking away for the engine
+    dont_break_the_bank/ the same files: column-by-column carrying and
+                         borrowing simulators, dealing, moves and a
+                         look-ahead Robo, hints
     shut_the_box/        the same files: dealing with rolls made in advance,
                          total and shut detectors (reusing card_war's),
                          moves and Robo, hints
@@ -327,7 +359,7 @@ backend/
   main.py                FastAPI routes
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
-                         CardWarPage, ShutTheBoxPage,
+                         CardWarPage, ShutTheBoxPage, DontBreakTheBankPage,
                          MultiplicationShootoutPage, FractionSpoonsPage,
                          TwentyFourPage, DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
