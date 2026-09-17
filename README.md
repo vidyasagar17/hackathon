@@ -19,6 +19,8 @@ It has two kinds of game, grouped on the home screen by grade band
   over; **Fraction Spoons** (grades 4–5), draw and
   discard to collect four equal fractions and win a spoon; **The 24 Game**
   (grades 4–5), use all four cards with + − × ÷ and parentheses to make 24;
+  **Coordinate Plane Battleship** (grades 4–5), write and read ordered pairs
+  to find Robo's hidden ships;
   **Addition War** and **Take-Away War** (grades K–1), flip two cards, add
   them or take the smaller away, and say whose hand wins; and **Shut the Box**
   (grades K–1), roll two dice, add the dots, and shut tiles that make that
@@ -105,6 +107,21 @@ addition, LeFevre et al.). Robo misses every fact above its level's size
 cutoff (12, 49, 54 — right on about 70%, 80% and 91% of each level's facts)
 by answering the fact one step down, and a wrong Robo answer always shows
 the right one.
+
+**Coordinate Plane Battleship.** Battleship on a first-quadrant grid, 8 turns
+each. On your shot you tap a point on Robo's ocean to aim, then write its
+ordered pair with number buttons and fire — the shot lands where the pair you
+wrote says. On Robo's shot, Robo calls a pair and you tap that point on your
+own ocean. Both are graded, so each turn checks both directions of 5.G.A.1.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `swapped_x_and_y` | writes (5, 3) for the point 3 across and 5 up, or taps (4, 2) for (2, 4) — the most reported coordinate-graphing error in grades 5–6 |
+| `counted_from_one` | counts the corner as 1: writes (4, 6) for (3, 5), or taps (1, 3) for (2, 4) — Sarama, J., et al. (2003), *Development of mathematical concepts of two-dimensional space in grid environments* |
+
+Level 1 is a 0–4 grid with no ship on an axis, level 2 a 0–5 grid where pairs
+can have a 0, level 3 adds a third ship. Robo aims at random at level 1, then
+hunts next to its hits (level 2) and also hunts on a checkerboard (level 3).
 
 **Don't Break the Bank.** Math for Love's place-value game: the same rolls
 of a die go to the student and Robo, and each roll is placed for good in a
@@ -255,6 +272,10 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   whole hint (e.g. *"Start at 4 and count on 3 more: 5, 6, 7."*). A wrong
   answer card wobbles once, the right card is outlined, and the hint is shown
   and spoken; there is no red text.
+- **Coordinate Plane Battleship:** a wrong pair or tap shows both points and
+  "Show me why", e.g. *"Across comes first, then up. Your aim is 3 across and
+  5 up, so it is (3, 5), not (5, 3)."* Never reworded by the LLM: the fact
+  check can't tell if "across" and "up" were swapped, the very mistake.
 - **Don't Break the Bank:** a wrong sum or distance shows the right one and
   "Show me why" in the panel where the keypad was. Hints name the column the
   mistake got wrong (e.g. *"In the ones column, 6 + 5 + 3 makes 14, so write 4
@@ -343,6 +364,8 @@ backend/
                          same files, with answer cards from mistakes
     addition_war/        fixes card_war to adding for the engine
     take_away_war/       fixes card_war to taking away for the engine
+    coordinate_battleship/ the same files: fleets, pair detectors in both
+                         directions, moves and hunting Robo, hints
     dont_break_the_bank/ the same files: column-by-column carrying and
                          borrowing simulators, dealing, moves and a
                          look-ahead Robo, hints
@@ -361,7 +384,8 @@ frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
                          CardWarPage, ShutTheBoxPage, DontBreakTheBankPage,
                          MultiplicationShootoutPage, FractionSpoonsPage,
-                         TwentyFourPage, DashboardPage
+                         TwentyFourPage, CoordinateBattleshipPage,
+                         DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
                          ProgressMeter, HundredthsGrid, FractionCard, DiceFace,
                          FractionBars, ...

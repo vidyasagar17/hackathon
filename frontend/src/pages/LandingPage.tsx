@@ -227,6 +227,28 @@ function DontBreakTheBankIcon() {
   )
 }
 
+/** A small first-quadrant grid with one hit marked at (2, 3): the pairs a Battleship game calls. */
+function CoordinateBattleshipIcon() {
+  const lines = [0, 1, 2, 3, 4]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {lines.map((line) => (
+        <g key={line}>
+          <line x1={24 + line * 14} x2={24 + line * 14} y1="6" y2="62" strokeWidth={line === 0 ? 3 : 1.5} className="stroke-ink" />
+          <line x1="24" x2="80" y1={62 - line * 14} y2={62 - line * 14} strokeWidth={line === 0 ? 3 : 1.5} className="stroke-ink" />
+        </g>
+      ))}
+      <circle cx={24 + 2 * 14} cy={62 - 3 * 14} r="6" className="fill-ones stroke-ink" strokeWidth="2" />
+      <text x="10" y="20" textAnchor="middle" fontSize="12" fontWeight="700" className="fill-ink font-display">
+        y
+      </text>
+      <text x="90" y="70" textAnchor="middle" fontSize="12" fontWeight="700" className="fill-ink font-display">
+        x
+      </text>
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -260,6 +282,14 @@ const GAMES: Game[] = [
     description: 'Use all four cards with + − × ÷ to make 24',
     to: '/curriculum/the-24-game',
     icon: <TwentyFourIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'Coordinate Plane Battleship',
+    description: 'Write and read ordered pairs to find Robo’s hidden ships',
+    to: '/curriculum/coordinate-plane-battleship',
+    icon: <CoordinateBattleshipIcon />,
     band: '4-5',
     kind: 'robo',
   },

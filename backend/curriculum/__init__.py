@@ -7,6 +7,7 @@ from types import ModuleType
 
 from . import (
     addition_war,
+    coordinate_battleship,
     decimal_war,
     dont_break_the_bank,
     for_keeps,
@@ -27,4 +28,5 @@ CURRICULUM_GAMES: dict[str, ModuleType] = {
     "the-24-game": twenty_four,
     "shut-the-box": shut_the_box,
     "dont-break-the-bank": dont_break_the_bank,
+    "coordinate-plane-battleship": coordinate_battleship,
 }

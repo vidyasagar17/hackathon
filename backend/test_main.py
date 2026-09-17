@@ -12,6 +12,8 @@ from curriculum.for_keeps.rounds import Hand, Round as ForKeepsRound
 from curriculum.fraction_spoons import hints as fraction_spoons_hints
 from curriculum.fraction_spoons.misconceptions import Card as SpoonsCard
 from curriculum.fraction_spoons.rounds import Hand as SpoonsHand, Round as SpoonsRound
+from curriculum.coordinate_battleship import hints as battleship_hints
+from curriculum.coordinate_battleship.rounds import Round as BattleshipRound
 from curriculum.dont_break_the_bank import hints as bank_hints
 from curriculum.dont_break_the_bank.rounds import Round as BankRound
 from curriculum.shut_the_box import hints as shut_the_box_hints
@@ -942,3 +944,60 @@ def test_an_undiagnosed_wrong_bank_sum_gets_the_general_hint(tmp_path, monkeypat
         "cards": None,
     }
 
+
+def _battleship_dealing(tmp_path, monkeypatch):
+    """Use a temp database and deal fixed fleets: Robo's ships along y = 4 and up x = 0 on a level-1 game."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["coordinate-plane-battleship"]
+    monkeypatch.setattr(
+        game,
+        "new_round",
+        lambda level: BattleshipRound(
+            level=level,
+            seed=3,
+            my_ships=[[(1, 1), (2, 1), (3, 1)], [(4, 3), (4, 4)]],
+            robo_ships=[[(1, 4), (2, 4), (3, 4)], [(1, 1), (1, 2)]],
+        ),
+    )
+    return client.post("/curriculum/coordinate-plane-battleship/rounds", params={"session_id": "s1"}).json()
+
+
+def _battleship_move(round_id, move):
+    return client.post(f"/rounds/{round_id}/moves", json={"move": move}).json()
+
+
+def test_a_battleship_turn_logs_the_written_and_read_pairs_and_hints_each(tmp_path, monkeypatch):
+    dealt = _battleship_dealing(tmp_path, monkeypatch)
+    round_id = dealt["round_id"]
+    assert dealt["visible_state"]["robo_ocean"]["ships"] is None
+
+    _battleship_move(round_id, {"type": "aim", "x": 2, "y": 4})
+    written = _battleship_move(round_id, {"type": "write", "x": 4, "y": 2})
+    assert (written["correct"], written["misconception"]) == (False, "swapped_x_and_y")
+    assert written["visible_state"]["robo_ocean"]["shots"] == [{"x": 4, "y": 2, "hit": False}]
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": "swapped_x_and_y",
+        "hint": "Across comes first, then up. Your aim is 2 across and 4 up, so it is (2, 4), not (4, 2).",
+        "cards": None,
+    }
+
+    call = _battleship_move(round_id, {"type": "robo_turn"})["visible_state"]["robo_call"]
+    tapped = (call[0] - 1, call[1] - 1) if min(call) >= 1 else tuple(call)
+    read = _battleship_move(round_id, {"type": "read", "x": tapped[0], "y": tapped[1]})
+    assert read["visible_state"]["my_ocean"]["shots"][0]["x"] == call[0]
+    history = db.get_move_history("s1", "coordinate-plane-battleship")
+    assert [attempt.misconception for attempt in history][0] == "swapped_x_and_y"
+    assert len(history) == 2
+
+
+def test_an_undiagnosed_wrong_battleship_pair_gets_the_general_hint(tmp_path, monkeypatch):
+    round_id = _battleship_dealing(tmp_path, monkeypatch)["round_id"]
+    _battleship_move(round_id, {"type": "aim", "x": 2, "y": 4})
+    _battleship_move(round_id, {"type": "write", "x": 3, "y": 4})
+
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": None,
+        "hint": battleship_hints.GENERAL_HINT,
+        "cards": None,
+    }

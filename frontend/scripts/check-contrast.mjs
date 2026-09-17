@@ -52,6 +52,9 @@ const PAIRS = [
   ['ink', 'tens/25 over card', 'T letter in an empty For Keeps tens slot'],
   ['ink', 'ones/25 over card', 'O letter in an empty For Keeps ones slot'],
   ['chalk', 'felt-edge', 'numbers on shut tiles in Shut the Box'],
+  ['tens', 'felt', 'your ship points on the Battleship grid', NON_TEXT_MINIMUM],
+  ['ones', 'felt', 'hit marks on the Battleship grid', NON_TEXT_MINIMUM],
+  ['ink', 'ones', 'the × on a hit mark'],
   ['chalk/70 over felt-edge', 'felt', 'dashed outline of an empty spot in Don\'t Break the Bank', NON_TEXT_MINIMUM],
 ]
 
