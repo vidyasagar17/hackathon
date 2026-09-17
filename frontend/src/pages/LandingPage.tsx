@@ -249,6 +249,44 @@ function CoordinateBattleshipIcon() {
   )
 }
 
+/** A 3 × 2 × 2 box of unit cubes drawn from the front, top and side, as the Volume Builder game draws its boxes. */
+function VolumeBuilderIcon() {
+  const cube = 14
+  const depth = cube / 2
+  const [left, top] = [20, 15]
+  const [length, width, height] = [3, 2, 2]
+  const back = width * depth
+  const lines: [number, number, number, number][] = []
+  for (let x = 0; x <= length; x += 1) {
+    lines.push([x * cube, back, x * cube, back + height * cube])
+    lines.push([x * cube, back, x * cube + back, 0])
+  }
+  for (let y = 0; y <= height; y += 1) {
+    lines.push([0, back + y * cube, length * cube, back + y * cube])
+    lines.push([length * cube, back + y * cube, length * cube + back, y * cube])
+  }
+  for (let z = 0; z <= width; z += 1) {
+    lines.push([z * depth, back - z * depth, length * cube + z * depth, back - z * depth])
+    lines.push([length * cube + z * depth, back - z * depth, length * cube + z * depth, back - z * depth + height * cube])
+  }
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <path
+        d={`M ${left} ${top + back} h ${length * cube} l ${back} ${-back} h ${-length * cube} Z`}
+        className="fill-white"
+      />
+      <path d={`M ${left} ${top + back} h ${length * cube} v ${height * cube} h ${-length * cube} Z`} className="fill-card" />
+      <path
+        d={`M ${left + length * cube} ${top + back} l ${back} ${-back} v ${height * cube} l ${-back} ${back} Z`}
+        className="fill-chalk"
+      />
+      {lines.map(([x1, y1, x2, y2], index) => (
+        <line key={index} x1={left + x1} y1={top + y1} x2={left + x2} y2={top + y2} strokeWidth="1.5" className="stroke-ink" />
+      ))}
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -290,6 +328,14 @@ const GAMES: Game[] = [
     description: 'Write and read ordered pairs to find Robo’s hidden ships',
     to: '/curriculum/coordinate-plane-battleship',
     icon: <CoordinateBattleshipIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'Volume Builder',
+    description: 'Count the cubes in a box, then build a different box that holds as many',
+    to: '/curriculum/volume-builder',
+    icon: <VolumeBuilderIcon />,
     band: '4-5',
     kind: 'robo',
   },

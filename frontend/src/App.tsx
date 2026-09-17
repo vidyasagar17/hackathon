@@ -11,6 +11,7 @@ import MultiplicationShootoutPage from './pages/MultiplicationShootoutPage'
 import PracticePage from './pages/PracticePage'
 import ShutTheBoxPage from './pages/ShutTheBoxPage'
 import TwentyFourPage from './pages/TwentyFourPage'
+import VolumeBuilderPage from './pages/VolumeBuilderPage'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/curriculum/fraction-spoons" element={<FractionSpoonsPage />} />
         <Route path="/curriculum/the-24-game" element={<TwentyFourPage />} />
         <Route path="/curriculum/coordinate-plane-battleship" element={<CoordinateBattleshipPage />} />
+        <Route path="/curriculum/volume-builder" element={<VolumeBuilderPage />} />
         <Route path="/curriculum/multiplication-shootout" element={<MultiplicationShootoutPage />} />
         <Route path="/curriculum/addition-war" element={<CardWarPage game="addition-war" />} />
         <Route path="/curriculum/take-away-war" element={<CardWarPage game="take-away-war" />} />

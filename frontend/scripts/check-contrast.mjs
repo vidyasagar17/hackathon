@@ -56,6 +56,14 @@ const PAIRS = [
   ['ones', 'felt', 'hit marks on the Battleship grid', NON_TEXT_MINIMUM],
   ['ink', 'ones', 'the × on a hit mark'],
   ['chalk/70 over felt-edge', 'felt', 'dashed outline of an empty spot in Don\'t Break the Bank', NON_TEXT_MINIMUM],
+  ['ink', 'white', 'cube edges on the top of a Volume Builder box', NON_TEXT_MINIMUM],
+  ['ink', 'card', 'cube edges on the front of a Volume Builder box', NON_TEXT_MINIMUM],
+  ['ink', 'chalk', 'cube edges on the side of a Volume Builder box', NON_TEXT_MINIMUM],
+  ['ink', 'helper', 'cube edges on a shaded Volume Builder layer', NON_TEXT_MINIMUM],
+  ['helper', 'white', 'a shaded Volume Builder layer beside unshaded top squares', NON_TEXT_MINIMUM],
+  ['helper', 'card', 'a shaded Volume Builder layer beside unshaded front squares', NON_TEXT_MINIMUM],
+  ['helper', 'chalk', 'a shaded Volume Builder layer beside unshaded side squares', NON_TEXT_MINIMUM],
+  ['chalk', 'felt', 'the edge of a Volume Builder box against the table', NON_TEXT_MINIMUM],
 ]
 
 const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')

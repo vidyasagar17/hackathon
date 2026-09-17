@@ -20,6 +20,8 @@ from curriculum.shut_the_box import hints as shut_the_box_hints
 from curriculum.shut_the_box.rounds import Round as ShutTheBoxRound
 from curriculum.twenty_four import hints as twenty_four_hints
 from curriculum.twenty_four.rounds import Round as TwentyFourRound
+from curriculum.volume_builder import hints as volume_hints
+from curriculum.volume_builder.rounds import Round as VolumeRound
 from games import GAMES
 from games.subtraction.problems import Problem, compute_columns
 from tiering import TierAttempt
@@ -999,5 +1001,58 @@ def test_an_undiagnosed_wrong_battleship_pair_gets_the_general_hint(tmp_path, mo
     assert client.post(f"/rounds/{round_id}/hint").json() == {
         "misconception": None,
         "hint": battleship_hints.GENERAL_HINT,
+        "cards": None,
+    }
+
+
+def _volume_dealing(tmp_path, monkeypatch):
+    """Use a temp database and deal a level-1 turn: a 4 x 3 x 2 box for the student, 2 x 3 x 4 for Robo."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["volume-builder"]
+    monkeypatch.setattr(game, "new_round", lambda level: VolumeRound(level=level, box=(4, 3, 2), robo_box=(2, 3, 4)))
+    return client.post("/curriculum/volume-builder/rounds", params={"session_id": "s1"}).json()
+
+
+def _volume_move(round_id, move):
+    return client.post(f"/rounds/{round_id}/moves", json={"move": move})
+
+
+def test_a_volume_turn_logs_the_count_and_the_build_and_hints_each(tmp_path, monkeypatch):
+    dealt = _volume_dealing(tmp_path, monkeypatch)
+    round_id = dealt["round_id"]
+    assert dealt["visible_state"]["box"] == [4, 3, 2] and dealt["visible_state"]["volume"] is None
+
+    counted = _volume_move(round_id, {"type": "count", "answer": 18}).json()
+    assert (counted["correct"], counted["misconception"]) == (False, "counted_visible_cubes")
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": "counted_visible_cubes",
+        "hint": "18 is the cubes you can see. 6 more cubes are hidden behind and under them. "
+        "The top layer has 4 × 3 = 12 cubes, and 2 layers make 2 × 12 = 24.",
+        "cards": None,
+    }
+
+    built = _volume_move(round_id, {"type": "build", "box": [2, 2, 5]}).json()
+    assert (built["correct"], built["misconception"]) == (False, "counted_visible_faces")
+    assert built["visible_state"]["robo"] == {"box": [2, 3, 4], "layer": 6, "layers": 4, "volume": 24, "built": [2, 6, 2]}
+    assert client.post(f"/rounds/{round_id}/hint").json()["hint"].startswith("24 is the squares you can see on your box's")
+
+    history = db.get_move_history("s1", "volume-builder")
+    assert [attempt.misconception for attempt in history] == ["counted_visible_cubes", "counted_visible_faces"]
+
+
+def test_building_the_same_box_is_refused_and_not_logged(tmp_path, monkeypatch):
+    round_id = _volume_dealing(tmp_path, monkeypatch)["round_id"]
+    _volume_move(round_id, {"type": "count", "answer": 24})
+    assert _volume_move(round_id, {"type": "build", "box": [2, 4, 3]}).status_code == 422
+    assert len(db.get_move_history("s1", "volume-builder")) == 1
+
+
+def test_an_undiagnosed_wrong_count_gets_the_general_volume_hint(tmp_path, monkeypatch):
+    round_id = _volume_dealing(tmp_path, monkeypatch)["round_id"]
+    _volume_move(round_id, {"type": "count", "answer": 25})
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": None,
+        "hint": volume_hints.GENERAL_HINT,
         "cards": None,
     }

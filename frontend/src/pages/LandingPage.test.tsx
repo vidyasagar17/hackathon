@@ -80,6 +80,7 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
     'Fraction Spoons',
     'The 24 Game',
     'Coordinate Plane Battleship',
+    'Volume Builder',
     'Multiplication',
     'Division',
   ])
@@ -101,6 +102,7 @@ test('picking 4th & 5th grade puts its shelf first with games against Robo befor
     'Fraction Spoons',
     'The 24 Game',
     'Coordinate Plane Battleship',
+    'Volume Builder',
     'Multiplication',
     'Division',
     'Addition War',
@@ -140,7 +142,7 @@ test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo
   expect(within(additionWar).getByText('vs Robo')).toBeTruthy()
   expect(within(takeAwayWar).getByText('vs Robo')).toBeTruthy()
   expect(screen.queryByText(/on the way/)).toBeNull()
-  expect(gameTitlesInOrder()).toHaveLength(14)
+  expect(gameTitlesInOrder()).toHaveLength(15)
 })
 
 test('only games against Robo carry the vs Robo tag', () => {
@@ -242,6 +244,17 @@ test('the Coordinate Plane Battleship box sits on the 4th & 5th grade shelf, ope
   const box = within(shelf).getByRole('link', { name: /Coordinate Plane Battleship/ })
   expect(box.getAttribute('href')).toBe('/curriculum/coordinate-plane-battleship')
   expect(within(box).getByText('Write and read ordered pairs to find Robo’s hidden ships')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+})
+
+test('the Volume Builder box sits on the 4th & 5th grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: '4th & 5th grade' })
+  const box = within(shelf).getByRole('link', { name: /Volume Builder/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/volume-builder')
+  expect(within(box).getByText('Count the cubes in a box, then build a different box that holds as many')).toBeTruthy()
   expect(within(box).getByText('vs Robo')).toBeTruthy()
 })
 

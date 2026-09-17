@@ -20,7 +20,8 @@ It has two kinds of game, grouped on the home screen by grade band
   discard to collect four equal fractions and win a spoon; **The 24 Game**
   (grades 4–5), use all four cards with + − × ÷ and parentheses to make 24;
   **Coordinate Plane Battleship** (grades 4–5), write and read ordered pairs
-  to find Robo's hidden ships;
+  to find Robo's hidden ships; **Volume Builder** (grades 4–5), count the
+  cubes in a drawn box, then build a different box that holds as many;
   **Addition War** and **Take-Away War** (grades K–1), flip two cards, add
   them or take the smaller away, and say whose hand wins; and **Shut the Box**
   (grades K–1), roll two dice, add the dots, and shut tiles that make that
@@ -122,6 +123,34 @@ own ocean. Both are graded, so each turn checks both directions of 5.G.A.1.
 Level 1 is a 0–4 grid with no ship on an axis, level 2 a 0–5 grid where pairs
 can have a 0, level 3 adds a third ship. Robo aims at random at level 1, then
 hunts next to its hits (level 2) and also hunts on a checkerboard (level 3).
+
+**Volume Builder.** A duel of five turns. Each turn the student counts the
+unit cubes in a drawn box (front, top and right side, every cube edge shown)
+and types the number, then builds a different box with the same number of
+cubes by setting its length, width and height (1–10). Both are graded, and a
+build is diagnosed by the same rules run the other way: the mistake whose
+number for the student's box equals the target. Examples are for a 4 × 3 × 2
+box (24 cubes).
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `counted_visible_faces` | 26: the squares on the top, front and side — Ben-Chaim, D., Lappan, G., & Houang, R. T. (1985), *Visualizing rectangular solids made of small cubes*; Hirstein, J. (1981), *The second national assessment in mathematics: Area and volume* |
+| `counted_visible_cubes` | 18: only the cubes you can see — Ben-Chaim et al. (1985); Battista, M. T., & Clements, D. H. (1996), *Students' understanding of three-dimensional rectangular arrays of cubes* |
+| `counted_all_six_faces` | 52: the squares on all six sides (visible faces doubled, or edge cubes counted twice) — Ben-Chaim et al. (1985); Battista & Clements (1996) |
+| `counted_outside_cubes` | 56 for a 4 × 4 × 4 box: the outside cubes, missing the middle — Battista & Clements (1996) |
+| `counted_one_layer` | 12, 8 or 6: one layer (top, front or side) — Battista & Clements (1996); Tan Şişman, G., & Aksu, M. (2016), *A study on sixth grade students' misconceptions and errors in spatial measurement* |
+| `added_the_edges` | 9: 4 + 3 + 2 — Tan Şişman & Aksu (2016) |
+| `doubled_visible_cubes` | 36: the visible cubes doubled for the hidden back — Ben-Chaim et al. (1985) |
+
+Earlier rows win when two give the same number. Level 1 deals boxes with
+edges 2–4 and at most 36 cubes, level 2 edges 2–5 and 40–100 cubes (too many
+to count one by one), level 3 edges 3–6, so every box hides a middle. Every
+dealt box has another box with the same cubes, and no mistake gives its right
+number. Robo always counts right, by layers (*"Robo counted 6 cubes in the top
+layer and 4 layers: 4 × 6 = 24."*), and never builds a box with an edge of 1:
+at level 1 it only halves one edge and doubles another, at level 2 it keeps
+one edge, at level 3 it tries every box (it finds one about 47%, 79% and 94%
+of the time).
 
 **Don't Break the Bank.** Math for Love's place-value game: the same rolls
 of a die go to the student and Robo, and each roll is placed for good in a
@@ -276,6 +305,12 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   "Show me why", e.g. *"Across comes first, then up. Your aim is 3 across and
   5 up, so it is (3, 5), not (5, 3)."* Never reworded by the LLM: the fact
   check can't tell if "across" and "up" were swapped, the very mistake.
+- **Volume Builder:** a wrong count or build shows the right number and "Show
+  me why": the hint, the diagnosed pattern and the box with one layer shaded
+  in the hint purple, e.g. *"18 is the cubes you can see. 6 more cubes are
+  hidden behind and under them. The top layer has 4 × 3 = 12 cubes, and 2
+  layers make 2 × 12 = 24."* Never reworded by the LLM: the fact check
+  protects numbers but not "top", "hidden" or "layer".
 - **Don't Break the Bank:** a wrong sum or distance shows the right one and
   "Show me why" in the panel where the keypad was. Hints name the column the
   mistake got wrong (e.g. *"In the ones column, 6 + 5 + 3 makes 14, so write 4
@@ -372,6 +407,8 @@ backend/
     shut_the_box/        the same files: dealing with rolls made in advance,
                          total and shut detectors (reusing card_war's),
                          moves and Robo, hints
+    volume_builder/      the same files: box detectors for counting and
+                         building, levels, moves and Robo, hints
     fraction_spoons/     the same files: dealing with mistake cards,
                          fit and claim detectors, moves and Robo, hints
     twenty_four/         expressions.py (work out tokens under any order),
@@ -385,10 +422,10 @@ frontend/src/
                          CardWarPage, ShutTheBoxPage, DontBreakTheBankPage,
                          MultiplicationShootoutPage, FractionSpoonsPage,
                          TwentyFourPage, CoordinateBattleshipPage,
-                         DashboardPage
+                         VolumeBuilderPage, DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
                          ProgressMeter, HundredthsGrid, FractionCard, DiceFace,
-                         FractionBars, ...
+                         FractionBars, CubeBox, ...
   regroup.ts             borrow/carry animation steps
   expressionEntry.ts     which 24 Game tile can be tapped next
   wobble.ts              the K–1 wrong-tap wobble
