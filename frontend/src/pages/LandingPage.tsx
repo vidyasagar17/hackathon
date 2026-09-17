@@ -303,6 +303,31 @@ function TargetNumberIcon() {
   )
 }
 
+/** A small 4 × 3 board with four brass spaces in a row: the line the Four in a Row game is played for. */
+function FourInARowIcon() {
+  const spaces = Array.from({ length: 12 }, (_, index) => index)
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {spaces.map((space) => {
+        const row = Math.floor(space / 4)
+        const column = space % 4
+        return (
+          <rect
+            key={space}
+            x={10 + column * 20}
+            y={8 + row * 20}
+            width="16"
+            height="16"
+            rx="3"
+            className={`${row === 1 ? 'fill-hundreds' : 'fill-white'} stroke-ink`}
+            strokeWidth="1.5"
+          />
+        )
+      })}
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -408,6 +433,14 @@ const GAMES: Game[] = [
     description: 'Roll two dice, add the dots, and shut tiles that make that many',
     to: '/curriculum/shut-the-box',
     icon: <ShutTheBoxIcon />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Four in a Row',
+    description: 'Add two cards and cover the answer to get four in a row',
+    to: '/curriculum/four-in-a-row',
+    icon: <FourInARowIcon />,
     band: 'k-1',
     kind: 'robo',
   },

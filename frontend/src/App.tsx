@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage'
 import DecimalWarPage from './pages/DecimalWarPage'
 import DontBreakTheBankPage from './pages/DontBreakTheBankPage'
 import ForKeepsPage from './pages/ForKeepsPage'
+import FourInARowPage from './pages/FourInARowPage'
 import FractionSpoonsPage from './pages/FractionSpoonsPage'
 import LandingPage from './pages/LandingPage'
 import MultiplicationShootoutPage from './pages/MultiplicationShootoutPage'
@@ -32,6 +33,7 @@ function App() {
         <Route path="/curriculum/addition-war" element={<CardWarPage game="addition-war" />} />
         <Route path="/curriculum/take-away-war" element={<CardWarPage game="take-away-war" />} />
         <Route path="/curriculum/shut-the-box" element={<ShutTheBoxPage />} />
+        <Route path="/curriculum/four-in-a-row" element={<FourInARowPage />} />
         <Route path="/summary" element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>

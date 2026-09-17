@@ -7,6 +7,8 @@ import db
 import main
 from curriculum.card_war.rounds import Round as CardWarRound
 from curriculum.engine import MoveResult
+from curriculum.four_in_a_row import hints as four_in_a_row_hints
+from curriculum.four_in_a_row.rounds import Round as FourInARowRound
 from curriculum.for_keeps import hints as for_keeps_hints
 from curriculum.for_keeps.rounds import Hand, Round as ForKeepsRound
 from curriculum.fraction_spoons import hints as fraction_spoons_hints
@@ -1123,5 +1125,53 @@ def test_an_undiagnosed_wrong_target_step_gets_the_general_hint(tmp_path, monkey
     assert client.post(f"/rounds/{round_id}/hint").json() == {
         "misconception": None,
         "hint": target_hints.GENERAL_HINT,
+        "cards": None,
+    }
+
+
+def _four_in_a_row_dealing(tmp_path, monkeypatch):
+    """Use a temp database and deal a fixed level-2 board: 14 at 0-4, 41 at 5, 13 at 6, 11 elsewhere; fact 10 + 4."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["four-in-a-row"]
+    cells = [14, 14, 14, 14, 14, 41, 13] + [11] * 18
+    monkeypatch.setattr(
+        game, "new_round", lambda level: FourInARowRound(level=2, seed=7, cells=cells, owners=[None] * 25, fact=(10, 4))
+    )
+    return client.post("/curriculum/four-in-a-row/rounds", params={"session_id": "s1"}).json()
+
+
+def test_a_four_in_a_row_turn_logs_the_tap_and_not_robos_turn(tmp_path, monkeypatch):
+    round_id = _four_in_a_row_dealing(tmp_path, monkeypatch)["round_id"]
+
+    tap = client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "tap", "cell": 5}}).json()
+    assert (tap["correct"], tap["misconception"]) == (False, "reversed_teen_digits")
+    assert tap["visible_state"]["right_cells"] == [0, 1, 2, 3, 4]
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": "reversed_teen_digits",
+        "hint": "Fourteen is 1 ten and 4 ones, so the 1 comes first: 14.",
+        "cards": None,
+    }
+
+    robo = client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "robo_turn"}}).json()["visible_state"]
+    assert robo["robo_last"] is not None and robo["step"] == "tap"
+    history = db.get_move_history("s1", "four-in-a-row")
+    assert [attempt.misconception for attempt in history] == ["reversed_teen_digits"]
+
+
+def test_a_four_in_a_row_tap_on_a_covered_space_is_refused_and_not_logged(tmp_path, monkeypatch):
+    round_id = _four_in_a_row_dealing(tmp_path, monkeypatch)["round_id"]
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "tap", "cell": 0}})
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "robo_turn"}})
+    assert client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "tap", "cell": 0}}).status_code == 422
+    assert len(db.get_move_history("s1", "four-in-a-row")) == 1
+
+
+def test_an_undiagnosed_four_in_a_row_tap_gets_the_general_hint(tmp_path, monkeypatch):
+    round_id = _four_in_a_row_dealing(tmp_path, monkeypatch)["round_id"]
+    client.post(f"/rounds/{round_id}/moves", json={"move": {"type": "tap", "cell": 10}})
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": None,
+        "hint": four_in_a_row_hints.GENERAL_HINT,
         "cards": None,
     }

@@ -25,9 +25,10 @@ It has two kinds of game, grouped on the home screen by grade band
   to find Robo's hidden ships; **Volume Builder** (grades 4–5), count the
   cubes in a drawn box, then build a different box that holds as many;
   **Addition War** and **Take-Away War** (grades K–1), flip two cards, add
-  them or take the smaller away, and say whose hand wins; and **Shut the Box**
+  them or take the smaller away, and say whose hand wins; **Shut the Box**
   (grades K–1), roll two dice, add the dots, and shut tiles that make that
-  many.
+  many; and **Four in a Row** (grades K–1), add two cards and cover the
+  answer on a shared board to get four in a row.
 
 ## How diagnosis works
 
@@ -223,6 +224,24 @@ level rule. Levels follow the standards: cards 0–5 (K.OA.A.5), then 0–10
 (K.OA.A.2; addition sums within 10), then sums to 20 or a teen card minus a card
 to 10 (1.OA.C.6).
 
+**Four in a Row.** A 5 × 5 board of numbers shared with Robo. Each turn two
+cards show an addition fact and the student taps a space showing the sum; a
+right tap covers it, a wrong tap covers nothing. Four in a row across, down or
+corner to corner wins; if no fact can be dealt, most spaces covered wins. The
+board holds the level's sums and the numbers its mistakes give, so a wrong tap
+can show which mistake it was.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `reversed_teen_digits` | 41 for 10 + 4: the teen written the way it is said, ones first — Clayton, F. J., et al. (2020), *Two-digit number writing and arithmetic in Year 1 children: Does number word inversion matter?* (32% of English-speaking Year 1 children's teen errors); Steiner, A. F., et al. (2021), *Language effects in early development of number writing and reading* |
+| `one_more_than_second`, `counted_on_from_start`, `subtracted_instead` | Addition War's counting mistakes, with the fact's two cards |
+
+Level 1 deals cards 0–5, level 2 a 10 and a card 1–9 (teen numbers as ten and
+some ones), level 3 cards 0–10 with sums 11–20. Robo never adds wrongly: at
+level 1 it covers the first space with its sum, at level 2 the one that lines
+up most with its own spaces, at level 3 it also takes a winning space and
+blocks three of the student's in a line.
+
 **Shut the Box.** The classic dice game (tiles 1–9; roll two dice and shut
 open tiles that add up to the roll; fewer tiles left is better), played box
 against box with Robo. A student turn is three taps: **Roll**, pick how many
@@ -353,6 +372,9 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   and count up (*"1000 is 9 hundreds, 9 tens and 10 ones, so 1000 − 687 = 313.
   Or count up: 687 + 13 = 700, and 700 + 300 = 1000."*); they may be reworded
   by the LLM under the fact check, as in For Keeps.
+- **Four in a Row (K–1):** a wrong tap wobbles, the right spaces are outlined,
+  and the hint is shown and spoken, e.g. *"Fourteen is 1 ten and 4 ones, so the
+  1 comes first: 14."* Never reworded by the LLM.
 - **Shut the Box (K–1):** hints are never reworded by the LLM and are read
   aloud. A wrong total gets Addition War's counting sentence; a wrong shut
   counts the picked tiles on, e.g. *"Start at 5 and count on: 6, 7, 8, 9. 5
@@ -439,6 +461,9 @@ backend/
     dont_break_the_bank/ the same files: column-by-column carrying and
                          borrowing simulators, dealing, moves and a
                          look-ahead Robo, hints
+    four_in_a_row/       the same files: board of sums and mistake numbers,
+                         teen-reversal detector (reusing card_war's), lines
+                         and a blocking Robo, hints
     shut_the_box/        the same files: dealing with rolls made in advance,
                          total and shut detectors (reusing card_war's),
                          moves and Robo, hints
@@ -456,7 +481,8 @@ backend/
   main.py                FastAPI routes
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
-                         CardWarPage, ShutTheBoxPage, DontBreakTheBankPage,
+                         CardWarPage, ShutTheBoxPage, FourInARowPage,
+                         DontBreakTheBankPage,
                          TargetNumberPage,
                          MultiplicationShootoutPage, FractionSpoonsPage,
                          TwentyFourPage, CoordinateBattleshipPage,

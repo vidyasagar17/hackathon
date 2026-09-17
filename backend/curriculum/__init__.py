@@ -11,6 +11,7 @@ from . import (
     decimal_war,
     dont_break_the_bank,
     for_keeps,
+    four_in_a_row,
     fraction_spoons,
     multiplication_shootout,
     shut_the_box,
@@ -33,4 +34,5 @@ CURRICULUM_GAMES: dict[str, ModuleType] = {
     "coordinate-plane-battleship": coordinate_battleship,
     "volume-builder": volume_builder,
     "target-number": target_number,
+    "four-in-a-row": four_in_a_row,
 }

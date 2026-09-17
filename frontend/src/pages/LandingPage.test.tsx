@@ -77,6 +77,7 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
     'Addition War',
     'Take-Away War',
     'Shut the Box',
+    'Four in a Row',
     'Decimal War',
     'Fraction Spoons',
     'The 24 Game',
@@ -109,6 +110,7 @@ test('picking 4th & 5th grade puts its shelf first with games against Robo befor
     'Addition War',
     'Take-Away War',
     'Shut the Box',
+    'Four in a Row',
     'For Keeps',
     'Multiplication Shootout',
     "Don't Break the Bank",
@@ -144,7 +146,7 @@ test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo
   expect(within(additionWar).getByText('vs Robo')).toBeTruthy()
   expect(within(takeAwayWar).getByText('vs Robo')).toBeTruthy()
   expect(screen.queryByText(/on the way/)).toBeNull()
-  expect(gameTitlesInOrder()).toHaveLength(16)
+  expect(gameTitlesInOrder()).toHaveLength(17)
 })
 
 test('only games against Robo carry the vs Robo tag', () => {
@@ -268,6 +270,17 @@ test('the Target Number box sits on the 2nd & 3rd grade shelf, opens its game an
   const box = within(shelf).getByRole('link', { name: /Target Number/ })
   expect(box.getAttribute('href')).toBe('/curriculum/target-number')
   expect(within(box).getByText('Add and take away cards one step at a time to make the target')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+})
+
+test('the Four in a Row box sits on the kindergarten & 1st grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', 'k-1')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: 'Kindergarten & 1st grade' })
+  const box = within(shelf).getByRole('link', { name: /Four in a Row/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/four-in-a-row')
+  expect(within(box).getByText('Add two cards and cover the answer to get four in a row')).toBeTruthy()
   expect(within(box).getByText('vs Robo')).toBeTruthy()
 })
 
