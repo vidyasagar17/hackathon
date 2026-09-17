@@ -136,6 +136,119 @@ function TwoCardsIcon({ first, sign, second }: { first: number; sign: string; se
   )
 }
 
+/** 1/2 = 2/4 on two fraction cards: a match Fraction Spoons asks the student to spot. */
+function FractionSpoonsIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {[
+        { x: 6, top: 1, bottom: 2 },
+        { x: 62, top: 2, bottom: 4 },
+      ].map(({ x, top, bottom }) => (
+        <g key={x}>
+          <rect x={x} y="6" width="28" height="60" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 14} y="30" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+            {top}
+          </text>
+          <rect x={x + 7} y="35" width="14" height="3" rx="1.5" className="fill-ink" />
+          <text x={x + 14} y="58" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+            {bottom}
+          </text>
+        </g>
+      ))}
+      <text x="48" y="45" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
+        =
+      </text>
+    </svg>
+  )
+}
+
+/** The target 24 on a card over the four signs a 24 Game expression uses. */
+function TwentyFourIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <rect x="26" y="4" width="44" height="40" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+      <text x="48" y="35" textAnchor="middle" fontSize="26" fontWeight="700" className="fill-ink font-display">
+        24
+      </text>
+      <text x="48" y="66" textAnchor="middle" fontSize="18" fontWeight="700" className="fill-ink font-display">
+        + − × ÷
+      </text>
+    </svg>
+  )
+}
+
+/** Two dice showing 3 and 5: the roll a Shut the Box turn adds up. */
+function ShutTheBoxIcon() {
+  const pips = [
+    { x: 4, dots: [[15, 22], [26, 36], [37, 50]] },
+    { x: 50, dots: [[61, 22], [83, 22], [72, 36], [61, 50], [83, 50]] },
+  ]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {pips.map(({ x, dots }) => (
+        <g key={x}>
+          <rect x={x} y="11" width="42" height="50" rx="7" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          {dots.map(([cx, cy]) => (
+            <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="4" className="fill-ink" />
+          ))}
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+/** 456 + 365 + 163 stacked in place columns over a line: the three numbers a Don't Break the Bank game adds. */
+function DontBreakTheBankIcon() {
+  const rows = ['456', '365', '163']
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {rows.map((row, index) => (
+        <text
+          key={row}
+          x="62"
+          y={18 + index * 17}
+          textAnchor="middle"
+          fontSize="17"
+          fontWeight="700"
+          letterSpacing="3"
+          className="fill-ink font-display"
+        >
+          {row}
+        </text>
+      ))}
+      <text x="22" y="52" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+        +
+      </text>
+      <rect x="30" y="58" width="62" height="3" rx="1.5" className="fill-ink" />
+      <text x="62" y="71" textAnchor="middle" fontSize="10" fontWeight="700" className="fill-ink font-display">
+        under 1000
+      </text>
+    </svg>
+  )
+}
+
+/** A small first-quadrant grid with one hit marked at (2, 3): the pairs a Battleship game calls. */
+function CoordinateBattleshipIcon() {
+  const lines = [0, 1, 2, 3, 4]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {lines.map((line) => (
+        <g key={line}>
+          <line x1={24 + line * 14} x2={24 + line * 14} y1="6" y2="62" strokeWidth={line === 0 ? 3 : 1.5} className="stroke-ink" />
+          <line x1="24" x2="80" y1={62 - line * 14} y2={62 - line * 14} strokeWidth={line === 0 ? 3 : 1.5} className="stroke-ink" />
+        </g>
+      ))}
+      <circle cx={24 + 2 * 14} cy={62 - 3 * 14} r="6" className="fill-ones stroke-ink" strokeWidth="2" />
+      <text x="10" y="20" textAnchor="middle" fontSize="12" fontWeight="700" className="fill-ink font-display">
+        y
+      </text>
+      <text x="90" y="70" textAnchor="middle" fontSize="12" fontWeight="700" className="fill-ink font-display">
+        x
+      </text>
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -157,6 +270,30 @@ const GAMES: Game[] = [
     kind: 'robo',
   },
   {
+    title: 'Fraction Spoons',
+    description: 'Collect four equal fractions to win a spoon',
+    to: '/curriculum/fraction-spoons',
+    icon: <FractionSpoonsIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'The 24 Game',
+    description: 'Use all four cards with + − × ÷ to make 24',
+    to: '/curriculum/the-24-game',
+    icon: <TwentyFourIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'Coordinate Plane Battleship',
+    description: 'Write and read ordered pairs to find Robo’s hidden ships',
+    to: '/curriculum/coordinate-plane-battleship',
+    icon: <CoordinateBattleshipIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
     title: 'For Keeps',
     description: 'Build two numbers, subtract, keep the lowest score',
     to: '/curriculum/for-keeps',
@@ -173,6 +310,14 @@ const GAMES: Game[] = [
     kind: 'robo',
   },
   {
+    title: "Don't Break the Bank",
+    description: 'Place rolled digits, add your numbers, and get close to 1000 without going over',
+    to: '/curriculum/dont-break-the-bank',
+    icon: <DontBreakTheBankIcon />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
     title: 'Addition War',
     description: 'Add your two cards and see whose hand wins',
     to: '/curriculum/addition-war',
@@ -185,6 +330,14 @@ const GAMES: Game[] = [
     description: 'Take the smaller card away and see whose hand wins',
     to: '/curriculum/take-away-war',
     icon: <TwoCardsIcon first={8} sign="−" second={3} />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Shut the Box',
+    description: 'Roll two dice, add the dots, and shut tiles that make that many',
+    to: '/curriculum/shut-the-box',
+    icon: <ShutTheBoxIcon />,
     band: 'k-1',
     kind: 'robo',
   },

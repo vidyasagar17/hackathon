@@ -70,11 +70,16 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
   expect(gameTitlesInOrder()).toEqual([
     'For Keeps',
     'Multiplication Shootout',
+    "Don't Break the Bank",
     'Subtraction',
     'Addition',
     'Addition War',
     'Take-Away War',
+    'Shut the Box',
     'Decimal War',
+    'Fraction Spoons',
+    'The 24 Game',
+    'Coordinate Plane Battleship',
     'Multiplication',
     'Division',
   ])
@@ -93,12 +98,17 @@ test('picking 4th & 5th grade puts its shelf first with games against Robo befor
   expect(within(shelf).getByText('Skill workshops')).toBeTruthy()
   expect(gameTitlesInOrder()).toEqual([
     'Decimal War',
+    'Fraction Spoons',
+    'The 24 Game',
+    'Coordinate Plane Battleship',
     'Multiplication',
     'Division',
     'Addition War',
     'Take-Away War',
+    'Shut the Box',
     'For Keeps',
     'Multiplication Shootout',
+    "Don't Break the Bank",
     'Subtraction',
     'Addition',
   ])
@@ -130,7 +140,7 @@ test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo
   expect(within(additionWar).getByText('vs Robo')).toBeTruthy()
   expect(within(takeAwayWar).getByText('vs Robo')).toBeTruthy()
   expect(screen.queryByText(/on the way/)).toBeNull()
-  expect(gameTitlesInOrder()).toHaveLength(9)
+  expect(gameTitlesInOrder()).toHaveLength(14)
 })
 
 test('only games against Robo carry the vs Robo tag', () => {
@@ -177,6 +187,61 @@ test('the Multiplication Shootout box sits on the 2nd & 3rd grade shelf, opens i
   const box = within(shelf).getByRole('link', { name: /Multiplication Shootout/ })
   expect(box.getAttribute('href')).toBe('/curriculum/multiplication-shootout')
   expect(within(box).getByText('Answer times and division facts in turns with Robo')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+})
+
+test('the Fraction Spoons box sits on the 4th & 5th grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: '4th & 5th grade' })
+  const box = within(shelf).getByRole('link', { name: /Fraction Spoons/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/fraction-spoons')
+  expect(within(box).getByText('Collect four equal fractions to win a spoon')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+})
+
+test('The 24 Game box sits on the 4th & 5th grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: '4th & 5th grade' })
+  const box = within(shelf).getByRole('link', { name: /The 24 Game/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/the-24-game')
+  expect(within(box).getByText('Use all four cards with + − × ÷ to make 24')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+})
+
+test('the Shut the Box box sits on the kindergarten & 1st grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', 'k-1')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: 'Kindergarten & 1st grade' })
+  const box = within(shelf).getByRole('link', { name: /Shut the Box/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/shut-the-box')
+  expect(within(box).getByText('Roll two dice, add the dots, and shut tiles that make that many')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+})
+
+test("the Don't Break the Bank box sits on the 2nd & 3rd grade shelf, opens its game and is played against Robo", () => {
+  localStorage.setItem('grade_band', '2-3')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: '2nd & 3rd grade' })
+  const box = within(shelf).getByRole('link', { name: /Don't Break the Bank/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/dont-break-the-bank')
+  expect(within(box).getByText('Place rolled digits, add your numbers, and get close to 1000 without going over')).toBeTruthy()
+  expect(within(box).getByText('vs Robo')).toBeTruthy()
+})
+
+test('the Coordinate Plane Battleship box sits on the 4th & 5th grade shelf, opens its game and is played against Robo', () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  const shelf = screen.getByRole('region', { name: '4th & 5th grade' })
+  const box = within(shelf).getByRole('link', { name: /Coordinate Plane Battleship/ })
+  expect(box.getAttribute('href')).toBe('/curriculum/coordinate-plane-battleship')
+  expect(within(box).getByText('Write and read ordered pairs to find Robo’s hidden ships')).toBeTruthy()
   expect(within(box).getByText('vs Robo')).toBeTruthy()
 })
 

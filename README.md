@@ -14,9 +14,17 @@ It has two kinds of game, grouped on the home screen by grade band
   whose decimal is larger; **For Keeps** (grades 2–3), build two 2-digit
   numbers from four cards, subtract, and keep the lowest scores;
   **Multiplication Shootout** (grades 2–3), take turns with Robo answering
-  times and division facts; and **Addition War** and **Take-Away War**
-  (grades K–1), flip two cards, add them or take the smaller away, and say
-  whose hand wins.
+  times and division facts; **Don't Break the Bank** (grades 2–3), place
+  rolled digits into numbers, add them, and get close to 1000 without going
+  over; **Fraction Spoons** (grades 4–5), draw and
+  discard to collect four equal fractions and win a spoon; **The 24 Game**
+  (grades 4–5), use all four cards with + − × ÷ and parentheses to make 24;
+  **Coordinate Plane Battleship** (grades 4–5), write and read ordered pairs
+  to find Robo's hidden ships;
+  **Addition War** and **Take-Away War** (grades K–1), flip two cards, add
+  them or take the smaller away, and say whose hand wins; and **Shut the Box**
+  (grades K–1), roll two dice, add the dots, and shut tiles that make that
+  many.
 
 ## How diagnosis works
 
@@ -100,6 +108,41 @@ cutoff (12, 49, 54 — right on about 70%, 80% and 91% of each level's facts)
 by answering the fact one step down, and a wrong Robo answer always shows
 the right one.
 
+**Coordinate Plane Battleship.** Battleship on a first-quadrant grid, 8 turns
+each. On your shot you tap a point on Robo's ocean to aim, then write its
+ordered pair with number buttons and fire — the shot lands where the pair you
+wrote says. On Robo's shot, Robo calls a pair and you tap that point on your
+own ocean. Both are graded, so each turn checks both directions of 5.G.A.1.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `swapped_x_and_y` | writes (5, 3) for the point 3 across and 5 up, or taps (4, 2) for (2, 4) — the most reported coordinate-graphing error in grades 5–6 |
+| `counted_from_one` | counts the corner as 1: writes (4, 6) for (3, 5), or taps (1, 3) for (2, 4) — Sarama, J., et al. (2003), *Development of mathematical concepts of two-dimensional space in grid environments* |
+
+Level 1 is a 0–4 grid with no ship on an axis, level 2 a 0–5 grid where pairs
+can have a 0, level 3 adds a third ship. Robo aims at random at level 1, then
+hunts next to its hits (level 2) and also hunts on a checkerboard (level 3).
+
+**Don't Break the Bank.** Math for Love's place-value game: the same rolls
+of a die go to the student and Robo, and each roll is placed for good in a
+hundreds, tens or ones spot of three numbers. Then the student types the sum
+and, when it isn't over the bank, how far it is from the bank; placing is
+strategy and not graded. Closest to the bank without going over wins.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `no_carry`, `carry_always`, `reversed_carry`, `carry_drops_at_second_column`, `drops_final_carry` | the addition workshop's carrying bugs, worked on three numbers column by column (Brown & Burton, 1978) |
+| `wrote_column_sums_side_by_side` | 456 + 365 + 163 → 81714: each column's whole sum written next to the others — Price, P. (2002), *"Face-value" and "independent-place" constructs* |
+| `added_digits_as_ones` | 456 + 365 + 163 → 39: every digit added as ones — face-value thinking (Ross, 1989) |
+| `stops_borrow_at_zero`, `borrow_across_zero_failure`, `zero_minus_digit_gives_digit`, `zero_minus_digit_gives_zero` | 1000 − 687 → 1423, 413, 1687 or 1000: borrowing across the bank's zeros — Burton, R. R. (1982), *Diagnosing bugs in a simple procedural skill* |
+
+Level 1 is two 2-digit numbers under 100, level 2 the classic three 3-digit
+numbers under 1000 with a 1–6 die, level 3 the same with a 0–9 die. Robo
+never adds wrongly; at level 1 it places each roll where its expected total
+lands nearest an aim, and at levels 2–3 it looks ahead, finishing its board
+40 times with made-up rolls and keeping the best spot (it breaks the bank in
+about 14% and 21% of games, against 30% and 42% for the aim rule).
+
 **Addition War and Take-Away War.** Everyday Mathematics' *Addition Top-It*,
 one hand at a time: the student and Robo each flip two cards, Robo's total is
 shown, the student taps their own total from four answer cards, then taps whose
@@ -121,6 +164,73 @@ logged, so an undiagnosed move never sits between two answer mistakes in the
 level rule. Levels follow the standards: cards 0–5 (K.OA.A.5), then 0–10
 (K.OA.A.2; addition sums within 10), then sums to 20 or a teen card minus a card
 to 10 (1.OA.C.6).
+
+**Shut the Box.** The classic dice game (tiles 1–9; roll two dice and shut
+open tiles that add up to the roll; fewer tiles left is better), played box
+against box with Robo. A student turn is three taps: **Roll**, pick how many
+dots in all from four answer cards, then tap tiles and **Shut**. Both the
+total and the shut are graded, one try each. Adding the dice reuses Addition
+War's three detectors with the dice as the two cards; shutting tiles has two
+more:
+
+| Diagnosis | Wrong tiles |
+|---|---|
+| `tiles_counted_on_from_start` | 5 and 4 for an 8: counting on while saying the start number again ("5, 6, 7, 8") — Secada, Fuson & Hall (1983) |
+| `added_the_total_tile` | the 8 tile with the 2 for an 8: making a number from parts read as a plain addition — Lindvall, C. M., & Ibarra, C. G. (1980), *Incorrect procedures used by primary grade pupils in solving open addition and subtraction sentences* |
+
+A wrong total outlines the right card and goes on with the right total; a
+wrong shut shuts a right way (fewest, highest tiles) so the student sees one.
+When no open tiles make the total, that box is done; the game ends when both
+boxes are done or one is empty, and fewest open tiles wins (counting, not
+adding up to nine numbers). Level 1 uses dice with 1–3 dots and tiles 1–6
+(K.OA.A.5), level 2 standard dice and tiles 1–9 (1.OA.C.6), level 3 tiles
+1–12. Robo never adds or shuts wrongly; at level 1 it shuts the most tiles it
+can (a weaker way), at levels 2–3 the fewest, highest tiles.
+
+**Fraction Spoons.** The classroom *Spoons* game (Games 4 Gains) made
+turn-based, with no grabbing race: the student and Robo each hold four
+fraction cards, and a hand is won by the first correct claim that all four
+equal the card being collected; first to 3 spoons wins. Each turn the student
+picks a Collecting card, draws, taps **Fits** or **Doesn't fit** for the
+drawn card, discards one card, then takes the spoon or hands the turn to
+Robo. The fit tap and the claim are graded; picking and discarding are
+strategy and not logged. Every set is a simple fraction times 1–4 (1/3, 2/6,
+3/9, 4/12), and the deck adds mistake cards built from the student's own
+Collecting cards:
+
+| Diagnosis | Wrong move |
+|---|---|
+| `same_difference_means_equal` | says 2/3 fits with 1/2 (top and bottom 1 apart in both) — "gap thinking", Mitchell, A., & Horne, M. (2010), *Gap thinking in fraction pair comparisons*; adding the same number to top and bottom always makes this card, so additive scaling is the same diagnosis |
+| `changed_only_top_or_bottom` | says 1/4 or 2/2 fits with 1/2 (only one part × 2) — Biber, Tuna & Aktaş (2013) |
+| `bigger_numbers_not_equal` | says 4/8 doesn't fit with 1/2 — Braithwaite, D. W., & Siegler, R. S. (2018), *Developmental changes in the whole number bias* (the fraction with larger numbers judged larger 62.7% of the time) |
+
+A wrong claim names the mistake most of its odd cards show. Level 1 deals
+sets from 1/2, 1/3 and 1/4 with same-difference cards (3.NF.A.3.b); level 2
+adds non-unit fractions, fifths and sixths, and one-part-only cards
+(4.NF.A.1); level 3 skips multipliers and reaches hundredths (3/4 = 75/100).
+Robo is never wrong: it collects what it holds most of, and the level only
+sets how close to a set its starting hand is.
+
+**The 24 Game.** The classroom 24 Game (Robert Sun, 1988) made turn-based: a
+duel of five hands. Each hand the student taps their four cards, + − × ÷ and
+parentheses into an expression (each card once) and presses **Check**; the
+server works it out exactly and shows what it makes, step by step by the
+order of operations (5.OA.A.1). Every check is graded, and the student can
+edit and check again or press **Show me a way** (not graded, no point). Then
+Robo shows its own hand. A wrong check is diagnosed only when the student's
+expression makes 24 under a mistaken order:
+
+| Diagnosis | Wrong expression |
+|---|---|
+| `left_to_right` | works every operation in the order written: 3 + 5 × 3 × 1 as if it were (3 + 5) × 3 × 1 — Bye, J. K., et al. (2024), *Perceiving precedence: Order of operations errors are predicted by perception of equivalent expressions* (15–22% of 837 middle schoolers kept going left to right); Blando et al. (1989); Tabak (2019) |
+| `pemdas_letter_order` | does × before ÷ or + before −: 6 × 8 ÷ 1 × 2 as if it were 6 × 8 ÷ (1 × 2) — Glidden, P. L. (2008), *Prospective elementary teachers' understanding of order of operations* (38.0% multiplied before dividing) |
+
+Hands are dealt by what their ways to 24 need, one new idea per level: level 1
+a way with no parentheses and no ÷, level 2 parentheses but no ÷, level 3 ÷
+(cards 1–9, then 1–10). Every way the game shows uses whole-number steps.
+Robo finds 24 with only the kinds of way its level allows (no parentheses; at
+most one pair and no ÷; at most one pair) — about 48%, 91% and 97% of its
+hands — and never shows wrong math.
 
 ## Adaptive difficulty
 
@@ -162,20 +272,49 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   whole hint (e.g. *"Start at 4 and count on 3 more: 5, 6, 7."*). A wrong
   answer card wobbles once, the right card is outlined, and the hint is shown
   and spoken; there is no red text.
+- **Coordinate Plane Battleship:** a wrong pair or tap shows both points and
+  "Show me why", e.g. *"Across comes first, then up. Your aim is 3 across and
+  5 up, so it is (3, 5), not (5, 3)."* Never reworded by the LLM: the fact
+  check can't tell if "across" and "up" were swapped, the very mistake.
+- **Don't Break the Bank:** a wrong sum or distance shows the right one and
+  "Show me why" in the panel where the keypad was. Hints name the column the
+  mistake got wrong (e.g. *"In the ones column, 6 + 5 + 3 makes 14, so write 4
+  and carry 1 to the tens column."*), or trade the bank into smaller places
+  and count up (*"1000 is 9 hundreds, 9 tens and 10 ones, so 1000 − 687 = 313.
+  Or count up: 687 + 13 = 700, and 700 + 300 = 1000."*); they may be reworded
+  by the LLM under the fact check, as in For Keeps.
+- **Shut the Box (K–1):** hints are never reworded by the LLM and are read
+  aloud. A wrong total gets Addition War's counting sentence; a wrong shut
+  counts the picked tiles on, e.g. *"Start at 5 and count on: 6, 7, 8, 9. 5
+  and 4 make 9. You need 8."*
+- **Fraction Spoons:** hints are never reworded by the LLM (live rewordings
+  of its size relations failed the fact check or read misleadingly). "Show
+  me why" draws the Collecting card and the card the hint is about as two
+  fraction bars of the same length, each cut into its parts, with a dashed
+  line where the Collecting card's shading ends: equal fractions reach it,
+  2/3 passes 1/2. The server picks both cards, so the picture always matches
+  the sentence.
+- **The 24 Game:** hints are never reworded by the LLM (a moved parenthesis
+  changes the math). A wrong check always lists its steps by the rule; "Show
+  me why" adds the rule that was missed and the parentheses that make the
+  student's order work, e.g. *"In 3 + 5 × 3 × 1, × and ÷ come before + and −,
+  so it makes 18. Parentheses show the order you used: (3 + 5) × 3 × 1 = 24."*
 
 ## The move engine (games against Robo)
 
 Curriculum games register in `backend/curriculum/` and provide `new_round`,
 `visible_state`, `evaluate_move`, `computer_move`, `hint_sentence` and a
-general hint. The server keeps each round (so hidden cards never reach the
-browser) and logs every graded move with its diagnosis; a move the game marks
+general hint, and optionally `hint_cards` for a hint picture. The server keeps
+each round (so hidden cards never reach the browser) and logs every graded move
+with its diagnosis; a move the game marks
 as not graded (`MoveResult.counted`, e.g. arranging cards) is applied but not
 logged:
 
 - `POST /curriculum/{game_id}/rounds` — start a round at the student's level
 - `POST /rounds/{round_id}/moves` — evaluate, log and answer a move (422 for a
   move the game rejects, which is not logged)
-- `POST /rounds/{round_id}/hint` — hint for the round's latest move
+- `POST /rounds/{round_id}/hint` — hint for the round's latest move, with the
+  two cards the hint compares when the game provides them
 
 The session summary counts workshop attempts and moves together, per game.
 
@@ -225,15 +364,34 @@ backend/
                          same files, with answer cards from mistakes
     addition_war/        fixes card_war to adding for the engine
     take_away_war/       fixes card_war to taking away for the engine
+    coordinate_battleship/ the same files: fleets, pair detectors in both
+                         directions, moves and hunting Robo, hints
+    dont_break_the_bank/ the same files: column-by-column carrying and
+                         borrowing simulators, dealing, moves and a
+                         look-ahead Robo, hints
+    shut_the_box/        the same files: dealing with rolls made in advance,
+                         total and shut detectors (reusing card_war's),
+                         moves and Robo, hints
+    fraction_spoons/     the same files: dealing with mistake cards,
+                         fit and claim detectors, moves and Robo, hints
+    twenty_four/         expressions.py (work out tokens under any order),
+                         the same files: solver and dealing, detectors,
+                         moves and Robo, hints
   tiering.py             adaptive levels
   db.py                  SQLite: attempts, rounds, moves, summary
   main.py                FastAPI routes
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
-                         CardWarPage, DashboardPage
+                         CardWarPage, ShutTheBoxPage, DontBreakTheBankPage,
+                         MultiplicationShootoutPage, FractionSpoonsPage,
+                         TwentyFourPage, CoordinateBattleshipPage,
+                         DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
-                         ProgressMeter, HundredthsGrid, ...
+                         ProgressMeter, HundredthsGrid, FractionCard, DiceFace,
+                         FractionBars, ...
   regroup.ts             borrow/carry animation steps
+  expressionEntry.ts     which 24 Game tile can be tapped next
+  wobble.ts              the K–1 wrong-tap wobble
 ```
 
 ## Running locally
