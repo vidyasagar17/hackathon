@@ -15,6 +15,7 @@ from . import (
     multiplication_shootout,
     shut_the_box,
     take_away_war,
+    target_number,
     twenty_four,
     volume_builder,
 )
@@ -31,4 +32,5 @@ CURRICULUM_GAMES: dict[str, ModuleType] = {
     "dont-break-the-bank": dont_break_the_bank,
     "coordinate-plane-battleship": coordinate_battleship,
     "volume-builder": volume_builder,
+    "target-number": target_number,
 }

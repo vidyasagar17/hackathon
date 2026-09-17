@@ -287,6 +287,22 @@ function VolumeBuilderIcon() {
   )
 }
 
+/** A target with 16 in the middle and 9 + 7 below: cards added to hit the target number. */
+function TargetNumberIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <circle cx="48" cy="28" r="24" className="fill-white stroke-ink" strokeWidth="2" />
+      <circle cx="48" cy="28" r="15" className="fill-hundreds stroke-ink" strokeWidth="2" />
+      <text x="48" y="34" textAnchor="middle" fontSize="16" fontWeight="700" className="fill-ink font-display">
+        16
+      </text>
+      <text x="48" y="68" textAnchor="middle" fontSize="14" fontWeight="700" className="fill-ink font-display">
+        9 + 7
+      </text>
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -360,6 +376,14 @@ const GAMES: Game[] = [
     description: 'Place rolled digits, add your numbers, and get close to 1000 without going over',
     to: '/curriculum/dont-break-the-bank',
     icon: <DontBreakTheBankIcon />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Target Number',
+    description: 'Add and take away cards one step at a time to make the target',
+    to: '/curriculum/target-number',
+    icon: <TargetNumberIcon />,
     band: '2-3',
     kind: 'robo',
   },

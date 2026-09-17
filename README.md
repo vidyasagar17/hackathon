@@ -16,7 +16,9 @@ It has two kinds of game, grouped on the home screen by grade band
   **Multiplication Shootout** (grades 2–3), take turns with Robo answering
   times and division facts; **Don't Break the Bank** (grades 2–3), place
   rolled digits into numbers, add them, and get close to 1000 without going
-  over; **Fraction Spoons** (grades 4–5), draw and
+  over; **Target Number** (grades 2–3), add and take away cards one mental
+  step at a time to make a target, then fill in an equation; **Fraction
+  Spoons** (grades 4–5), draw and
   discard to collect four equal fractions and win a spoon; **The 24 Game**
   (grades 4–5), use all four cards with + − × ÷ and parentheses to make 24;
   **Coordinate Plane Battleship** (grades 4–5), write and read ordered pairs
@@ -151,6 +153,33 @@ layer and 4 layers: 4 × 6 = 24."*), and never builds a box with an edge of 1:
 at level 1 it only halves one edge and doubles another, at level 2 it keeps
 one edge, at level 3 it tries every box (it finds one about 47%, 79% and 94%
 of the time).
+
+**Target Number.** Illustrative Mathematics' "Hitting the Target Number"
+(2.OA.B.2) as a duel of five hands. The student starts with a card, then taps
++ or −, a card, and types the new total; every step is graded and shown as its
+own equation, and a wrong step goes on from the right total. Making the target
+with every step right scores a point. After Robo's turn, one equation question
+is graded: *16 = 2 + □* at level 1, *1 + 15 = 2 + □* at levels 2–3, both sides
+making the target.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `counted_on_from_start` | 14 + 3 → 16: counting on says the start number again — Secada, W. G., Fuson, K. C., & Hall, J. W. (1983) |
+| `counted_back_one_off` | 14 − 3 → 10 or 12: counting back ends one step early or late — Fuson, K. C. (1984, 1986) |
+| `subtracted_instead`, `added_instead` | the other operation — Fuson (1984) |
+| `smaller_from_larger` | 42 − 8 → 46: the smaller ones digit taken from the larger (Brown & Burton, 1978) |
+| `forgot_to_change_the_tens` | 38 + 7 → 35, 42 − 8 → 44: a step across a ten without changing the tens (Brown & Burton, 1978) |
+| `answer_to_equal_sign` | 1 + 15 = 2 + □ → 16: the left side's answer — Falkner, K. P., Levi, L., & Carpenter, T. P. (1999), *Children's understanding of equality: A foundation for algebra* |
+| `added_all_numbers` | 1 + 15 = 2 + □ → 18, or 16 = 2 + □ → 18: every number added — Falkner et al. (1999); McNeil, N. M., & Alibali, M. W. (2005) |
+
+On equations with operations on both sides, second graders were right only 6%
+of the time (Matthews, P. G., & Fuchs, L. S., 2018, *Keys to the gate? Equal
+sign knowledge at second grade predicts fourth-grade algebra competence*).
+Level 1 deals cards 1–10 and a target of 10–20 with totals up to 20; level 2 a
+target of 21–40 with totals up to 99 (one-digit steps across tens); level 3
+adds two cards of 11–40 and a target of 30–99. Every hand has a way. Robo never
+adds or takes away wrongly and uses at most 2, 4 and 4 cards by level (it finds
+a way about 47%, 75% and 85% of the time).
 
 **Don't Break the Bank.** Math for Love's place-value game: the same rolls
 of a die go to the student and Robo, and each roll is placed for good in a
@@ -311,6 +340,12 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   hidden behind and under them. The top layer has 4 × 3 = 12 cubes, and 2
   layers make 2 × 12 = 24."* Never reworded by the LLM: the fact check
   protects numbers but not "top", "hidden" or "layer".
+- **Target Number:** a wrong step total or equation answer shows the right one
+  and "Show me why" in the panel, e.g. *"42 has only 2 ones, so use a ten: 42 is
+  30 and 12. 12 − 8 = 4, so 42 − 8 = 34."* or *"1 + 15 = 16 is only the left
+  side. = means both sides are the same amount, so 2 + □ must make 16 too: 2 +
+  14 = 16."* Never reworded by the LLM: the fact check doesn't protect "both
+  sides" or "only".
 - **Don't Break the Bank:** a wrong sum or distance shows the right one and
   "Show me why" in the panel where the keypad was. Hints name the column the
   mistake got wrong (e.g. *"In the ones column, 6 + 5 + 3 makes 14, so write 4
@@ -407,6 +442,8 @@ backend/
     shut_the_box/        the same files: dealing with rolls made in advance,
                          total and shut detectors (reusing card_war's),
                          moves and Robo, hints
+    target_number/       the same files: step and equation detectors, a
+                         way finder for dealing and Robo, moves, hints
     volume_builder/      the same files: box detectors for counting and
                          building, levels, moves and Robo, hints
     fraction_spoons/     the same files: dealing with mistake cards,
@@ -420,6 +457,7 @@ backend/
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
                          CardWarPage, ShutTheBoxPage, DontBreakTheBankPage,
+                         TargetNumberPage,
                          MultiplicationShootoutPage, FractionSpoonsPage,
                          TwentyFourPage, CoordinateBattleshipPage,
                          VolumeBuilderPage, DashboardPage

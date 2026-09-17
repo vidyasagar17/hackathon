@@ -18,6 +18,9 @@ from curriculum.dont_break_the_bank import hints as bank_hints
 from curriculum.dont_break_the_bank.rounds import Round as BankRound
 from curriculum.shut_the_box import hints as shut_the_box_hints
 from curriculum.shut_the_box.rounds import Round as ShutTheBoxRound
+from curriculum.target_number import hints as target_hints
+from curriculum.target_number.misconceptions import Equation as TargetEquation
+from curriculum.target_number.rounds import Round as TargetRound
 from curriculum.twenty_four import hints as twenty_four_hints
 from curriculum.twenty_four.rounds import Round as TwentyFourRound
 from curriculum.volume_builder import hints as volume_hints
@@ -1054,5 +1057,71 @@ def test_an_undiagnosed_wrong_count_gets_the_general_volume_hint(tmp_path, monke
     assert client.post(f"/rounds/{round_id}/hint").json() == {
         "misconception": None,
         "hint": volume_hints.GENERAL_HINT,
+        "cards": None,
+    }
+
+
+def _target_dealing(tmp_path, monkeypatch):
+    """Use a temp database and deal a fixed level-2 hand: cards 9 5 3 1 8 to 25; Robo 7 9 2 6 4; 1 + 24 = 2 + box."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["target-number"]
+    monkeypatch.setattr(
+        game,
+        "new_round",
+        lambda level: TargetRound(
+            level=2,
+            cards=[9, 5, 3, 1, 8],
+            robo_cards=[7, 9, 2, 6, 4],
+            target=25,
+            equation=TargetEquation(left=[1, 24], right=2),
+        ),
+    )
+    return client.post("/curriculum/target-number/rounds", params={"session_id": "s1"}).json()
+
+
+def _target_move(round_id, move):
+    return client.post(f"/rounds/{round_id}/moves", json={"move": move})
+
+
+def test_a_target_number_hand_logs_steps_and_the_equation_but_not_starting(tmp_path, monkeypatch):
+    round_id = _target_dealing(tmp_path, monkeypatch)["round_id"]
+
+    assert _target_move(round_id, {"type": "start", "card": 0}).status_code == 200
+    wrong = _target_move(round_id, {"type": "step", "sign": "+", "card": 4, "answer": 7}).json()
+    assert (wrong["correct"], wrong["misconception"]) == (False, "forgot_to_change_the_tens")
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": "forgot_to_change_the_tens",
+        "hint": "9 + 8 makes 17 ones, which is 1 ten and 7 ones, so 9 + 8 = 17.",
+        "cards": None,
+    }
+    made = _target_move(round_id, {"type": "step", "sign": "+", "card": 2, "answer": 20}).json()
+    assert made["visible_state"]["total"] == 20
+
+    shown = _target_move(round_id, {"type": "show_way"}).json()["visible_state"]
+    assert shown["done"] and shown["robo"]["cards"] == [7, 9, 2, 6, 4]
+    assert shown["equation"] == {"left": [1, 24], "right": 2}
+    answered = _target_move(round_id, {"type": "equation", "answer": 25}).json()
+    assert (answered["correct"], answered["misconception"]) == (False, "answer_to_equal_sign")
+    assert client.post(f"/rounds/{round_id}/hint").json()["hint"].startswith("1 + 24 = 25 is only the left side.")
+
+    history = db.get_move_history("s1", "target-number")
+    assert [attempt.misconception for attempt in history] == ["forgot_to_change_the_tens", None, "answer_to_equal_sign"]
+
+
+def test_a_target_number_step_past_the_top_is_refused_and_not_logged(tmp_path, monkeypatch):
+    round_id = _target_dealing(tmp_path, monkeypatch)["round_id"]
+    _target_move(round_id, {"type": "start", "card": 2})
+    assert _target_move(round_id, {"type": "step", "sign": "-", "card": 0, "answer": 0}).status_code == 422
+    assert db.get_move_history("s1", "target-number") == []
+
+
+def test_an_undiagnosed_wrong_target_step_gets_the_general_hint(tmp_path, monkeypatch):
+    round_id = _target_dealing(tmp_path, monkeypatch)["round_id"]
+    _target_move(round_id, {"type": "start", "card": 0})
+    _target_move(round_id, {"type": "step", "sign": "+", "card": 1, "answer": 30})
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": None,
+        "hint": target_hints.GENERAL_HINT,
         "cards": None,
     }

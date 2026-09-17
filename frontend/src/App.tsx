@@ -10,6 +10,7 @@ import LandingPage from './pages/LandingPage'
 import MultiplicationShootoutPage from './pages/MultiplicationShootoutPage'
 import PracticePage from './pages/PracticePage'
 import ShutTheBoxPage from './pages/ShutTheBoxPage'
+import TargetNumberPage from './pages/TargetNumberPage'
 import TwentyFourPage from './pages/TwentyFourPage'
 import VolumeBuilderPage from './pages/VolumeBuilderPage'
 
@@ -22,6 +23,7 @@ function App() {
         <Route path="/curriculum/decimal-war" element={<DecimalWarPage />} />
         <Route path="/curriculum/for-keeps" element={<ForKeepsPage />} />
         <Route path="/curriculum/dont-break-the-bank" element={<DontBreakTheBankPage />} />
+        <Route path="/curriculum/target-number" element={<TargetNumberPage />} />
         <Route path="/curriculum/fraction-spoons" element={<FractionSpoonsPage />} />
         <Route path="/curriculum/the-24-game" element={<TwentyFourPage />} />
         <Route path="/curriculum/coordinate-plane-battleship" element={<CoordinateBattleshipPage />} />
