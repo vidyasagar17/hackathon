@@ -328,6 +328,27 @@ function FourInARowIcon() {
   )
 }
 
+/** A die showing 3 beside a row of number tiles with the 3 covered: roll, count, cover. */
+function CoverTheNumberIcon() {
+  const pips = [[14, 20], [24, 30], [34, 40]]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <rect x="6" y="12" width="36" height="36" rx="6" strokeWidth="2" className="fill-white stroke-ink" />
+      {pips.map(([x, y]) => (
+        <circle key={x} cx={x} cy={y} r="3.5" className="fill-ink" />
+      ))}
+      {[1, 2, 3].map((value, index) => (
+        <g key={value}>
+          <rect x={50 + index * 14} y="18" width="12" height="24" rx="2" strokeWidth="1.5" className={`${value === 3 ? 'fill-hundreds' : 'fill-white'} stroke-ink`} />
+          <text x={56 + index * 14} y="35" textAnchor="middle" fontSize="11" fontWeight="700" className="fill-ink font-display">
+            {value}
+          </text>
+        </g>
+      ))}
+    </svg>
+  )
+}
+
 type Game = {
   title: string
   description: string
@@ -441,6 +462,14 @@ const GAMES: Game[] = [
     description: 'Add two cards and cover the answer to get four in a row',
     to: '/curriculum/four-in-a-row',
     icon: <FourInARowIcon />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Cover the Number',
+    description: 'Roll, count the dots, and cover that number on your board',
+    to: '/curriculum/cover-the-number',
+    icon: <CoverTheNumberIcon />,
     band: 'k-1',
     kind: 'robo',
   },

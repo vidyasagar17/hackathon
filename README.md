@@ -27,8 +27,9 @@ It has two kinds of game, grouped on the home screen by grade band
   **Addition War** and **Take-Away War** (grades K–1), flip two cards, add
   them or take the smaller away, and say whose hand wins; **Shut the Box**
   (grades K–1), roll two dice, add the dots, and shut tiles that make that
-  many; and **Four in a Row** (grades K–1), add two cards and cover the
-  answer on a shared board to get four in a row.
+  many; **Four in a Row** (grades K–1), add two cards and cover the
+  answer on a shared board to get four in a row; and **Cover the Number**
+  (grades K–1), roll, count the dots, and cover that number on your board.
 
 ## How diagnosis works
 
@@ -224,6 +225,24 @@ level rule. Levels follow the standards: cards 0–5 (K.OA.A.5), then 0–10
 (K.OA.A.2; addition sums within 10), then sums to 20 or a teen card minus a card
 to 10 (1.OA.C.6).
 
+**Cover the Number.** The classroom "roll and cover" game: each player has a
+board of numbers, and on each of 10 turns the student rolls, counts the dots
+and taps that number to cover it. A right tap on a number already covered lets
+the student roll again once. Covering the whole board wins; after 10 turns,
+more numbers covered wins. Level 1 rolls one die (board 1–6), level 2 shows a
+card of 1–10 scattered dots (board 1–10, K.CC.B.5), level 3 rolls two dice
+(board 2–12).
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `counted_one_too_many` | 6 for 5 dots: a dot counted twice, two number words for one dot, or a word left out — Kobayashi, W., et al. (2025), *Counting and subitizing skills in children with Down syndrome and autism spectrum disorder* (17 of the 28 counting errors of typically developing 3–5-year-olds), using Fuson et al.'s (1988) categories |
+| `counted_one_too_few` | 4 for 5 dots: a dot skipped or a word said twice — Kobayashi et al. (2025) (3 of 28) |
+| `one_more_than_second`, `counted_on_from_start`, `subtracted_instead` | with two dice, Addition War's counting mistakes |
+
+Robo always counts right; when its number is already covered it rolls again 0,
+1 or 2 times by level, so against a student who is always right it wins about
+15%, 35% and 53% of games.
+
 **Four in a Row.** A 5 × 5 board of numbers shared with Robo. Each turn two
 cards show an addition fact and the student taps a space showing the sum; a
 right tap covers it, a wrong tap covers nothing. Four in a row across, down or
@@ -372,6 +391,10 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   and count up (*"1000 is 9 hundreds, 9 tens and 10 ones, so 1000 − 687 = 313.
   Or count up: 687 + 13 = 700, and 700 + 300 = 1000."*); they may be reworded
   by the LLM under the fact check, as in For Keeps.
+- **Cover the Number (K–1):** a wrong tap wobbles, the right number is
+  outlined, and the hint is shown and spoken, e.g. *"Say one number for each
+  dot, and each dot only once: 1, 2, 3, 4, 5. That's 5."* Never reworded by the
+  LLM.
 - **Four in a Row (K–1):** a wrong tap wobbles, the right spaces are outlined,
   and the hint is shown and spoken, e.g. *"Fourteen is 1 ten and 4 ones, so the
   1 comes first: 14."* Never reworded by the LLM.
@@ -461,6 +484,8 @@ backend/
     dont_break_the_bank/ the same files: column-by-column carrying and
                          borrowing simulators, dealing, moves and a
                          look-ahead Robo, hints
+    cover_the_number/    the same files: rolls and scattered dots made in
+                         advance, counting detectors, moves and Robo, hints
     four_in_a_row/       the same files: board of sums and mistake numbers,
                          teen-reversal detector (reusing card_war's), lines
                          and a blocking Robo, hints
@@ -482,6 +507,7 @@ backend/
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
                          CardWarPage, ShutTheBoxPage, FourInARowPage,
+                         CoverTheNumberPage,
                          DontBreakTheBankPage,
                          TargetNumberPage,
                          MultiplicationShootoutPage, FractionSpoonsPage,
@@ -489,7 +515,7 @@ frontend/src/
                          VolumeBuilderPage, DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
                          ProgressMeter, HundredthsGrid, FractionCard, DiceFace,
-                         FractionBars, CubeBox, ...
+                         FractionBars, CubeBox, DotCard, ...
   regroup.ts             borrow/carry animation steps
   expressionEntry.ts     which 24 Game tile can be tapped next
   wobble.ts              the K–1 wrong-tap wobble

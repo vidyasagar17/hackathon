@@ -15,6 +15,8 @@ from curriculum.fraction_spoons import hints as fraction_spoons_hints
 from curriculum.fraction_spoons.misconceptions import Card as SpoonsCard
 from curriculum.fraction_spoons.rounds import Hand as SpoonsHand, Round as SpoonsRound
 from curriculum.coordinate_battleship import hints as battleship_hints
+from curriculum.cover_the_number import hints as cover_hints
+from curriculum.cover_the_number.rounds import Roll as CoverRoll, Round as CoverRound
 from curriculum.coordinate_battleship.rounds import Round as BattleshipRound
 from curriculum.dont_break_the_bank import hints as bank_hints
 from curriculum.dont_break_the_bank.rounds import Round as BankRound
@@ -1173,5 +1175,56 @@ def test_an_undiagnosed_four_in_a_row_tap_gets_the_general_hint(tmp_path, monkey
     assert client.post(f"/rounds/{round_id}/hint").json() == {
         "misconception": None,
         "hint": four_in_a_row_hints.GENERAL_HINT,
+        "cards": None,
+    }
+
+
+def _cover_dealing(tmp_path, monkeypatch):
+    """Use a temp database and deal a level-1 game: the student rolls 4 every time, Robo rolls 2."""
+    monkeypatch.setattr(db, "DB_PATH", tmp_path / "attempts.db")
+    db.init_db()
+    game = main.CURRICULUM_GAMES["cover-the-number"]
+    monkeypatch.setattr(
+        game,
+        "new_round",
+        lambda level: CoverRound(level=1, my_rolls=[CoverRoll(values=[4])] * 30, robo_rolls=[CoverRoll(values=[2])] * 30),
+    )
+    return client.post("/curriculum/cover-the-number/rounds", params={"session_id": "s1"}).json()
+
+
+def _cover_move(round_id, move):
+    return client.post(f"/rounds/{round_id}/moves", json={"move": move})
+
+
+def test_a_cover_the_number_turn_logs_only_the_tap(tmp_path, monkeypatch):
+    round_id = _cover_dealing(tmp_path, monkeypatch)["round_id"]
+
+    _cover_move(round_id, {"type": "roll"})
+    tap = _cover_move(round_id, {"type": "tap", "number": 5}).json()
+    assert (tap["correct"], tap["misconception"]) == (False, "counted_one_too_many")
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": "counted_one_too_many",
+        "hint": "Say one number for each dot, and each dot only once: 1, 2, 3, 4. That's 4.",
+        "cards": None,
+    }
+    robo = _cover_move(round_id, {"type": "robo_turn"}).json()["visible_state"]
+    assert robo["robo_covered"] == [2] and robo["turn"] == 2
+    assert [attempt.misconception for attempt in db.get_move_history("s1", "cover-the-number")] == ["counted_one_too_many"]
+
+
+def test_a_cover_the_number_tap_off_the_board_is_refused_and_not_logged(tmp_path, monkeypatch):
+    round_id = _cover_dealing(tmp_path, monkeypatch)["round_id"]
+    _cover_move(round_id, {"type": "roll"})
+    assert _cover_move(round_id, {"type": "tap", "number": 9}).status_code == 422
+    assert db.get_move_history("s1", "cover-the-number") == []
+
+
+def test_an_undiagnosed_cover_the_number_tap_gets_the_general_hint(tmp_path, monkeypatch):
+    round_id = _cover_dealing(tmp_path, monkeypatch)["round_id"]
+    _cover_move(round_id, {"type": "roll"})
+    _cover_move(round_id, {"type": "tap", "number": 1})
+    assert client.post(f"/rounds/{round_id}/hint").json() == {
+        "misconception": None,
+        "hint": cover_hints.GENERAL_HINT,
         "cards": None,
     }
