@@ -1,17 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import GameTable from '../components/GameTable'
+import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
 import HundredthsGrid from '../components/HundredthsGrid'
-import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
 import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
 import { postJson } from '../api'
-import { formatMisconception } from '../format'
+import { useRoundHint } from '../roundHint'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -104,21 +104,17 @@ function DecimalWarPage() {
   const [sending, setSending] = useState(false)
   const [moveError, setMoveError] = useState(false)
   const [result, setResult] = useState<MoveResult | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
-  const [hintError, setHintError] = useState(false)
-  const hintRequest = useRef<AbortController | null>(null)
+  const { hint, hintError, showWhy, clearHint } = useRoundHint()
 
   const showRound = useCallback((payload: RoundPayload) => {
-    hintRequest.current?.abort()
     setRoundId(payload.round_id)
     setState(payload.visible_state)
     setProgress(payload.progress)
     setLoadError(false)
     setMoveError(false)
     setResult(null)
-    setHint(null)
-    setHintError(false)
-  }, [])
+    clearHint()
+  }, [clearHint])
 
   useEffect(() => {
     let stale = false
@@ -158,18 +154,6 @@ function DecimalWarPage() {
       })
       .catch(() => setMoveError(true))
       .finally(() => setSending(false))
-  }
-
-  const showWhy = () => {
-    hintRequest.current?.abort()
-    const request = new AbortController()
-    hintRequest.current = request
-    setHintError(false)
-    postJson<{ hint: string | null }>(`/rounds/${roundId}/hint`, undefined, request.signal)
-      .then((reply) => setHint(reply.hint))
-      .catch(() => {
-        if (!request.signal.aborted) setHintError(true)
-      })
   }
 
   if (loadError) {
@@ -289,34 +273,19 @@ function DecimalWarPage() {
               {verdict}
             </p>
 
-            {!result.correct && hint === null && (
-              <button
-                type="button"
-                onClick={showWhy}
-                className="tap-target inline-flex items-center gap-2 self-start rounded-2xl border-4 border-ink bg-white px-4 font-display text-lg font-semibold text-ink"
-              >
-                <LightbulbIcon />
-                Show me why
-              </button>
-            )}
-            {hintError && (
-              <p className="font-semibold text-alert-text">Couldn't load the hint — try again.</p>
-            )}
-            {hint && (
-              <div className="flex flex-col items-start gap-2">
+            <HintPanel
+              wrong={!result.correct}
+              hint={hint}
+              hintError={hintError}
+              misconception={result.misconception}
+              onShowWhy={() => showWhy(roundId)}
+              picture={
                 <div className="flex flex-wrap gap-6">
                   <HundredthsGrid digits={state.mine.slice(2)} places={places} />
                   <HundredthsGrid digits={state.robo.slice(2)} places={places} />
                 </div>
-                <p className="text-lg">{hint}</p>
-                <ReadAloudButton text={hint} label="Read the hint aloud" />
-                {result.misconception && (
-                  <p className="text-sm text-ink-muted">
-                    Diagnosed pattern: {formatMisconception(result.misconception)}
-                  </p>
-                )}
-              </div>
-            )}
+              }
+            />
 
             <button
               type="button"

@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import GameTable from '../components/GameTable'
+import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
-import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import { postJson } from '../api'
-import { formatMisconception } from '../format'
+import { useRoundHint } from '../roundHint'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -162,17 +162,13 @@ function CoordinateBattleshipPage() {
   const [moveError, setMoveError] = useState(false)
   const [digits, setDigits] = useState<number[]>([])
   const [result, setResult] = useState<Result | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
-  const [hintError, setHintError] = useState(false)
   const [finished, setFinished] = useState(false)
-  const hintRequest = useRef<AbortController | null>(null)
+  const { hint, hintError, showWhy, clearHint } = useRoundHint()
 
   const clearResult = useCallback(() => {
-    hintRequest.current?.abort()
     setResult(null)
-    setHint(null)
-    setHintError(false)
-  }, [])
+    clearHint()
+  }, [clearHint])
 
   const showRound = useCallback(
     (payload: RoundPayload) => {
@@ -294,18 +290,6 @@ function CoordinateBattleshipPage() {
     })
   }
 
-  const showWhy = () => {
-    hintRequest.current?.abort()
-    const request = new AbortController()
-    hintRequest.current = request
-    setHintError(false)
-    postJson<{ hint: string | null }>(`/rounds/${roundId}/hint`, undefined, request.signal)
-      .then((reply) => setHint(reply.hint))
-      .catch(() => {
-        if (!request.signal.aborted) setHintError(true)
-      })
-  }
-
   const showingMine = state.step === 'read' || (result?.kind === 'read' && state.step !== 'over')
   const robosMarks: Mark[] = [
     ...state.robo_ocean.shots.map((shot): Mark => ({ point: [shot.x, shot.y], kind: shot.hit ? 'hit' : 'miss' })),
@@ -425,28 +409,13 @@ function CoordinateBattleshipPage() {
                     {result.message}
                   </p>
                 )}
-                {result && !result.correct && hint === null && (
-                  <button
-                    type="button"
-                    onClick={showWhy}
-                    className={`tap-target ${PANEL_BUTTON} inline-flex items-center gap-2 border-4 border-ink bg-white text-ink`}
-                  >
-                    <LightbulbIcon />
-                    Show me why
-                  </button>
-                )}
-                {hintError && <p className="font-semibold text-alert-text">Couldn't load the hint — try again.</p>}
-                {hint && result && (
-                  <div className="flex flex-col items-start gap-2">
-                    <p className="text-lg">{hint}</p>
-                    <div className="flex w-full items-center justify-between gap-2">
-                      <p className="text-sm text-ink-muted">
-                        {result.misconception && `Diagnosed pattern: ${formatMisconception(result.misconception)}`}
-                      </p>
-                      <ReadAloudButton text={hint} label="Read the hint aloud" />
-                    </div>
-                  </div>
-                )}
+                <HintPanel
+                  wrong={Boolean(result && !result.correct)}
+                  hint={hint}
+                  hintError={hintError}
+                  misconception={result?.misconception ?? null}
+                  onShowWhy={() => showWhy(roundId)}
+                />
                 {state.step === 'pass' && (
                   <button type="button" onClick={roboTurn} disabled={sending} className={`tap-target ${PANEL_BUTTON} bg-hundreds text-ink`}>
                     Robo's turn

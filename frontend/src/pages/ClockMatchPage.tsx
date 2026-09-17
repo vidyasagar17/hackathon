@@ -1,16 +1,16 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import ClockFace from '../components/ClockFace'
 import type { Clock } from '../clock'
 import GameTable from '../components/GameTable'
+import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
-import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import { postJson } from '../api'
-import { formatMisconception } from '../format'
+import { useRoundHint } from '../roundHint'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -68,27 +68,23 @@ function ClockMatchPage() {
   const [dealing, setDealing] = useState(false)
   const [moveError, setMoveError] = useState(false)
   const [result, setResult] = useState<MoveResult | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
-  const [hintError, setHintError] = useState(false)
   const [roboShown, setRoboShown] = useState(false)
   const [turn, setTurn] = useState(1)
   const [myPoints, setMyPoints] = useState(0)
   const [roboPoints, setRoboPoints] = useState(0)
   const [finished, setFinished] = useState(false)
-  const hintRequest = useRef<AbortController | null>(null)
+  const { hint, hintError, showWhy, clearHint } = useRoundHint()
 
   const showRound = useCallback((payload: RoundPayload) => {
-    hintRequest.current?.abort()
     setRoundId(payload.round_id)
     setState(payload.visible_state)
     setProgress(payload.progress)
     setLoadError(false)
     setMoveError(false)
     setResult(null)
-    setHint(null)
-    setHintError(false)
+    clearHint()
     setRoboShown(false)
-  }, [])
+  }, [clearHint])
 
   useEffect(() => {
     let stale = false
@@ -150,23 +146,9 @@ function ClockMatchPage() {
       .finally(() => setSending(false))
   }
 
-  const showWhy = () => {
-    hintRequest.current?.abort()
-    const request = new AbortController()
-    hintRequest.current = request
-    setHintError(false)
-    postJson<{ hint: string | null }>(`/rounds/${roundId}/hint`, undefined, request.signal)
-      .then((reply) => setHint(reply.hint))
-      .catch(() => {
-        if (!request.signal.aborted) setHintError(true)
-      })
-  }
-
   const showRobo = () => {
     playSound('tap')
-    hintRequest.current?.abort()
-    setHint(null)
-    setHintError(false)
+    clearHint()
     setRoboShown(true)
     if (state.robo?.knows) setRoboPoints((points) => points + 1)
   }
@@ -253,28 +235,13 @@ function ClockMatchPage() {
               {result && (
                 <div aria-live="polite" className="flex w-full max-w-xs flex-col items-start gap-3 rounded-2xl border-2 border-felt-edge bg-card p-4 md:w-80">
                   <p className={`font-display text-xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}>{verdict}</p>
-                  {!result.correct && hint === null && !roboShown && (
-                    <button
-                      type="button"
-                      onClick={showWhy}
-                      className={`tap-target ${PANEL_BUTTON} inline-flex items-center gap-2 border-4 border-ink bg-white text-ink`}
-                    >
-                      <LightbulbIcon />
-                      Show me why
-                    </button>
-                  )}
-                  {hintError && <p className="font-semibold text-alert-text">Couldn't load the hint — try again.</p>}
-                  {hint && (
-                    <div className="flex flex-col items-start gap-2">
-                      <p className="text-lg">{hint}</p>
-                      <div className="flex w-full items-center justify-between gap-2">
-                        <p className="text-sm text-ink-muted">
-                          {result.misconception && `Diagnosed pattern: ${formatMisconception(result.misconception)}`}
-                        </p>
-                        <ReadAloudButton text={hint} label="Read the hint aloud" />
-                      </div>
-                    </div>
-                  )}
+                  <HintPanel
+                    wrong={!result.correct && !roboShown}
+                    hint={hint}
+                    hintError={hintError}
+                    misconception={result.misconception}
+                    onShowWhy={() => showWhy(roundId)}
+                  />
                   {!roboShown && (
                     <button type="button" onClick={showRobo} className={`tap-target ${PANEL_BUTTON} bg-hundreds text-ink`}>
                       Robo's turn

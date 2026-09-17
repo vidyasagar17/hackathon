@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import GameTable from '../components/GameTable'
+import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
-import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
 import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
@@ -11,7 +11,7 @@ import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
 import { postJson } from '../api'
 import { OPERATORS, SPOKEN, SYMBOLS, canTap, expressionText, isComplete, type Token } from '../expressionEntry'
-import { formatMisconception } from '../format'
+import { useRoundHint } from '../roundHint'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -112,22 +112,18 @@ function TwentyFourPage() {
   const [moveError, setMoveError] = useState(false)
   const [tokens, setTokens] = useState<Token[]>([])
   const [result, setResult] = useState<MoveResult | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
-  const [hintError, setHintError] = useState(false)
   const [roboShown, setRoboShown] = useState(false)
   const [hand, setHand] = useState(1)
   const [myPoints, setMyPoints] = useState(0)
   const [roboPoints, setRoboPoints] = useState(0)
   const [finished, setFinished] = useState(false)
-  const hintRequest = useRef<AbortController | null>(null)
+  const { hint, hintError, showWhy, clearHint } = useRoundHint()
 
   /** Clear the last check's result and hint, so an older hint never sits beside a newer check. */
   const clearResult = useCallback(() => {
-    hintRequest.current?.abort()
     setResult(null)
-    setHint(null)
-    setHintError(false)
-  }, [])
+    clearHint()
+  }, [clearHint])
 
   const showRound = useCallback(
     (payload: RoundPayload) => {
@@ -237,18 +233,6 @@ function TwentyFourPage() {
   const showWay = () => {
     playSound('tap')
     send({ type: 'show_way' }, false)
-  }
-
-  const showWhy = () => {
-    hintRequest.current?.abort()
-    const request = new AbortController()
-    hintRequest.current = request
-    setHintError(false)
-    postJson<{ hint: string | null }>(`/rounds/${roundId}/hint`, undefined, request.signal)
-      .then((reply) => setHint(reply.hint))
-      .catch(() => {
-        if (!request.signal.aborted) setHintError(true)
-      })
   }
 
   const showRoboTurn = () => {
@@ -426,28 +410,13 @@ function TwentyFourPage() {
                         <Steps shown={state.shown_way} />
                       </>
                     )}
-                    {result && !result.correct && hint === null && (
-                      <button
-                        type="button"
-                        onClick={showWhy}
-                        className={`tap-target ${PANEL_BUTTON} inline-flex items-center gap-2 border-4 border-ink bg-white text-ink`}
-                      >
-                        <LightbulbIcon />
-                        Show me why
-                      </button>
-                    )}
-                    {hintError && <p className="font-semibold text-alert-text">Couldn't load the hint — try again.</p>}
-                    {hint && result && (
-                      <div className="flex flex-col items-start gap-2">
-                        <p className="text-lg">{hint}</p>
-                        <ReadAloudButton text={hint} label="Read the hint aloud" />
-                        {result.misconception && (
-                          <p className="text-sm text-ink-muted">
-                            Diagnosed pattern: {formatMisconception(result.misconception)}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    <HintPanel
+                      wrong={Boolean(result && !result.correct)}
+                      hint={hint}
+                      hintError={hintError}
+                      misconception={result?.misconception ?? null}
+                      onShowWhy={() => showWhy(roundId)}
+                    />
                     {building && (
                       <button
                         type="button"
