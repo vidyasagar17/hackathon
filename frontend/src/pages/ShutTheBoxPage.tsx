@@ -10,6 +10,7 @@ import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
 import { postJson } from '../api'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 import { speakWhenAllowed } from '../speech'
@@ -46,7 +47,7 @@ type MoveResult = { correct: boolean; misconception: string | null; visible_stat
 const RESULTS = { mine: 'You win!', robo: 'Robo wins.', same: "Same! It's a tie." }
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/shut-the-box/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/shut-the-box/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 /** 5; 5 and 3; 1, 2 and 5 */
@@ -383,7 +384,7 @@ function ShutTheBoxPage() {
                     aria-pressed={state.step === 'shut' && open ? isSelected : undefined}
                     onClick={() => toggleTile(tile)}
                     disabled={sending || state.step !== 'shut' || !open}
-                    className={`tap-target w-16 rounded-xl border-4 font-display text-3xl font-bold ${
+                    className={`tap-target w-16 rounded-xl border-4 font-display text-3xl font-bold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${
                       open ? 'border-felt-edge bg-card text-ink' : 'border-chalk/40 bg-felt-edge text-chalk'
                     } ${isSelected ? 'ring-4 ring-hundreds ring-offset-2 ring-offset-felt' : ''} ${justShut ? 'outline outline-4 outline-hundreds' : ''}`}
                   >
@@ -398,7 +399,7 @@ function ShutTheBoxPage() {
                 type="button"
                 onClick={shut}
                 disabled={sending || selected.length === 0}
-                className="tap-target rounded-2xl bg-hundreds px-10 font-display text-2xl font-bold text-ink disabled:opacity-40"
+                className="tap-target rounded-2xl bg-hundreds px-10 font-display text-2xl font-bold text-ink disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-chalk focus-visible:ring-offset-2 focus-visible:ring-offset-felt"
               >
                 Shut
               </button>
@@ -411,7 +412,7 @@ function ShutTheBoxPage() {
                   type="button"
                   onClick={roboTurn}
                   disabled={sending}
-                  className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink"
+                  className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-chalk focus-visible:ring-offset-2 focus-visible:ring-offset-felt"
                 >
                   Robo's turn
                   <NextArrow />
@@ -432,7 +433,7 @@ function ShutTheBoxPage() {
                   type="button"
                   aria-label="Play again"
                   onClick={dealGame}
-                  className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink"
+                  className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
                 >
                   Play again
                   <NextArrow />

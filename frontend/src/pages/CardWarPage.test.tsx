@@ -146,7 +146,7 @@ test('an Addition War hand shows both hands, Robo total and four answer cards', 
   expect(screen.getByRole('heading', { name: 'Addition War' })).toBeTruthy()
   expect(screen.getByLabelText('Your cards: 3 plus 4')).toBeTruthy()
   expect(screen.getByLabelText("Robo's cards: 5 plus 1")).toBeTruthy()
-  expect(screen.getByText('Robo has 6')).toBeTruthy()
+  expect(screen.getByText('I have 6!')).toBeTruthy()
   expect(screen.getByText('How many in all?')).toBeTruthy()
   expect(screen.queryByRole('group', { name: 'Who has more?' })).toBeNull()
 })
@@ -191,6 +191,7 @@ test('tapping a wrong card wobbles it, outlines the right card, and shows and sp
   expect(await screen.findByText(HINT)).toBeTruthy()
   expect(spokenTexts().at(-1)).toBe(`${HINT} You have 7 and Robo has 6. Who has more?`)
   expect(screen.queryByText(/not quite/i)).toBeNull()
+  expect(document.querySelector('.text-alert-text')).toBeNull()
 })
 
 test('a wrong card does not wobble when the device asks for less motion', async () => {

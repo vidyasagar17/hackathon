@@ -1,17 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import FractionBars from '../components/FractionBars'
 import FractionCard from '../components/FractionCard'
 import GameTable from '../components/GameTable'
+import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
-import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
-import { formatMisconception } from '../format'
+import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -40,8 +42,6 @@ type RoundPayload = { round_id: string; visible_state: VisibleState; progress: P
 type MoveResult = { correct: boolean; misconception: string | null; visible_state: VisibleState }
 
 /** `cards` are the Collecting card and the card a diagnosed hint compares it with; null for the general hint. */
-type HintReply = { hint: string | null; cards: [Fraction, Fraction] | null }
-
 /** A graded fit tap or claim as shown on the panel; the message keeps the cards the move was about. */
 type Result = { correct: boolean; misconception: string | null; message: string }
 
@@ -54,10 +54,11 @@ const INSTRUCTIONS: Partial<Record<Step, string>> = {
 }
 
 /** Shared look of the panel buttons; each tag still writes `tap-target` so `check:tap-targets` can see it. */
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/fraction-spoons/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/fraction-spoons/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function fractionText(fraction: Fraction): string {
@@ -189,19 +190,13 @@ function FractionSpoonsPage() {
   const [sending, setSending] = useState(false)
   const [moveError, setMoveError] = useState(false)
   const [result, setResult] = useState<Result | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
-  const [hintCards, setHintCards] = useState<[Fraction, Fraction] | null>(null)
-  const [hintError, setHintError] = useState(false)
-  const hintRequest = useRef<AbortController | null>(null)
+  const { hint, cards: hintCards, hintError, showWhy, clearHint } = useRoundHint<[Fraction, Fraction]>()
 
   /** Clear the last graded move's result and hint, so the next move starts fresh. */
   const clearResult = useCallback(() => {
-    hintRequest.current?.abort()
     setResult(null)
-    setHint(null)
-    setHintCards(null)
-    setHintError(false)
-  }, [])
+    clearHint()
+  }, [clearHint])
 
   const showRound = useCallback(
     (payload: RoundPayload) => {
@@ -362,21 +357,6 @@ function FractionSpoonsPage() {
     sendMove({ type: 'robo_turn' })
   }
 
-  const showWhy = () => {
-    hintRequest.current?.abort()
-    const request = new AbortController()
-    hintRequest.current = request
-    setHintError(false)
-    postJson<HintReply>(`/rounds/${roundId}/hint`, undefined, request.signal)
-      .then((reply) => {
-        setHint(reply.hint)
-        setHintCards(reply.cards)
-      })
-      .catch(() => {
-        if (!request.signal.aborted) setHintError(true)
-      })
-  }
-
   return (
     <div className="flex min-h-screen flex-col bg-base">
       <AppHeader
@@ -386,7 +366,7 @@ function FractionSpoonsPage() {
             <MuteToggle />
             <Link
               to="/summary"
-              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Session summary
             </Link>
@@ -436,7 +416,7 @@ function FractionSpoonsPage() {
                       aria-pressed={index === collectingIndex}
                       disabled={!(canCollect || canDiscard)}
                       onClick={() => (state.step === 'discard' ? discard(index) : collect(index))}
-                      className={`tap-target rounded-lg disabled:cursor-default ${
+                      className={`tap-target rounded-lg disabled:cursor-default focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${
                         index === collectingIndex ? 'ring-4 ring-hundreds ring-offset-4 ring-offset-felt' : ''
                       }`}
                     >
@@ -474,35 +454,18 @@ function FractionSpoonsPage() {
                     </div>
                   )}
                   {result && (
-                    <p
-                      className={`font-display text-2xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}
-                    >
+                    <Verdict correct={result.correct}>
                       {result.message}
-                    </p>
+                    </Verdict>
                   )}
-                  {result && !result.correct && hint === null && (
-                    <button
-                      type="button"
-                      onClick={showWhy}
-                      className={`tap-target ${PANEL_BUTTON} inline-flex items-center gap-2 border-4 border-ink bg-white text-ink`}
-                    >
-                      <LightbulbIcon />
-                      Show me why
-                    </button>
-                  )}
-                  {hintError && <p className="font-semibold text-alert-text">Couldn't load the hint — try again.</p>}
-                  {hint && result && (
-                    <div className="flex w-full flex-col items-start gap-2">
-                      {hintCards && <FractionBars cards={hintCards} />}
-                      <p className="text-lg">{hint}</p>
-                      <ReadAloudButton text={hint} label="Read the hint aloud" />
-                      {result.misconception && (
-                        <p className="text-sm text-ink-muted">
-                          Diagnosed pattern: {formatMisconception(result.misconception)}
-                        </p>
-                      )}
-                    </div>
-                  )}
+                  <HintPanel
+                    wrong={Boolean(result && !result.correct)}
+                    hint={hint}
+                    hintError={hintError}
+                    misconception={result?.misconception ?? null}
+                    onShowWhy={() => showWhy(roundId)}
+                    picture={hintCards && <FractionBars cards={hintCards} />}
+                  />
                   {choosing && (
                     <div className="flex flex-wrap gap-3">
                       {state.can_claim && (
@@ -550,7 +513,7 @@ function FractionSpoonsPage() {
         </GameTable>
 
         {moveError && (
-          <p className="font-display text-xl font-bold text-alert-text">Couldn't send your move — try again.</p>
+          <p className="font-display text-lg font-semibold text-alert-text">Couldn't send your move — try again.</p>
         )}
       </main>
     </div>

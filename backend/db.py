@@ -26,6 +26,15 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
+def _add_learner_id(conn: sqlite3.Connection, table: str) -> None:
+    """Give an older table the learner_id column, backfilling its session_id as the learner."""
+    columns = {row[1] for row in conn.execute(f"PRAGMA table_info({table})")}
+    if "learner_id" in columns:
+        return
+    conn.execute(f"ALTER TABLE {table} ADD COLUMN learner_id TEXT NOT NULL DEFAULT ''")
+    conn.execute(f"UPDATE {table} SET learner_id = session_id WHERE learner_id = ''")
+
+
 def init_db() -> None:
     with closing(_connect()) as conn:
         conn.execute(
@@ -33,6 +42,7 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS attempts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id TEXT NOT NULL,
+                learner_id TEXT NOT NULL DEFAULT '',
                 game TEXT NOT NULL,
                 difficulty INTEGER NOT NULL DEFAULT 1,
                 problem_data TEXT NOT NULL,
@@ -48,6 +58,7 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS rounds (
                 id TEXT PRIMARY KEY,
                 session_id TEXT NOT NULL,
+                learner_id TEXT NOT NULL DEFAULT '',
                 game TEXT NOT NULL,
                 level INTEGER NOT NULL,
                 state TEXT NOT NULL,
@@ -67,11 +78,14 @@ def init_db() -> None:
             )
             """
         )
+        _add_learner_id(conn, "attempts")
+        _add_learner_id(conn, "rounds")
         conn.commit()
 
 
 def log_attempt(
     session_id: str,
+    learner_id: str,
     game: str,
     difficulty: int,
     problem_data: dict,
@@ -83,11 +97,13 @@ def log_attempt(
         conn.execute(
             """
             INSERT INTO attempts
-                (session_id, game, difficulty, problem_data, submitted_answer, correct, misconception)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                (session_id, learner_id, game, difficulty, problem_data, submitted_answer,
+                 correct, misconception)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 session_id,
+                learner_id,
                 game,
                 difficulty,
                 json.dumps(problem_data),
@@ -99,17 +115,21 @@ def log_attempt(
         conn.commit()
 
 
-def get_tier_history(session_id: str, game: str) -> list[TierAttempt]:
-    """Return this session's attempts at this game, oldest first."""
+def get_tier_history(learner_id: str, game: str) -> list[TierAttempt]:
+    """Return this learner's attempts at this game across sessions, oldest first.
+
+    Scoped to the learner, not the session, so a student who comes back tomorrow
+    resumes at the level they reached instead of starting again at level 1.
+    """
     with closing(_connect()) as conn:
         rows = conn.execute(
             """
             SELECT difficulty, correct, misconception
             FROM attempts
-            WHERE session_id = ? AND game = ?
+            WHERE learner_id = ? AND game = ?
             ORDER BY id ASC
             """,
-            (session_id, game),
+            (learner_id, game),
         ).fetchall()
 
     return [
@@ -118,7 +138,9 @@ def get_tier_history(session_id: str, game: str) -> list[TierAttempt]:
     ]
 
 
-def save_round(session_id: str, game: str, level: int, state: dict[str, Any]) -> str:
+def save_round(
+    session_id: str, learner_id: str, game: str, level: int, state: dict[str, Any]
+) -> str:
     """Store a new curriculum-game round and return its id.
 
     Ids are random so a browser can't reach another student's round by guessing.
@@ -126,8 +148,11 @@ def save_round(session_id: str, game: str, level: int, state: dict[str, Any]) ->
     round_id = uuid.uuid4().hex
     with closing(_connect()) as conn:
         conn.execute(
-            "INSERT INTO rounds (id, session_id, game, level, state) VALUES (?, ?, ?, ?, ?)",
-            (round_id, session_id, game, level, json.dumps(state)),
+            """
+            INSERT INTO rounds (id, session_id, learner_id, game, level, state)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (round_id, session_id, learner_id, game, level, json.dumps(state)),
         )
         conn.commit()
     return round_id
@@ -177,17 +202,20 @@ def get_last_move(round_id: str) -> tuple[bool, str | None] | None:
     return bool(correct), misconception
 
 
-def get_move_history(session_id: str, game: str) -> list[TierAttempt]:
-    """Return this session's moves in this curriculum game, oldest first, at each round's level."""
+def get_move_history(learner_id: str, game: str) -> list[TierAttempt]:
+    """Return this learner's moves in this curriculum game, oldest first, at each round's level.
+
+    Scoped to the learner across sessions, like `get_tier_history`.
+    """
     with closing(_connect()) as conn:
         rows = conn.execute(
             """
             SELECT rounds.level, moves.correct, moves.misconception
             FROM moves JOIN rounds ON rounds.id = moves.round_id
-            WHERE rounds.session_id = ? AND rounds.game = ?
+            WHERE rounds.learner_id = ? AND rounds.game = ?
             ORDER BY moves.id ASC
             """,
-            (session_id, game),
+            (learner_id, game),
         ).fetchall()
 
     return [
@@ -229,3 +257,66 @@ def get_summary(session_id: str) -> tuple[int, int, list[tuple[str, str, int]]]:
         ).fetchall()
 
     return total_attempts, correct_count, rows
+
+
+_LEARNER_RESULTS = """
+    SELECT game, difficulty AS level, correct, misconception, created_at
+    FROM attempts WHERE learner_id = :learner_id
+    UNION ALL
+    SELECT rounds.game, rounds.level, moves.correct, moves.misconception, moves.created_at
+    FROM moves JOIN rounds ON rounds.id = moves.round_id
+    WHERE rounds.learner_id = :learner_id
+"""
+
+
+def get_learner_progress(learner_id: str) -> list[tuple[str, int, int, int, str]]:
+    """Return [(game, total, correct_count, top_level_reached, last_played)] for a learner.
+
+    One row per game the learner has ever played, across every session. Games never
+    played are absent, which is how the home screen tells new games from started ones.
+    """
+    with closing(_connect()) as conn:
+        return conn.execute(
+            f"""
+            SELECT game, COUNT(*), COALESCE(SUM(correct), 0), MAX(level), MAX(created_at)
+            FROM ({_LEARNER_RESULTS})
+            GROUP BY game
+            ORDER BY game
+            """,
+            {"learner_id": learner_id},
+        ).fetchall()
+
+
+def get_learner_misconceptions(learner_id: str) -> list[tuple[str, str, int, str]]:
+    """Return [(game, misconception, count, last_seen)] for a learner, most recent first.
+
+    The recommendation engine reads this to name why it is sending a student somewhere.
+    """
+    with closing(_connect()) as conn:
+        return conn.execute(
+            f"""
+            SELECT game, misconception, COUNT(*), MAX(created_at)
+            FROM ({_LEARNER_RESULTS})
+            WHERE misconception IS NOT NULL
+            GROUP BY game, misconception
+            ORDER BY MAX(created_at) DESC
+            """,
+            {"learner_id": learner_id},
+        ).fetchall()
+
+
+def get_game_scores(session_id: str) -> list[tuple[str, int, int]]:
+    """Return [(game, total, correct_count)] for a session, one row per game played, by game id.
+
+    Counts workshop attempts and curriculum-game moves together, like `get_summary`.
+    """
+    with closing(_connect()) as conn:
+        return conn.execute(
+            f"""
+            SELECT game, COUNT(*), COALESCE(SUM(correct), 0)
+            FROM ({_SESSION_RESULTS})
+            GROUP BY game
+            ORDER BY game
+            """,
+            {"session_id": session_id},
+        ).fetchall()

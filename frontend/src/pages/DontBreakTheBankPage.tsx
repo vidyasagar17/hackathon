@@ -1,19 +1,21 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import DiceFace from '../components/DiceFace'
 import GameTable from '../components/GameTable'
+import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
 import Keypad from '../components/Keypad'
-import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
 import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
 import { chipColor, placeLetter, type Column } from '../columns'
-import { formatMisconception } from '../format'
+import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -52,7 +54,8 @@ type MoveResult = { correct: boolean; misconception: string | null; visible_stat
 /** Every answer the game asks for fits in 6 digits, even a sum written column by column (81714). */
 const MAX_DIGITS = 6
 
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 const PLACES: Column[] = ['hundreds', 'tens', 'ones']
 
@@ -64,7 +67,7 @@ const OUTCOMES: Record<Winner, string> = {
 }
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/dont-break-the-bank/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/dont-break-the-bank/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function placesFor(width: number): Column[] {
@@ -131,7 +134,7 @@ function Board({
                   aria-label={label}
                   onClick={() => onPlace(spot)}
                   disabled={!placing}
-                  className="tap-target w-16 rounded-xl border-4 border-dashed border-chalk/70 bg-felt-edge"
+                  className="tap-target w-16 rounded-xl border-4 border-dashed border-chalk/70 bg-felt-edge focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds"
                 />
               ) : (
                 <span
@@ -269,18 +272,14 @@ function DontBreakTheBankPage() {
   const [moveError, setMoveError] = useState(false)
   const [typed, setTyped] = useState('')
   const [result, setResult] = useState<MoveResult | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
-  const [hintError, setHintError] = useState(false)
   const [askingDistance, setAskingDistance] = useState(false)
   const [finished, setFinished] = useState(false)
-  const hintRequest = useRef<AbortController | null>(null)
+  const { hint, hintError, showWhy, clearHint } = useRoundHint()
 
   const clearResult = useCallback(() => {
-    hintRequest.current?.abort()
     setResult(null)
-    setHint(null)
-    setHintError(false)
-  }, [])
+    clearHint()
+  }, [clearHint])
 
   const showRound = useCallback(
     (payload: RoundPayload) => {
@@ -386,18 +385,6 @@ function DontBreakTheBankPage() {
     })
   }
 
-  const showWhy = () => {
-    hintRequest.current?.abort()
-    const request = new AbortController()
-    hintRequest.current = request
-    setHintError(false)
-    postJson<{ hint: string | null }>(`/rounds/${roundId}/hint`, undefined, request.signal)
-      .then((reply) => setHint(reply.hint))
-      .catch(() => {
-        if (!request.signal.aborted) setHintError(true)
-      })
-  }
-
   const askDistance = () => {
     playSound('tap')
     clearResult()
@@ -449,7 +436,7 @@ function DontBreakTheBankPage() {
             <MuteToggle />
             <Link
               to="/summary"
-              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Session summary
             </Link>
@@ -502,32 +489,17 @@ function DontBreakTheBankPage() {
                     className="flex w-full max-w-sm flex-col items-start gap-3 rounded-2xl border-2 border-felt-edge bg-card p-4 md:w-96"
                   >
                     {verdict && (
-                      <p className={`font-display text-2xl font-bold ${result?.correct ? 'text-success-text' : 'text-alert-text'}`}>
+                      <Verdict correct={Boolean(result?.correct)}>
                         {verdict}
-                      </p>
+                      </Verdict>
                     )}
-                    {result && !result.correct && hint === null && (
-                      <button
-                        type="button"
-                        onClick={showWhy}
-                        className={`tap-target ${PANEL_BUTTON} inline-flex items-center gap-2 border-4 border-ink bg-white text-ink`}
-                      >
-                        <LightbulbIcon />
-                        Show me why
-                      </button>
-                    )}
-                    {hintError && <p className="font-semibold text-alert-text">Couldn't load the hint — try again.</p>}
-                    {hint && result && (
-                      <div className="flex flex-col items-start gap-2">
-                        <p className="text-lg">{hint}</p>
-                        <div className="flex w-full items-center justify-between gap-2">
-                          <p className="text-sm text-ink-muted">
-                            {result.misconception && `Diagnosed pattern: ${formatMisconception(result.misconception)}`}
-                          </p>
-                          <ReadAloudButton text={hint} label="Read the hint aloud" />
-                        </div>
-                      </div>
-                    )}
+                    <HintPanel
+                      wrong={Boolean(result && !result.correct)}
+                      hint={hint}
+                      hintError={hintError}
+                      misconception={result?.misconception ?? null}
+                      onShowWhy={() => showWhy(roundId)}
+                    />
                     {bankLine && state.step === 'pass' && <p className="font-display text-xl font-semibold">{bankLine}</p>}
                     {state.step === 'distance' && !askingDistance && (
                       <button type="button" onClick={askDistance} className={`tap-target ${PANEL_BUTTON} bg-hundreds text-ink`}>

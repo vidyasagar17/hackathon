@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, cast
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -7,8 +7,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ValidationError
 
 from curriculum import CURRICULUM_GAMES
+from catalog import BANDS, Band
 from db import (
+    get_game_scores,
     get_last_move,
+    get_learner_misconceptions,
+    get_learner_progress,
     get_move_history,
     get_round,
     get_summary,
@@ -20,6 +24,14 @@ from db import (
     update_round,
 )
 from games import GAMES
+from recommend import (
+    GameProgress,
+    GameState,
+    Misconception,
+    Recommendation,
+    game_states,
+    recommend,
+)
 from tiering import ESCALATION_RUN, MAX_TIER, TierAttempt, correct_in_a_row, next_tier
 
 load_dotenv()
@@ -67,6 +79,7 @@ class ProblemResponse(BaseModel):
 
 class CheckRequest(BaseModel):
     session_id: str
+    learner_id: str
     problem: dict[str, Any]
     submitted_answer: int
 
@@ -114,10 +127,27 @@ class MisconceptionCount(BaseModel):
     count: int
 
 
+class GameScore(BaseModel):
+    game: str
+    total_attempts: int
+    correct_count: int
+
+
 class SessionSummary(BaseModel):
     total_attempts: int
     correct_count: int
     misconceptions: list[MisconceptionCount]
+    games: list[GameScore]
+
+
+class HomeResponse(BaseModel):
+    """Everything the home screen draws for one learner: a tile state per game in the
+    band, the one suggested game, and the totals behind the greeting."""
+
+    games: list[GameState]
+    suggestion: Recommendation
+    total_answers: int
+    total_correct: int
 
 
 def _get_game(game_id: str):
@@ -172,10 +202,10 @@ def health() -> dict[str, str]:
 
 
 @app.get("/games/{game_id}/problem")
-def get_problem(game_id: str, session_id: str) -> ProblemResponse:
-    """Return the next problem at the session's tier, with progress toward the next tier."""
+def get_problem(game_id: str, learner_id: str) -> ProblemResponse:
+    """Return the next problem at the learner's tier, with progress toward the next tier."""
     game = _get_game(game_id)
-    history = get_tier_history(session_id, game_id)
+    history = get_tier_history(learner_id, game_id)
     difficulty = next_tier(history)
     return ProblemResponse(
         problem=game.generate_problem(difficulty).model_dump(),
@@ -193,6 +223,7 @@ def check_answer(game_id: str, request: CheckRequest) -> CheckResponse:
 
     log_attempt(
         session_id=request.session_id,
+        learner_id=request.learner_id,
         game=game_id,
         difficulty=problem.difficulty,
         problem_data=request.problem,
@@ -224,13 +255,13 @@ def get_hint(game_id: str, request: HintRequest) -> HintResponse:
 
 
 @app.post("/curriculum/{game_id}/rounds")
-def new_round(game_id: str, session_id: str) -> RoundResponse:
-    """Start a round at the session's level. The full round stays on the server; the browser sees only its visible state."""
+def new_round(game_id: str, session_id: str, learner_id: str) -> RoundResponse:
+    """Start a round at the learner's level. The full round stays on the server; the browser sees only its visible state."""
     game = _get_curriculum_game(game_id)
-    history = get_move_history(session_id, game_id)
+    history = get_move_history(learner_id, game_id)
     level = next_tier(history)
     round_state = game.new_round(level)
-    round_id = save_round(session_id, game_id, level, round_state.model_dump())
+    round_id = save_round(session_id, learner_id, game_id, level, round_state.model_dump())
     return RoundResponse(
         round_id=round_id,
         visible_state=game.visible_state(round_state),
@@ -292,6 +323,34 @@ def get_round_hint(round_id: str) -> RoundHintResponse:
     return RoundHintResponse(misconception=misconception, hint=hint, cards=cards)
 
 
+@app.get("/home/{learner_id}")
+def get_home(learner_id: str, band: str) -> HomeResponse:
+    """Return the learner's tile states and the one game to suggest next.
+
+    Everything here is decided by the rules in `recommend.py`, never by an LLM.
+    """
+    if band not in BANDS:
+        raise HTTPException(status_code=404, detail=f"Unknown grade band: {band}")
+
+    progress = [
+        GameProgress(
+            game=game, total=total, correct=correct, top_level=top_level, last_played=last_played
+        )
+        for game, total, correct, top_level, last_played in get_learner_progress(learner_id)
+    ]
+    misconceptions = [
+        Misconception(game=game, name=name, count=count, last_seen=last_seen)
+        for game, name, count, last_seen in get_learner_misconceptions(learner_id)
+    ]
+
+    return HomeResponse(
+        games=game_states(cast(Band, band), progress),
+        suggestion=recommend(cast(Band, band), progress, misconceptions),
+        total_answers=sum(record.total for record in progress),
+        total_correct=sum(record.correct for record in progress),
+    )
+
+
 @app.get("/summary/{session_id}")
 def get_session_summary(session_id: str) -> SessionSummary:
     total_attempts, correct_count, misconception_rows = get_summary(session_id)
@@ -301,5 +360,9 @@ def get_session_summary(session_id: str) -> SessionSummary:
         misconceptions=[
             MisconceptionCount(game=game, name=name, count=count)
             for game, name, count in misconception_rows
+        ],
+        games=[
+            GameScore(game=game, total_attempts=total, correct_count=correct)
+            for game, total, correct in get_game_scores(session_id)
         ],
     )

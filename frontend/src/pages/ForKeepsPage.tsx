@@ -1,20 +1,22 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AnswerBox from '../components/AnswerBox'
 import AppHeader from '../components/AppHeader'
 import GameTable from '../components/GameTable'
+import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
 import Keypad from '../components/Keypad'
-import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
 import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
 import { columnEntryOrder } from '../answerEntry'
 import { answerFill, chipColor, placeLetter } from '../columns'
-import { formatMisconception } from '../format'
+import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -67,10 +69,11 @@ const ENTRY_ORDER = columnEntryOrder(ANSWER_PLACES) as AnswerPlace[]
 const EMPTY_ANSWER: Record<AnswerPlace, string> = { tens: '', ones: '' }
 
 /** Shared look of the panel buttons; each tag still writes `tap-target` so `check:tap-targets` can see it. */
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/for-keeps/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/for-keeps/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function RoboCards({ cards }: { cards: number[] }) {
@@ -250,23 +253,19 @@ function ForKeepsPage() {
   const [answer, setAnswer] = useState(EMPTY_ANSWER)
   const [activePlace, setActivePlace] = useState<AnswerPlace | null>(null)
   const [result, setResult] = useState<MoveResult | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
-  const [hintError, setHintError] = useState(false)
   const [reviewing, setReviewing] = useState<number | null>(null)
-  const hintRequest = useRef<AbortController | null>(null)
+  const { hint, hintError, showWhy, clearHint } = useRoundHint()
 
   /** Clear everything about the hand on screen, so the next hand starts fresh. */
   const clearHand = useCallback(() => {
-    hintRequest.current?.abort()
     setMoveError(false)
     setSlots(EMPTY_SLOTS)
     setAnswer(EMPTY_ANSWER)
     setActivePlace(null)
     setResult(null)
-    setHint(null)
-    setHintError(false)
+    clearHint()
     setReviewing(null)
-  }, [])
+  }, [clearHint])
 
   const showRound = useCallback(
     (payload: RoundPayload) => {
@@ -403,18 +402,6 @@ function ForKeepsPage() {
     })
   }
 
-  const showWhy = () => {
-    hintRequest.current?.abort()
-    const request = new AbortController()
-    hintRequest.current = request
-    setHintError(false)
-    postJson<{ hint: string | null }>(`/rounds/${roundId}/hint`, undefined, request.signal)
-      .then((reply) => setHint(reply.hint))
-      .catch(() => {
-        if (!request.signal.aborted) setHintError(true)
-      })
-  }
-
   const outcome =
     state.my_total < state.robo_total
       ? 'You win with the lower total!'
@@ -448,7 +435,7 @@ function ForKeepsPage() {
             <MuteToggle />
             <Link
               to="/summary"
-              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Session summary
             </Link>
@@ -535,34 +522,17 @@ function ForKeepsPage() {
                   className="flex w-full max-w-xs flex-col items-start gap-3 rounded-2xl border-2 border-felt-edge bg-card p-4 md:w-80"
                 >
                   {result && (
-                    <p
-                      className={`font-display text-2xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}
-                    >
+                    <Verdict correct={result.correct}>
                       {result.correct ? 'Correct!' : `Not quite — the difference is ${hand.difference}.`}
-                    </p>
+                    </Verdict>
                   )}
-                  {result && !result.correct && hint === null && (
-                    <button
-                      type="button"
-                      onClick={showWhy}
-                      className={`tap-target ${PANEL_BUTTON} inline-flex items-center gap-2 border-4 border-ink bg-white text-ink`}
-                    >
-                      <LightbulbIcon />
-                      Show me why
-                    </button>
-                  )}
-                  {hintError && <p className="font-semibold text-alert-text">Couldn't load the hint — try again.</p>}
-                  {hint && result && (
-                    <div className="flex flex-col items-start gap-2">
-                      <p className="text-lg">{hint}</p>
-                      <ReadAloudButton text={hint} label="Read the hint aloud" />
-                      {result.misconception && (
-                        <p className="text-sm text-ink-muted">
-                          Diagnosed pattern: {formatMisconception(result.misconception)}
-                        </p>
-                      )}
-                    </div>
-                  )}
+                  <HintPanel
+                    wrong={Boolean(result && !result.correct)}
+                    hint={hint}
+                    hintError={hintError}
+                    misconception={result?.misconception ?? null}
+                    onShowWhy={() => showWhy(roundId)}
+                  />
                   {state.step === 'keep' && (
                     <>
                       <div className="flex flex-wrap gap-3">
@@ -599,7 +569,7 @@ function ForKeepsPage() {
                       </button>
                     </>
                   )}
-                  {moveError && <p className="font-semibold text-alert-text">{moveErrorText}</p>}
+                  {moveError && <p className="font-display text-lg font-semibold text-alert-text">{moveErrorText}</p>}
                 </div>
               )}
             </div>
@@ -608,7 +578,7 @@ function ForKeepsPage() {
                 type="button"
                 onClick={arrange}
                 disabled={sending || slots.includes(null)}
-                className="tap-target rounded-2xl bg-hundreds px-8 font-display text-xl font-semibold text-ink disabled:opacity-60"
+                className="tap-target rounded-2xl bg-hundreds px-8 font-display text-xl font-semibold text-ink disabled:opacity-60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-chalk focus-visible:ring-offset-2 focus-visible:ring-offset-felt"
               >
                 Make these numbers
               </button>

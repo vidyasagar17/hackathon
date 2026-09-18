@@ -16,15 +16,21 @@ It has two kinds of game, grouped on the home screen by grade band
   **Multiplication Shootout** (grades 2–3), take turns with Robo answering
   times and division facts; **Don't Break the Bank** (grades 2–3), place
   rolled digits into numbers, add them, and get close to 1000 without going
-  over; **Fraction Spoons** (grades 4–5), draw and
+  over; **Clock Match** (grades 2–3), read analog clocks and pick the clock
+  for a time; **Target Number** (grades 2–3), add and take away cards one mental
+  step at a time to make a target, then fill in an equation; **Fraction
+  Spoons** (grades 4–5), draw and
   discard to collect four equal fractions and win a spoon; **The 24 Game**
   (grades 4–5), use all four cards with + − × ÷ and parentheses to make 24;
   **Coordinate Plane Battleship** (grades 4–5), write and read ordered pairs
-  to find Robo's hidden ships;
+  to find Robo's hidden ships; **Volume Builder** (grades 4–5), count the
+  cubes in a drawn box, then build a different box that holds as many;
   **Addition War** and **Take-Away War** (grades K–1), flip two cards, add
-  them or take the smaller away, and say whose hand wins; and **Shut the Box**
+  them or take the smaller away, and say whose hand wins; **Shut the Box**
   (grades K–1), roll two dice, add the dots, and shut tiles that make that
-  many.
+  many; **Four in a Row** (grades K–1), add two cards and cover the
+  answer on a shared board to get four in a row; and **Cover the Number**
+  (grades K–1), roll, count the dots, and cover that number on your board.
 
 ## How diagnosis works
 
@@ -123,6 +129,76 @@ Level 1 is a 0–4 grid with no ship on an axis, level 2 a 0–5 grid where pair
 can have a 0, level 3 adds a third ship. Robo aims at random at level 1, then
 hunts next to its hits (level 2) and also hunts on a checkerboard (level 3).
 
+**Volume Builder.** A duel of five turns. Each turn the student counts the
+unit cubes in a drawn box (front, top and right side, every cube edge shown)
+and types the number, then builds a different box with the same number of
+cubes by setting its length, width and height (1–10). Both are graded, and a
+build is diagnosed by the same rules run the other way: the mistake whose
+number for the student's box equals the target. Examples are for a 4 × 3 × 2
+box (24 cubes).
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `counted_visible_faces` | 26: the squares on the top, front and side — Ben-Chaim, D., Lappan, G., & Houang, R. T. (1985), *Visualizing rectangular solids made of small cubes*; Hirstein, J. (1981), *The second national assessment in mathematics: Area and volume* |
+| `counted_visible_cubes` | 18: only the cubes you can see — Ben-Chaim et al. (1985); Battista, M. T., & Clements, D. H. (1996), *Students' understanding of three-dimensional rectangular arrays of cubes* |
+| `counted_all_six_faces` | 52: the squares on all six sides (visible faces doubled, or edge cubes counted twice) — Ben-Chaim et al. (1985); Battista & Clements (1996) |
+| `counted_outside_cubes` | 56 for a 4 × 4 × 4 box: the outside cubes, missing the middle — Battista & Clements (1996) |
+| `counted_one_layer` | 12, 8 or 6: one layer (top, front or side) — Battista & Clements (1996); Tan Şişman, G., & Aksu, M. (2016), *A study on sixth grade students' misconceptions and errors in spatial measurement* |
+| `added_the_edges` | 9: 4 + 3 + 2 — Tan Şişman & Aksu (2016) |
+| `doubled_visible_cubes` | 36: the visible cubes doubled for the hidden back — Ben-Chaim et al. (1985) |
+
+Earlier rows win when two give the same number. Level 1 deals boxes with
+edges 2–4 and at most 36 cubes, level 2 edges 2–5 and 40–100 cubes (too many
+to count one by one), level 3 edges 3–6, so every box hides a middle. Every
+dealt box has another box with the same cubes, and no mistake gives its right
+number. Robo always counts right, by layers (*"Robo counted 6 cubes in the top
+layer and 4 layers: 4 × 6 = 24."*), and never builds a box with an edge of 1:
+at level 1 it only halves one edge and doubles another, at level 2 it keeps
+one edge, at level 3 it tries every box (it finds one about 47%, 79% and 94%
+of the time).
+
+**Clock Match.** A duel of eight turns. Each turn is either a clock to read
+(pick its time from four cards) or a time to set (pick its clock from four
+clocks); the wrong choices are built from the mistakes below. Level 1 is o'clock
+and half past, level 2 five-minute times from :05 to :25, level 3 from :35 to
+:55, where the hour hand is almost at the next numeral. Robo is never shown a
+wrong time: it knows its card 50%, 65% or 80% of the time by level, or says it
+wasn't sure.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `read_the_next_hour` | reads 2:50 as 3:50, the hour hand being close to the 3 — Williams (2012), via Earnest, D., Gonzales, A. C., & Plant, A. M. (2018), *Time as a measure: Elementary students positioning the hands of an analog clock* |
+| `hour_hand_on_the_numeral` | picks a clock for 2:50 with the hour hand right on the 2 — Earnest et al. (2018): the hour hand was set right far less often than the minute hand, and matching it to the hour's numeral was the most common approach |
+| `swapped_the_hands` | reads the long hand as the hour and the short hand as the minutes (3:10 as 2:15), or picks the clock with them swapped — Mutlu, Y., & Korkmaz, E. (2020), *Investigating clock reading skills of third graders with and without dyscalculia risk* |
+| `minute_numeral_as_minutes` / `minute_hand_on_the_minutes_numeral` | reads 10:10 as 10:02, or points the minute hand at the 10 for 10 minutes — the same number matching, for the minute hand |
+
+**Target Number.** Illustrative Mathematics' "Hitting the Target Number"
+(2.OA.B.2) as a duel of five hands. The student starts with a card, then taps
++ or −, a card, and types the new total; every step is graded and shown as its
+own equation, and a wrong step goes on from the right total. Making the target
+with every step right scores a point. After Robo's turn, one equation question
+is graded: *16 = 2 + □* at level 1, *1 + 15 = 2 + □* at levels 2–3, both sides
+making the target.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `counted_on_from_start` | 14 + 3 → 16: counting on says the start number again — Secada, W. G., Fuson, K. C., & Hall, J. W. (1983) |
+| `counted_back_one_off` | 14 − 3 → 10 or 12: counting back ends one step early or late — Fuson, K. C. (1984, 1986) |
+| `subtracted_instead`, `added_instead` | the other operation — Fuson (1984) |
+| `smaller_from_larger` | 42 − 8 → 46: the smaller ones digit taken from the larger (Brown & Burton, 1978) |
+| `forgot_to_change_the_tens` | 38 + 7 → 35, 42 − 8 → 44: a step across a ten without changing the tens (Brown & Burton, 1978) |
+| `answer_to_equal_sign` | 1 + 15 = 2 + □ → 16: the left side's answer — Falkner, K. P., Levi, L., & Carpenter, T. P. (1999), *Children's understanding of equality: A foundation for algebra* |
+| `added_all_numbers` | 1 + 15 = 2 + □ → 18, or 16 = 2 + □ → 18: every number added — Falkner et al. (1999); McNeil, N. M., & Alibali, M. W. (2005) |
+
+On equations with operations on both sides, second graders were right only 6%
+of the time (Matthews, P. G., & Fuchs, L. S., 2018, *Keys to the gate? Equal
+sign knowledge at second grade predicts fourth-grade algebra competence*).
+Level 1 deals cards 1–10 and a target of 10–20 with totals up to 20; level 2 a
+target of 21–40 with totals up to 99 (one-digit steps across tens); level 3
+adds two cards of 11–40 and a target of 30–99. Every hand has a way. Robo never
+adds or takes away wrongly and uses at most 2, 4 and 4 cards by level (it finds
+a way about 47%, 75% and 85% of the time).
+
 **Don't Break the Bank.** Math for Love's place-value game: the same rolls
 of a die go to the student and Robo, and each roll is placed for good in a
 hundreds, tens or ones spot of three numbers. Then the student types the sum
@@ -164,6 +240,42 @@ logged, so an undiagnosed move never sits between two answer mistakes in the
 level rule. Levels follow the standards: cards 0–5 (K.OA.A.5), then 0–10
 (K.OA.A.2; addition sums within 10), then sums to 20 or a teen card minus a card
 to 10 (1.OA.C.6).
+
+**Cover the Number.** The classroom "roll and cover" game: each player has a
+board of numbers, and on each of 10 turns the student rolls, counts the dots
+and taps that number to cover it. A right tap on a number already covered lets
+the student roll again once. Covering the whole board wins; after 10 turns,
+more numbers covered wins. Level 1 rolls one die (board 1–6), level 2 shows a
+card of 1–10 scattered dots (board 1–10, K.CC.B.5), level 3 rolls two dice
+(board 2–12).
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `counted_one_too_many` | 6 for 5 dots: a dot counted twice, two number words for one dot, or a word left out — Kobayashi, W., et al. (2025), *Counting and subitizing skills in children with Down syndrome and autism spectrum disorder* (17 of the 28 counting errors of typically developing 3–5-year-olds), using Fuson et al.'s (1988) categories |
+| `counted_one_too_few` | 4 for 5 dots: a dot skipped or a word said twice — Kobayashi et al. (2025) (3 of 28) |
+| `one_more_than_second`, `counted_on_from_start`, `subtracted_instead` | with two dice, Addition War's counting mistakes |
+
+Robo always counts right; when its number is already covered it rolls again 0,
+1 or 2 times by level, so against a student who is always right it wins about
+15%, 35% and 53% of games.
+
+**Four in a Row.** A 5 × 5 board of numbers shared with Robo. Each turn two
+cards show an addition fact and the student taps a space showing the sum; a
+right tap covers it, a wrong tap covers nothing. Four in a row across, down or
+corner to corner wins; if no fact can be dealt, most spaces covered wins. The
+board holds the level's sums and the numbers its mistakes give, so a wrong tap
+can show which mistake it was.
+
+| Diagnosis | Wrong answer |
+|---|---|
+| `reversed_teen_digits` | 41 for 10 + 4: the teen written the way it is said, ones first — Clayton, F. J., et al. (2020), *Two-digit number writing and arithmetic in Year 1 children: Does number word inversion matter?* (32% of English-speaking Year 1 children's teen errors); Steiner, A. F., et al. (2021), *Language effects in early development of number writing and reading* |
+| `one_more_than_second`, `counted_on_from_start`, `subtracted_instead` | Addition War's counting mistakes, with the fact's two cards |
+
+Level 1 deals cards 0–5, level 2 a 10 and a card 1–9 (teen numbers as ten and
+some ones), level 3 cards 0–10 with sums 11–20. Robo never adds wrongly: at
+level 1 it covers the first space with its sum, at level 2 the one that lines
+up most with its own spaces, at level 3 it also takes a winning space and
+blocks three of the student's in a line.
 
 **Shut the Box.** The classic dice game (tiles 1–9; roll two dice and shut
 open tiles that add up to the roll; fewer tiles left is better), played box
@@ -238,6 +350,38 @@ hands — and never shows wrong math.
 down when the *same* misconception is diagnosed twice in a row, per game.
 Stars on the page show progress; there are no timers.
 
+Levels follow the *learner*, not the tab. A student picks a name and a token on
+their first visit, which saves a `learner_id` in the browser's localStorage; the
+session id in `sessionStorage` still marks one sitting, and the session summary
+stays scoped to it. So closing the browser ends the session but not the
+progress: a student who comes back tomorrow resumes at the level they reached
+instead of starting again at level 1. There are no accounts and no login — the
+profile is local to the device and only the random id reaches the server.
+
+## The home screen engine
+
+`backend/recommend.py` decides what the home screen leads with. It is pure and
+deterministic, tested in `test_recommend.py`, and — like the diagnosis — an LLM
+never picks the game or the reason.
+
+Each game's tile carries its own state for that learner: `new` (never opened),
+`learning` (fewer than 4 answers, or under 60% right), `growing`, or `strong`
+(the top level reached at 80% or better). The tile shows the score and a meter
+alongside the words, so the state is never carried by colour alone.
+
+One game is then suggested, in this order:
+
+| Reason | When | What Robo says |
+|---|---|---|
+| `stuck_on` | a misconception in this band was diagnosed twice or more | names the bug and offers another go |
+| `keep_going` | a game is started but not yet strong | offers the most recently played one |
+| `try_new` | every started game is strong, one is untouched | offers the new one |
+| `stay_sharp` | everything in the band is strong | offers the lowest-scoring one |
+
+Only games shelved in the student's own grade band are ever suggested. The
+reason code maps to its sentence in `frontend/src/home.ts`, so what a student is
+told always matches the rule that actually fired.
+
 ## Hints
 
 Hints start as a sentence **built by code from the student's own numbers**
@@ -276,6 +420,23 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   "Show me why", e.g. *"Across comes first, then up. Your aim is 3 across and
   5 up, so it is (3, 5), not (5, 3)."* Never reworded by the LLM: the fact
   check can't tell if "across" and "up" were swapped, the very mistake.
+- **Volume Builder:** a wrong count or build shows the right number and "Show
+  me why": the hint, the diagnosed pattern and the box with one layer shaded
+  in the hint purple, e.g. *"18 is the cubes you can see. 6 more cubes are
+  hidden behind and under them. The top layer has 4 × 3 = 12 cubes, and 2
+  layers make 2 × 12 = 24."* Never reworded by the LLM: the fact check
+  protects numbers but not "top", "hidden" or "layer".
+- **Clock Match:** a wrong pick outlines the right card and "Show me why" gives
+  the hint and diagnosed pattern, e.g. *"The minute hand on the 10 means 50
+  minutes, so it isn't 3 o'clock yet. The hour hand is almost at the 3 but still
+  after the 2: 2:50."* Never reworded by the LLM: the fact check can't protect
+  "hour hand", "short" or "almost".
+- **Target Number:** a wrong step total or equation answer shows the right one
+  and "Show me why" in the panel, e.g. *"42 has only 2 ones, so use a ten: 42 is
+  30 and 12. 12 − 8 = 4, so 42 − 8 = 34."* or *"1 + 15 = 16 is only the left
+  side. = means both sides are the same amount, so 2 + □ must make 16 too: 2 +
+  14 = 16."* Never reworded by the LLM: the fact check doesn't protect "both
+  sides" or "only".
 - **Don't Break the Bank:** a wrong sum or distance shows the right one and
   "Show me why" in the panel where the keypad was. Hints name the column the
   mistake got wrong (e.g. *"In the ones column, 6 + 5 + 3 makes 14, so write 4
@@ -283,6 +444,13 @@ never reasons. A wrong answer with no diagnosis gets a fixed general hint.
   and count up (*"1000 is 9 hundreds, 9 tens and 10 ones, so 1000 − 687 = 313.
   Or count up: 687 + 13 = 700, and 700 + 300 = 1000."*); they may be reworded
   by the LLM under the fact check, as in For Keeps.
+- **Cover the Number (K–1):** a wrong tap wobbles, the right number is
+  outlined, and the hint is shown and spoken, e.g. *"Say one number for each
+  dot, and each dot only once: 1, 2, 3, 4, 5. That's 5."* Never reworded by the
+  LLM.
+- **Four in a Row (K–1):** a wrong tap wobbles, the right spaces are outlined,
+  and the hint is shown and spoken, e.g. *"Fourteen is 1 ten and 4 ones, so the
+  1 comes first: 14."* Never reworded by the LLM.
 - **Shut the Box (K–1):** hints are never reworded by the LLM and are read
   aloud. A wrong total gets Addition War's counting sentence; a wrong shut
   counts the picked tiles on, e.g. *"Start at 5 and count on: 6, 7, 8, 9. 5
@@ -330,7 +498,8 @@ The session summary counts workshop attempts and moves together, per game.
   button; after answering, the hint, winner buttons and Next sit beside the
   answer cards so nothing falls below the table.
 - **Game-table design:** games are played on a felt table with real-looking
-  digit cards; the home screen is a set of grade-band shelves of game boxes.
+  digit cards; the home screen is a set of grade-band shelves of games against
+  Robo, with the skill workshops in their own space below them.
   Animation is used only for the math itself (the carry/borrow badge) and
   short feedback cues.
 
@@ -369,26 +538,42 @@ backend/
     dont_break_the_bank/ the same files: column-by-column carrying and
                          borrowing simulators, dealing, moves and a
                          look-ahead Robo, hints
+    cover_the_number/    the same files: rolls and scattered dots made in
+                         advance, counting detectors, moves and Robo, hints
+    four_in_a_row/       the same files: board of sums and mistake numbers,
+                         teen-reversal detector (reusing card_war's), lines
+                         and a blocking Robo, hints
     shut_the_box/        the same files: dealing with rolls made in advance,
                          total and shut detectors (reusing card_war's),
                          moves and Robo, hints
+    clock_match/         the same files: reading and setting detectors, time
+                         and clock choices, moves, hints
+    target_number/       the same files: step and equation detectors, a
+                         way finder for dealing and Robo, moves, hints
+    volume_builder/      the same files: box detectors for counting and
+                         building, levels, moves and Robo, hints
     fraction_spoons/     the same files: dealing with mistake cards,
                          fit and claim detectors, moves and Robo, hints
     twenty_four/         expressions.py (work out tokens under any order),
                          the same files: solver and dealing, detectors,
                          moves and Robo, hints
+  catalog.py             each game's grade band, for shelving and suggesting
+  recommend.py           the home screen engine: tile states and what to play next
   tiering.py             adaptive levels
   db.py                  SQLite: attempts, rounds, moves, summary
   main.py                FastAPI routes
 frontend/src/
   pages/                 LandingPage, PracticePage, DecimalWarPage, ForKeepsPage,
-                         CardWarPage, ShutTheBoxPage, DontBreakTheBankPage,
+                         CardWarPage, ShutTheBoxPage, FourInARowPage,
+                         CoverTheNumberPage,
+                         DontBreakTheBankPage,
+                         TargetNumberPage, ClockMatchPage,
                          MultiplicationShootoutPage, FractionSpoonsPage,
                          TwentyFourPage, CoordinateBattleshipPage,
-                         DashboardPage
+                         VolumeBuilderPage, DashboardPage
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
                          ProgressMeter, HundredthsGrid, FractionCard, DiceFace,
-                         FractionBars, ...
+                         FractionBars, CubeBox, DotCard, ClockFace, ...
   regroup.ts             borrow/carry animation steps
   expressionEntry.ts     which 24 Game tile can be tapped next
   wobble.ts              the K–1 wrong-tap wobble

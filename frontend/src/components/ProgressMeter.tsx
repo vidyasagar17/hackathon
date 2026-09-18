@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { prefersReducedMotion } from '../motion'
+import { playSound } from '../sound'
 
 export type Progress = {
   level: number
@@ -33,7 +34,7 @@ function progressMessage({ level, correct_in_a_row, needed, top_level }: Progres
  *
  * When a star is gained, one short animation plays (Phase 1 decision 1): the new star pops
  * (400 ms), or, when that star completes a level below the top, a ring pulses around the stars
- * (1.2 s). Nothing plays when `canCelebrate` is false (a math animation is running) or the
+ * (1.2 s) and a soft harmonic level-up sound plays. Nothing plays when `canCelebrate` is false (a math animation is running) or the
  * device asks for reduced motion.
  */
 export default function ProgressMeter({
@@ -54,6 +55,7 @@ export default function ProgressMeter({
     if (!gainedStar || !canCelebrate || prefersReducedMotion()) return
 
     if (correct_in_a_row === needed && level < top_level) {
+      playSound('level_up')
       starsRef.current?.animate(
         [
           { boxShadow: '0 0 0 0 rgba(61, 220, 151, 0.8)' },

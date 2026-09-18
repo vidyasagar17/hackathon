@@ -1,17 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
+import DuelResult from '../components/DuelResult'
+import DuelScoreLine from '../components/DuelScoreLine'
+import DuelTurnButtons from '../components/DuelTurnButtons'
 import GameTable from '../components/GameTable'
+import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
-import LightbulbIcon from '../components/LightbulbIcon'
 import MuteToggle from '../components/MuteToggle'
 import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
+import { duelOutcome } from '../duel'
 import { OPERATORS, SPOKEN, SYMBOLS, canTap, expressionText, isComplete, type Token } from '../expressionEntry'
-import { formatMisconception } from '../format'
+import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -37,23 +43,19 @@ type MoveResult = { correct: boolean; misconception: string | null; visible_stat
 const HANDS = 5
 
 /** Shared look of the panel buttons; each tag still writes `tap-target` so `check:tap-targets` can see it. */
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 /** Operator and parenthesis tiles: card stock with a large sign; each tag still writes `tap-target`. */
-const TILE = 'w-16 rounded-xl border-2 border-felt-edge bg-card font-display text-4xl font-bold text-ink disabled:opacity-40'
+const TILE =
+  'w-16 rounded-xl border-2 border-felt-edge bg-card font-display text-4xl font-bold text-ink disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds'
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/the-24-game/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/the-24-game/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function listed(numbers: number[]) {
   return `${numbers.slice(0, -1).join(', ')} and ${numbers.at(-1)}`
-}
-
-function outcome(myPoints: number, roboPoints: number) {
-  if (myPoints > roboPoints) return 'You win the game!'
-  if (myPoints < roboPoints) return 'Robo wins the game.'
-  return "It's a draw!"
 }
 
 /** An expression's steps in the order the rule does them, one per line. */
@@ -109,25 +111,22 @@ function TwentyFourPage() {
   const [progress, setProgress] = useState<Progress | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [sending, setSending] = useState(false)
+  const [dealing, setDealing] = useState(false)
   const [moveError, setMoveError] = useState(false)
   const [tokens, setTokens] = useState<Token[]>([])
   const [result, setResult] = useState<MoveResult | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
-  const [hintError, setHintError] = useState(false)
   const [roboShown, setRoboShown] = useState(false)
   const [hand, setHand] = useState(1)
   const [myPoints, setMyPoints] = useState(0)
   const [roboPoints, setRoboPoints] = useState(0)
   const [finished, setFinished] = useState(false)
-  const hintRequest = useRef<AbortController | null>(null)
+  const { hint, hintError, showWhy, clearHint } = useRoundHint()
 
   /** Clear the last check's result and hint, so an older hint never sits beside a newer check. */
   const clearResult = useCallback(() => {
-    hintRequest.current?.abort()
     setResult(null)
-    setHint(null)
-    setHintError(false)
-  }, [])
+    clearHint()
+  }, [clearHint])
 
   const showRound = useCallback(
     (payload: RoundPayload) => {
@@ -157,10 +156,13 @@ function TwentyFourPage() {
     }
   }, [showRound])
 
+  /** Deal the next hand; Next hand stays off until it arrives, so a double tap deals once. */
   const dealHand = () => {
+    setDealing(true)
     requestRound()
       .then(showRound)
       .catch(() => setLoadError(true))
+      .finally(() => setDealing(false))
   }
 
   if (loadError) {
@@ -239,18 +241,6 @@ function TwentyFourPage() {
     send({ type: 'show_way' }, false)
   }
 
-  const showWhy = () => {
-    hintRequest.current?.abort()
-    const request = new AbortController()
-    hintRequest.current = request
-    setHintError(false)
-    postJson<{ hint: string | null }>(`/rounds/${roundId}/hint`, undefined, request.signal)
-      .then((reply) => setHint(reply.hint))
-      .catch(() => {
-        if (!request.signal.aborted) setHintError(true)
-      })
-  }
-
   const showRoboTurn = () => {
     playSound('tap')
     if (state.robo_way) setRoboPoints((points) => points + 1)
@@ -275,7 +265,7 @@ function TwentyFourPage() {
   const lastCheck = result ? state.last_check : null
 
   const spoken = finished
-    ? `You ${myPoints}, Robo ${roboPoints}. ${outcome(myPoints, roboPoints)}`
+    ? `You ${myPoints}, Robo ${roboPoints}. ${duelOutcome(myPoints, roboPoints)}`
     : roboTurn
       ? roboTurn.way
         ? `Robo's cards are ${listed(roboTurn.cards)}. Robo made 24.`
@@ -291,7 +281,7 @@ function TwentyFourPage() {
             <MuteToggle />
             <Link
               to="/summary"
-              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Session summary
             </Link>
@@ -308,23 +298,10 @@ function TwentyFourPage() {
 
         <GameTable>
           {finished ? (
-            <div
-              role="group"
-              aria-label="Game result"
-              aria-live="polite"
-              className="mx-auto flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border-2 border-felt-edge bg-card p-6"
-            >
-              <p className="font-display text-2xl font-semibold">{`You ${myPoints} · Robo ${roboPoints}`}</p>
-              <p className="font-display text-3xl font-bold">{outcome(myPoints, roboPoints)}</p>
-              <button type="button" onClick={playAgain} className={`tap-target ${PANEL_BUTTON} bg-ink text-base`}>
-                Play again
-              </button>
-            </div>
+            <DuelResult myPoints={myPoints} roboPoints={roboPoints} card dealing={dealing} onPlayAgain={playAgain} />
           ) : (
             <div className="flex flex-col items-center gap-6">
-              <p className="font-display text-xl font-semibold text-chalk">
-                {`Hand ${hand} of ${HANDS} · You ${myPoints} · Robo ${roboPoints}`}
-              </p>
+              <DuelScoreLine unit="Hand" at={hand} of={HANDS} myPoints={myPoints} roboPoints={roboPoints} />
               {roboTurn && <RoboTurn {...roboTurn} />}
               <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-start md:justify-center">
                 <div className="flex flex-col items-center gap-4">
@@ -336,7 +313,7 @@ function TwentyFourPage() {
                         aria-label={`Card ${card}`}
                         onClick={() => tap(index)}
                         disabled={!building || !canTap(tokens, index, cardCount)}
-                        className={`tap-target rounded-lg ${tokens.includes(index) ? 'opacity-40' : ''}`}
+                        className={`tap-target rounded-lg focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${tokens.includes(index) ? 'opacity-40' : ''}`}
                       >
                         <PlayingCard digit={card} />
                       </button>
@@ -412,11 +389,9 @@ function TwentyFourPage() {
                   >
                     {lastCheck && result && (
                       <>
-                        <p
-                          className={`font-display text-2xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}
-                        >
+                        <Verdict correct={result.correct}>
                           {checkMessage(lastCheck, result.correct)}
-                        </p>
+                        </Verdict>
                         <Steps shown={lastCheck} />
                       </>
                     )}
@@ -426,28 +401,13 @@ function TwentyFourPage() {
                         <Steps shown={state.shown_way} />
                       </>
                     )}
-                    {result && !result.correct && hint === null && (
-                      <button
-                        type="button"
-                        onClick={showWhy}
-                        className={`tap-target ${PANEL_BUTTON} inline-flex items-center gap-2 border-4 border-ink bg-white text-ink`}
-                      >
-                        <LightbulbIcon />
-                        Show me why
-                      </button>
-                    )}
-                    {hintError && <p className="font-semibold text-alert-text">Couldn't load the hint — try again.</p>}
-                    {hint && result && (
-                      <div className="flex flex-col items-start gap-2">
-                        <p className="text-lg">{hint}</p>
-                        <ReadAloudButton text={hint} label="Read the hint aloud" />
-                        {result.misconception && (
-                          <p className="text-sm text-ink-muted">
-                            Diagnosed pattern: {formatMisconception(result.misconception)}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                    <HintPanel
+                      wrong={Boolean(result && !result.correct)}
+                      hint={hint}
+                      hintError={hintError}
+                      misconception={result?.misconception ?? null}
+                      onShowWhy={() => showWhy(roundId)}
+                    />
                     {building && (
                       <button
                         type="button"
@@ -458,29 +418,17 @@ function TwentyFourPage() {
                         Show me a way
                       </button>
                     )}
-                    {state.done && !roboTurn && (
-                      <button
-                        type="button"
-                        onClick={showRoboTurn}
-                        className={`tap-target ${PANEL_BUTTON} bg-hundreds text-ink`}
-                      >
-                        Robo's turn
-                      </button>
-                    )}
-                    {roboTurn && hand < HANDS && (
-                      <button type="button" onClick={nextHand} className={`tap-target ${PANEL_BUTTON} bg-ink text-base`}>
-                        Next hand
-                      </button>
-                    )}
-                    {roboTurn && hand === HANDS && (
-                      <button
-                        type="button"
-                        onClick={() => setFinished(true)}
-                        className={`tap-target ${PANEL_BUTTON} bg-ink text-base`}
-                      >
-                        See who won
-                      </button>
-                    )}
+                    <DuelTurnButtons
+                      roboDue={state.done && !roboTurn}
+                      turnDone={Boolean(roboTurn)}
+                      lastTurn={hand === HANDS}
+                      finished={finished}
+                      nextLabel="Next hand"
+                      dealing={dealing}
+                      onRoboTurn={showRoboTurn}
+                      onNext={nextHand}
+                      onSeeWhoWon={() => setFinished(true)}
+                    />
                   </div>
                 )}
               </div>

@@ -1,13 +1,16 @@
 import { render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
+import * as sound from '../sound'
 import ProgressMeter, { type Progress } from './ProgressMeter'
 
 let reducedMotion = false
 const animate = vi.fn()
+const playSoundSpy = vi.spyOn(sound, 'playSound').mockImplementation(() => {})
 
 beforeEach(() => {
   reducedMotion = false
   animate.mockClear()
+  playSoundSpy.mockClear()
   Element.prototype.animate = animate as unknown as Element['animate']
   vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: reducedMotion })))
 })
@@ -64,13 +67,14 @@ test('gaining a star pops that star', () => {
   expect(animate.mock.contexts[0]).toBe(stars()[1])
 })
 
-test('the star that completes a level pulses the ring around the stars instead', () => {
+test('the star that completes a level pulses the ring around the stars and plays level_up sound', () => {
   const update = renderMeter(progress(1, 2))
 
   update(progress(1, 3))
 
   expect(animate).toHaveBeenCalledTimes(1)
   expect(animate.mock.contexts[0]).toBe(screen.getByRole('img'))
+  expect(playSoundSpy).toHaveBeenCalledWith('level_up')
 })
 
 test('at the top level the third star just pops', () => {

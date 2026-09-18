@@ -50,6 +50,18 @@ test('muting silences every sound and is remembered', () => {
   expect(isMuted()).toBe(true)
 })
 
+test('the level_up sound plays three notes', () => {
+  playSound('level_up')
+
+  expect(fakeContext.createOscillator).toHaveBeenCalledTimes(3)
+})
+
+test('the victory sound plays four notes', () => {
+  playSound('victory')
+
+  expect(fakeContext.createOscillator).toHaveBeenCalledTimes(4)
+})
+
 test('a browser without Web Audio stays silent without errors', () => {
   vi.stubGlobal('AudioContext', undefined)
 

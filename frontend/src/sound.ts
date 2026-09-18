@@ -1,4 +1,4 @@
-export type SoundName = 'correct' | 'wrong' | 'tap'
+export type SoundName = 'correct' | 'wrong' | 'tap' | 'level_up' | 'victory'
 
 type Note = { frequency: number; start: number; duration: number }
 
@@ -10,6 +10,17 @@ const NOTES: Record<SoundName, Note[]> = {
   ],
   wrong: [{ frequency: 220, start: 0, duration: 0.2 }],
   tap: [{ frequency: 880, start: 0, duration: 0.06 }],
+  level_up: [
+    { frequency: 523.25, start: 0, duration: 0.1 },
+    { frequency: 659.25, start: 0.1, duration: 0.1 },
+    { frequency: 783.99, start: 0.2, duration: 0.2 },
+  ],
+  victory: [
+    { frequency: 392.0, start: 0, duration: 0.09 },
+    { frequency: 523.25, start: 0.09, duration: 0.09 },
+    { frequency: 659.25, start: 0.18, duration: 0.09 },
+    { frequency: 783.99, start: 0.27, duration: 0.25 },
+  ],
 }
 
 const MUTED_KEY = 'sound_muted'

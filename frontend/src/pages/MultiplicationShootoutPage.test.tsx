@@ -18,6 +18,8 @@ let fact: Fact = { operation: 'multiply', left: 6, right: 7 }
 let roboFact: Fact = { operation: 'multiply', left: 3, right: 4 }
 let roboAnswer = 12
 let movesFail = false
+let releaseDeal: (() => void) | null = null
+let holdDeals = false
 
 function correctAnswer(f: Fact) {
   return f.operation === 'multiply' ? f.left * f.right : f.left / f.right
@@ -29,7 +31,7 @@ function jsonResponse(body: unknown, ok = true) {
 
 function fakeApi(url: string, init?: RequestInit) {
   if (url.includes('/curriculum/multiplication-shootout/rounds')) {
-    return jsonResponse({
+    const payload = {
       round_id: 'round-1',
       visible_state: {
         level: 1,
@@ -41,6 +43,10 @@ function fakeApi(url: string, init?: RequestInit) {
         robo_correct_answer: null,
       },
       progress: { level: 1, correct_in_a_row: 0, needed: 3, top_level: 3 },
+    }
+    if (!holdDeals) return jsonResponse(payload)
+    return new Promise((resolve) => {
+      releaseDeal = () => resolve(jsonResponse(payload))
     })
   }
   if (url.endsWith('/hint')) return jsonResponse({ misconception: 'neighboring_fact', hint: HINT })
@@ -75,6 +81,8 @@ beforeEach(() => {
   roboFact = { operation: 'multiply', left: 3, right: 4 }
   roboAnswer = 12
   movesFail = false
+  holdDeals = false
+  releaseDeal = null
   vi.mocked(playSound).mockClear()
   Element.prototype.animate = vi.fn() as unknown as Element['animate']
   vi.stubGlobal('fetch', vi.fn(fakeApi))
@@ -241,7 +249,7 @@ test("Robo's turn waits for the student's check, then shows Robo's fact and corr
   await userEvent.click(button("Robo's turn") as HTMLButtonElement)
 
   expect(screen.getByRole('group', { name: "Robo's fact: 3 times 4" })).toBeTruthy()
-  expect(screen.getByText('Robo said 12 — correct!')).toBeTruthy()
+  expect(screen.getByText("I think it's 12 — correct!")).toBeTruthy()
   expect(screen.queryByRole('group', { name: 'Robo calls 6 times 7' })).toBeNull()
   expect(button("Robo's turn")).toBeNull()
 })
@@ -254,7 +262,7 @@ test('a wrong Robo answer always shows the correct one', async () => {
   await pressKeys('4', '2', 'Check answer')
   await userEvent.click(await screen.findByRole('button', { name: "Robo's turn" }))
 
-  expect(screen.getByText('Robo said 48 — 8 × 7 is 56.')).toBeTruthy()
+  expect(screen.getByText('I said 48 — 8 × 7 is 56.')).toBeTruthy()
 })
 
 test("the hint stays reachable before Robo's turn and on screen after it", async () => {
@@ -286,6 +294,19 @@ test('Next turn deals a new fact with empty answer boxes and the keypad back', a
   expect(boxes()).toEqual(['', ''])
   expect(screen.queryByText('Correct!')).toBeNull()
   expect(screen.getByRole('group', { name: 'Number keypad' })).toBeTruthy()
+  expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes('/rounds?'))).toHaveLength(2)
+})
+
+test('a double tap on Next turn deals only one new fact', async () => {
+  renderPage()
+  await pressKeys('4', '2', 'Check answer')
+  await userEvent.click(await screen.findByRole('button', { name: "Robo's turn" }))
+
+  holdDeals = true
+  await userEvent.dblClick(screen.getByRole('button', { name: 'Next turn' }))
+  releaseDeal?.()
+
+  expect(await screen.findByText('Turn 2 of 10 · You 1 · Robo 1')).toBeTruthy()
   expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes('/rounds?'))).toHaveLength(2)
 })
 

@@ -27,6 +27,8 @@ let checkReply: { correct: boolean; misconception: string | null; last_check: Sh
 let roboWay: Shown | null = ROBO_WAY
 let movesFail = false
 let deals = 0
+let releaseDeal: (() => void) | null = null
+let holdDeals = false
 
 function jsonResponse(body: unknown, ok = true) {
   return Promise.resolve({ ok, json: () => Promise.resolve(body) })
@@ -50,10 +52,14 @@ function visibleState(update: Record<string, unknown> = {}) {
 function fakeApi(url: string, init?: RequestInit) {
   if (url.includes('/curriculum/the-24-game/rounds')) {
     deals += 1
-    return jsonResponse({
+    const payload = {
       round_id: `round-${deals}`,
       visible_state: visibleState(),
       progress: { level: 2, correct_in_a_row: 2, needed: 3, top_level: 3 },
+    }
+    if (!holdDeals) return jsonResponse(payload)
+    return new Promise((resolve) => {
+      releaseDeal = () => resolve(jsonResponse(payload))
     })
   }
   if (url.endsWith('/hint')) return jsonResponse({ misconception: 'left_to_right', hint: HINT, cards: null })
@@ -94,6 +100,8 @@ beforeEach(() => {
   roboWay = ROBO_WAY
   movesFail = false
   deals = 0
+  holdDeals = false
+  releaseDeal = null
   vi.mocked(playSound).mockClear()
   Element.prototype.animate = vi.fn() as unknown as Element['animate']
   vi.stubGlobal('fetch', vi.fn(fakeApi))
@@ -299,6 +307,23 @@ test('Next hand deals a fresh hand and the fifth hand ends with See who won', as
   await user.click(button('Play again'))
 
   expect(await screen.findByText('Hand 1 of 5 · You 0 · Robo 0')).toBeTruthy()
+})
+
+test('a double tap on Next hand deals only one new hand', async () => {
+  checkReply = { correct: true, misconception: null, last_check: RIGHT_CHECK }
+  const user = userEvent.setup()
+  renderPage()
+  await screen.findByText(/^Hand 1 of 5/)
+  await build(user, true)
+  await user.click(button('Check'))
+  await user.click(await screen.findByRole('button', { name: "Robo's turn" }))
+
+  holdDeals = true
+  await user.dblClick(button('Next hand'))
+  releaseDeal?.()
+
+  expect(await screen.findByText('Hand 2 of 5 · You 1 · Robo 1')).toBeTruthy()
+  expect(deals).toBe(2)
 })
 
 test('a move that fails to send says so', async () => {

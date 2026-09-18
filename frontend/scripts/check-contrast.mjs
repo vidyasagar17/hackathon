@@ -56,6 +56,16 @@ const PAIRS = [
   ['ones', 'felt', 'hit marks on the Battleship grid', NON_TEXT_MINIMUM],
   ['ink', 'ones', 'the × on a hit mark'],
   ['chalk/70 over felt-edge', 'felt', 'dashed outline of an empty spot in Don\'t Break the Bank', NON_TEXT_MINIMUM],
+  ['ink', 'white', 'cube edges on the top of a Volume Builder box', NON_TEXT_MINIMUM],
+  ['ink', 'card', 'cube edges on the front of a Volume Builder box', NON_TEXT_MINIMUM],
+  ['ink', 'chalk', 'cube edges on the side of a Volume Builder box', NON_TEXT_MINIMUM],
+  ['ink', 'helper', 'cube edges on a shaded Volume Builder layer', NON_TEXT_MINIMUM],
+  ['helper', 'white', 'a shaded Volume Builder layer beside unshaded top squares', NON_TEXT_MINIMUM],
+  ['helper', 'card', 'a shaded Volume Builder layer beside unshaded front squares', NON_TEXT_MINIMUM],
+  ['helper', 'chalk', 'a shaded Volume Builder layer beside unshaded side squares', NON_TEXT_MINIMUM],
+  ['chalk', 'felt', 'the edge of a Volume Builder box against the table', NON_TEXT_MINIMUM],
+  ['felt', 'ink/10 over card', "the filled part of a game's score bar on the session summary", NON_TEXT_MINIMUM],
+['chalk', 'felt', 'the home screen heading, welcome and shelf headings on the felt table'],  ['spark', 'felt', 'the kindergarten and 1st grade shelf rail', 3],  ['tens', 'felt', 'the 2nd and 3rd grade shelf rail', 3],  ['hundreds', 'felt', 'the 4th and 5th grade shelf rail', 3],  ['ink-muted', 'card', 'the "Play next" label and a tile score on the suggested game card'],  ['chalk', 'felt', 'the mastery badge on a game tile'],  ['hundreds', 'felt', 'the border of the suggested game card against the table', 3],  ['spark', 'felt', 'the ring on a game tile the student has got, outside the tile border', 3],  ['tens', 'felt', 'the ring on a game tile in progress, outside the tile border', 3],  ['ones', 'felt', 'the ring on a game tile still being learned, outside the tile border', 3],
 ]
 
 const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8')

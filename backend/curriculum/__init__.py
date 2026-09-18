@@ -7,15 +7,20 @@ from types import ModuleType
 
 from . import (
     addition_war,
+    clock_match,
     coordinate_battleship,
+    cover_the_number,
     decimal_war,
     dont_break_the_bank,
     for_keeps,
+    four_in_a_row,
     fraction_spoons,
     multiplication_shootout,
     shut_the_box,
     take_away_war,
+    target_number,
     twenty_four,
+    volume_builder,
 )
 
 CURRICULUM_GAMES: dict[str, ModuleType] = {
@@ -29,4 +34,9 @@ CURRICULUM_GAMES: dict[str, ModuleType] = {
     "shut-the-box": shut_the_box,
     "dont-break-the-bank": dont_break_the_bank,
     "coordinate-plane-battleship": coordinate_battleship,
+    "volume-builder": volume_builder,
+    "target-number": target_number,
+    "four-in-a-row": four_in_a_row,
+    "cover-the-number": cover_the_number,
+    "clock-match": clock_match,
 }

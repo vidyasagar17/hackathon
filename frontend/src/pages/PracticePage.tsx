@@ -9,6 +9,7 @@ import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import TutorialOverlay from '../components/TutorialOverlay'
+import Verdict from '../components/Verdict'
 import { API_URL } from '../api'
 import {
   columnEntryOrder,
@@ -21,6 +22,7 @@ import { formatMisconception } from '../format'
 import { getGradeBand } from '../gradeBand'
 import { prefersReducedMotion } from '../motion'
 import { buildRegroupSteps, PLACE_ORDER, type RegroupStep } from '../regroup'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 import { hasSeenTutorial, markTutorialSeen } from '../tutorial'
@@ -199,7 +201,7 @@ function RegroupTopChip({
 
 function requestProblem(gameId: string | undefined): Promise<ProblemPayload> {
   return fetch(
-    `${API_URL}/games/${gameId}/problem?session_id=${getSessionId()}`,
+    `${API_URL}/games/${gameId}/problem?learner_id=${getLearnerId()}`,
   ).then((res) => {
     if (!res.ok) throw new Error('Failed to load problem')
     return res.json()
@@ -393,6 +395,7 @@ function PracticePage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: getSessionId(),
+        learner_id: getLearnerId(),
         problem,
         submitted_answer,
       }),
@@ -574,7 +577,7 @@ function PracticePage() {
               type="button"
               disabled={checkDisabled}
               onClick={checkAnswer}
-              className="tap-target mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40"
+              className="tap-target mt-8 w-full rounded-2xl bg-ink py-3 font-display text-xl font-semibold text-base shadow-[0_4px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Check answer
             </button>
@@ -582,9 +585,9 @@ function PracticePage() {
           </div>
 
           {feedback === 'correct' && (
-            <p className="mt-6 text-center font-display text-lg font-semibold text-success-text">
-              Correct!
-            </p>
+            <div className="mt-6 text-center">
+              <Verdict correct>Correct!</Verdict>
+            </div>
           )}
           {feedback === 'error' && (
             <p className="mt-6 text-center font-display text-lg font-semibold text-alert-text">
@@ -593,9 +596,7 @@ function PracticePage() {
           )}
           {feedback === 'incorrect' && (
             <div className="mt-6 w-0 min-w-full rounded-2xl border-l-8 border-helper bg-helper/10 p-4 text-left">
-              <p className="font-display text-lg font-semibold text-alert-text">
-                Not quite — try again!
-              </p>
+              <Verdict correct={false}>Not quite — try again!</Verdict>
               {revealed && hint && (
                 <div className="mt-2 flex flex-col items-start gap-2">
                   <p>{hint}</p>
@@ -613,7 +614,7 @@ function PracticePage() {
             <button
               type="button"
               onClick={fetchProblem}
-              className="tap-target mt-4 w-full rounded-2xl border-4 border-ink bg-white py-3 font-display text-xl font-semibold text-ink active:translate-y-1"
+              className="tap-target mt-4 w-full rounded-2xl border-4 border-ink bg-white py-3 font-display text-xl font-semibold text-ink active:translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Next problem
             </button>

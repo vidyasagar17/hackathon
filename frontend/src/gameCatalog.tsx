@@ -1,0 +1,530 @@
+import type { ReactNode } from 'react'
+import type { GradeBand } from './gradeBand'
+
+/* The still SVG each game tile shows: drawn from the game's own board, cards or numbers,
+ * so a student recognises the game before they can read its name. Never animated. */
+
+function SubtractionIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <line x1="6" y1="60" x2="90" y2="60" stroke="#1B1B2F" strokeOpacity="0.15" strokeWidth="2" />
+      <rect x="12" y="40" width="24" height="20" rx="6" className="fill-hundreds" />
+      <rect x="42" y="34" width="24" height="26" rx="6" className="fill-tens" />
+      <g transform="rotate(-10 78 22)">
+        <rect x="64" y="10" width="24" height="20" rx="6" className="fill-ones" />
+      </g>
+      <circle cx="84" cy="8" r="9" fill="#1B1B2F" />
+      <rect x="79.5" y="6.5" width="9" height="3" rx="1.5" fill="#F3E8D4" />
+    </svg>
+  )
+}
+
+function AdditionIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <rect x="8" y="14" width="22" height="18" rx="6" className="fill-ones" />
+      <rect x="8" y="38" width="22" height="18" rx="6" className="fill-ones" />
+      <rect x="66" y="14" width="22" height="18" rx="6" className="fill-tens" />
+      <rect x="66" y="38" width="22" height="18" rx="6" className="fill-tens" />
+      <circle cx="48" cy="36" r="14" fill="#1B1B2F" />
+      <rect x="42" y="34.5" width="12" height="3" rx="1.5" fill="#F3E8D4" />
+      <rect x="46.5" y="30" width="3" height="12" rx="1.5" fill="#F3E8D4" />
+    </svg>
+  )
+}
+
+function MultiplicationIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {[0, 1, 2].map((col) =>
+        [0, 1].map((row) => (
+          <rect
+            key={`${col}-${row}`}
+            x={14 + col * 26}
+            y={16 + row * 26}
+            width="18"
+            height="18"
+            rx="5"
+            className={row === 0 ? 'fill-hundreds' : 'fill-tens'}
+          />
+        )),
+      )}
+    </svg>
+  )
+}
+
+function DivisionIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <rect x="18" y="34" width="60" height="6" rx="3" className="fill-ones" />
+      <circle cx="48" cy="18" r="6" className="fill-tens" />
+      <circle cx="48" cy="54" r="6" className="fill-tens" />
+    </svg>
+  )
+}
+
+function DecimalWarIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <text x="18" y="54" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
+        0.
+      </text>
+      <rect x="34" y="12" width="26" height="46" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+      <rect x="66" y="12" width="26" height="46" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+      <text x="47" y="43" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+        4
+      </text>
+      <text x="79" y="43" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+        5
+      </text>
+    </svg>
+  )
+}
+
+/** 73 − 58 on digit cards: the two numbers a For Keeps hand builds. */
+function ForKeepsIcon() {
+  const cards = [
+    { x: 46, y: 4, digit: 7 },
+    { x: 70, y: 4, digit: 3 },
+    { x: 46, y: 38, digit: 5 },
+    { x: 70, y: 38, digit: 8 },
+  ]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {cards.map(({ x, y, digit }) => (
+        <g key={`${x}-${y}`}>
+          <rect x={x} y={y} width="22" height="30" rx="4" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 11} y={y + 22} textAnchor="middle" fontSize="18" fontWeight="700" className="fill-ink font-display">
+            {digit}
+          </text>
+        </g>
+      ))}
+      <rect x="24" y="51" width="14" height="4" rx="2" className="fill-ink" />
+    </svg>
+  )
+}
+
+/**
+ * Two digit cards with the operation sign between them: the hand an Addition War or Take-Away War
+ * round deals, or a fact Robo calls in Multiplication Shootout.
+ */
+function TwoCardsIcon({ first, sign, second }: { first: number; sign: string; second: number }) {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {[
+        { x: 6, digit: first },
+        { x: 62, digit: second },
+      ].map(({ x, digit }) => (
+        <g key={x}>
+          <rect x={x} y="14" width="28" height="44" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 14} y="44" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
+            {digit}
+          </text>
+        </g>
+      ))}
+      <text x="48" y="45" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
+        {sign}
+      </text>
+    </svg>
+  )
+}
+
+/** 1/2 = 2/4 on two fraction cards: a match Fraction Spoons asks the student to spot. */
+function FractionSpoonsIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {[
+        { x: 6, top: 1, bottom: 2 },
+        { x: 62, top: 2, bottom: 4 },
+      ].map(({ x, top, bottom }) => (
+        <g key={x}>
+          <rect x={x} y="6" width="28" height="60" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          <text x={x + 14} y="30" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+            {top}
+          </text>
+          <rect x={x + 7} y="35" width="14" height="3" rx="1.5" className="fill-ink" />
+          <text x={x + 14} y="58" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+            {bottom}
+          </text>
+        </g>
+      ))}
+      <text x="48" y="45" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
+        =
+      </text>
+    </svg>
+  )
+}
+
+/** The target 24 on a card over the four signs a 24 Game expression uses. */
+function TwentyFourIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <rect x="26" y="4" width="44" height="40" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+      <text x="48" y="35" textAnchor="middle" fontSize="26" fontWeight="700" className="fill-ink font-display">
+        24
+      </text>
+      <text x="48" y="66" textAnchor="middle" fontSize="18" fontWeight="700" className="fill-ink font-display">
+        + − × ÷
+      </text>
+    </svg>
+  )
+}
+
+/** Two dice showing 3 and 5: the roll a Shut the Box turn adds up. */
+function ShutTheBoxIcon() {
+  const pips = [
+    { x: 4, dots: [[15, 22], [26, 36], [37, 50]] },
+    { x: 50, dots: [[61, 22], [83, 22], [72, 36], [61, 50], [83, 50]] },
+  ]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {pips.map(({ x, dots }) => (
+        <g key={x}>
+          <rect x={x} y="11" width="42" height="50" rx="7" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
+          {dots.map(([cx, cy]) => (
+            <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="4" className="fill-ink" />
+          ))}
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+/** 456 + 365 + 163 stacked in place columns over a line: the three numbers a Don't Break the Bank game adds. */
+function DontBreakTheBankIcon() {
+  const rows = ['456', '365', '163']
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {rows.map((row, index) => (
+        <text
+          key={row}
+          x="62"
+          y={18 + index * 17}
+          textAnchor="middle"
+          fontSize="17"
+          fontWeight="700"
+          letterSpacing="3"
+          className="fill-ink font-display"
+        >
+          {row}
+        </text>
+      ))}
+      <text x="22" y="52" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
+        +
+      </text>
+      <rect x="30" y="58" width="62" height="3" rx="1.5" className="fill-ink" />
+      <text x="62" y="71" textAnchor="middle" fontSize="10" fontWeight="700" className="fill-ink font-display">
+        under 1000
+      </text>
+    </svg>
+  )
+}
+
+/** A small first-quadrant grid with one hit marked at (2, 3): the pairs a Battleship game calls. */
+function CoordinateBattleshipIcon() {
+  const lines = [0, 1, 2, 3, 4]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {lines.map((line) => (
+        <g key={line}>
+          <line x1={24 + line * 14} x2={24 + line * 14} y1="6" y2="62" strokeWidth={line === 0 ? 3 : 1.5} className="stroke-ink" />
+          <line x1="24" x2="80" y1={62 - line * 14} y2={62 - line * 14} strokeWidth={line === 0 ? 3 : 1.5} className="stroke-ink" />
+        </g>
+      ))}
+      <circle cx={24 + 2 * 14} cy={62 - 3 * 14} r="6" className="fill-ones stroke-ink" strokeWidth="2" />
+      <text x="10" y="20" textAnchor="middle" fontSize="12" fontWeight="700" className="fill-ink font-display">
+        y
+      </text>
+      <text x="90" y="70" textAnchor="middle" fontSize="12" fontWeight="700" className="fill-ink font-display">
+        x
+      </text>
+    </svg>
+  )
+}
+
+/** A 3 × 2 × 2 box of unit cubes drawn from the front, top and side, as the Volume Builder game draws its boxes. */
+function VolumeBuilderIcon() {
+  const cube = 14
+  const depth = cube / 2
+  const [left, top] = [20, 15]
+  const [length, width, height] = [3, 2, 2]
+  const back = width * depth
+  const lines: [number, number, number, number][] = []
+  for (let x = 0; x <= length; x += 1) {
+    lines.push([x * cube, back, x * cube, back + height * cube])
+    lines.push([x * cube, back, x * cube + back, 0])
+  }
+  for (let y = 0; y <= height; y += 1) {
+    lines.push([0, back + y * cube, length * cube, back + y * cube])
+    lines.push([length * cube, back + y * cube, length * cube + back, y * cube])
+  }
+  for (let z = 0; z <= width; z += 1) {
+    lines.push([z * depth, back - z * depth, length * cube + z * depth, back - z * depth])
+    lines.push([length * cube + z * depth, back - z * depth, length * cube + z * depth, back - z * depth + height * cube])
+  }
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <path
+        d={`M ${left} ${top + back} h ${length * cube} l ${back} ${-back} h ${-length * cube} Z`}
+        className="fill-white"
+      />
+      <path d={`M ${left} ${top + back} h ${length * cube} v ${height * cube} h ${-length * cube} Z`} className="fill-card" />
+      <path
+        d={`M ${left + length * cube} ${top + back} l ${back} ${-back} v ${height * cube} l ${-back} ${back} Z`}
+        className="fill-chalk"
+      />
+      {lines.map(([x1, y1, x2, y2], index) => (
+        <line key={index} x1={left + x1} y1={top + y1} x2={left + x2} y2={top + y2} strokeWidth="1.5" className="stroke-ink" />
+      ))}
+    </svg>
+  )
+}
+
+/** A target with 16 in the middle and 9 + 7 below: cards added to hit the target number. */
+function TargetNumberIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <circle cx="48" cy="28" r="24" className="fill-white stroke-ink" strokeWidth="2" />
+      <circle cx="48" cy="28" r="15" className="fill-hundreds stroke-ink" strokeWidth="2" />
+      <text x="48" y="34" textAnchor="middle" fontSize="16" fontWeight="700" className="fill-ink font-display">
+        16
+      </text>
+      <text x="48" y="68" textAnchor="middle" fontSize="14" fontWeight="700" className="fill-ink font-display">
+        9 + 7
+      </text>
+    </svg>
+  )
+}
+
+/** A small 4 × 3 board with four brass spaces in a row: the line the Four in a Row game is played for. */
+function FourInARowIcon() {
+  const spaces = Array.from({ length: 12 }, (_, index) => index)
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      {spaces.map((space) => {
+        const row = Math.floor(space / 4)
+        const column = space % 4
+        return (
+          <rect
+            key={space}
+            x={10 + column * 20}
+            y={8 + row * 20}
+            width="16"
+            height="16"
+            rx="3"
+            className={`${row === 1 ? 'fill-hundreds' : 'fill-white'} stroke-ink`}
+            strokeWidth="1.5"
+          />
+        )
+      })}
+    </svg>
+  )
+}
+
+/** A die showing 3 beside a row of number tiles with the 3 covered: roll, count, cover. */
+function CoverTheNumberIcon() {
+  const pips = [[14, 20], [24, 30], [34, 40]]
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <rect x="6" y="12" width="36" height="36" rx="6" strokeWidth="2" className="fill-white stroke-ink" />
+      {pips.map(([x, y]) => (
+        <circle key={x} cx={x} cy={y} r="3.5" className="fill-ink" />
+      ))}
+      {[1, 2, 3].map((value, index) => (
+        <g key={value}>
+          <rect x={50 + index * 14} y="18" width="12" height="24" rx="2" strokeWidth="1.5" className={`${value === 3 ? 'fill-hundreds' : 'fill-white'} stroke-ink`} />
+          <text x={56 + index * 14} y="35" textAnchor="middle" fontSize="11" fontWeight="700" className="fill-ink font-display">
+            {value}
+          </text>
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+/** A small clock showing 2:50, the hour hand almost at the 3. */
+function ClockMatchIcon() {
+  return (
+    <svg viewBox="0 0 96 72" className="h-16 w-20">
+      <circle cx="48" cy="36" r="30" strokeWidth="2.5" className="fill-white stroke-ink" />
+      {[0, 90, 180, 270].map((angle) => (
+        <line key={angle} x1="48" y1="9" x2="48" y2="14" strokeWidth="2" transform={`rotate(${angle} 48 36)`} className="stroke-ink" />
+      ))}
+      <line x1="48" y1="36" x2="48" y2="20" strokeWidth="4" strokeLinecap="round" transform="rotate(85 48 36)" className="stroke-ink" />
+      <line x1="48" y1="36" x2="48" y2="12" strokeWidth="2" strokeLinecap="round" transform="rotate(300 48 36)" className="stroke-ink" />
+      <circle cx="48" cy="36" r="2.5" className="fill-ink" />
+    </svg>
+  )
+}
+
+export type Game = {
+  title: string
+  description: string
+  to: string
+  icon: ReactNode
+  /** The one shelf the game sits on: its home band in the curriculum catalog. */
+  band: GradeBand
+  /** Curriculum games are played against Robo; skill workshops are solo practice. */
+  kind: 'robo' | 'workshop'
+}
+
+export const GAMES: Game[] = [
+  {
+    title: 'Decimal War',
+    description: 'Judge whose decimal is larger',
+    to: '/curriculum/decimal-war',
+    icon: <DecimalWarIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'Fraction Spoons',
+    description: 'Collect four equal fractions to win a spoon',
+    to: '/curriculum/fraction-spoons',
+    icon: <FractionSpoonsIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'The 24 Game',
+    description: 'Use all four cards with + − × ÷ to make 24',
+    to: '/curriculum/the-24-game',
+    icon: <TwentyFourIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'Coordinate Plane Battleship',
+    description: 'Write and read ordered pairs to find Robo’s hidden ships',
+    to: '/curriculum/coordinate-plane-battleship',
+    icon: <CoordinateBattleshipIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'Volume Builder',
+    description: 'Count the cubes in a box, then build a different box that holds as many',
+    to: '/curriculum/volume-builder',
+    icon: <VolumeBuilderIcon />,
+    band: '4-5',
+    kind: 'robo',
+  },
+  {
+    title: 'For Keeps',
+    description: 'Build two numbers, subtract, keep the lowest score',
+    to: '/curriculum/for-keeps',
+    icon: <ForKeepsIcon />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Multiplication Shootout',
+    description: 'Answer times and division facts in turns with Robo',
+    to: '/curriculum/multiplication-shootout',
+    icon: <TwoCardsIcon first={6} sign="×" second={7} />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: "Don't Break the Bank",
+    description: 'Place rolled digits, add your numbers, and get close to 1000 without going over',
+    to: '/curriculum/dont-break-the-bank',
+    icon: <DontBreakTheBankIcon />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Target Number',
+    description: 'Add and take away cards one step at a time to make the target',
+    to: '/curriculum/target-number',
+    icon: <TargetNumberIcon />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Clock Match',
+    description: 'Read clocks and find the clock for a time',
+    to: '/curriculum/clock-match',
+    icon: <ClockMatchIcon />,
+    band: '2-3',
+    kind: 'robo',
+  },
+  {
+    title: 'Addition War',
+    description: 'Add your two cards and see whose hand wins',
+    to: '/curriculum/addition-war',
+    icon: <TwoCardsIcon first={3} sign="+" second={4} />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Take-Away War',
+    description: 'Take the smaller card away and see whose hand wins',
+    to: '/curriculum/take-away-war',
+    icon: <TwoCardsIcon first={8} sign="−" second={3} />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Shut the Box',
+    description: 'Roll two dice, add the dots, and shut tiles that make that many',
+    to: '/curriculum/shut-the-box',
+    icon: <ShutTheBoxIcon />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Four in a Row',
+    description: 'Add two cards and cover the answer to get four in a row',
+    to: '/curriculum/four-in-a-row',
+    icon: <FourInARowIcon />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Cover the Number',
+    description: 'Roll, count the dots, and cover that number on your board',
+    to: '/curriculum/cover-the-number',
+    icon: <CoverTheNumberIcon />,
+    band: 'k-1',
+    kind: 'robo',
+  },
+  {
+    title: 'Subtraction',
+    description: 'Multi-digit subtraction with borrowing',
+    to: '/practice/subtraction',
+    icon: <SubtractionIcon />,
+    band: '2-3',
+    kind: 'workshop',
+  },
+  {
+    title: 'Addition',
+    description: 'Multi-digit addition with carrying',
+    to: '/practice/addition',
+    icon: <AdditionIcon />,
+    band: '2-3',
+    kind: 'workshop',
+  },
+  {
+    title: 'Multiplication',
+    description: 'Times tables and multi-digit products',
+    to: '/practice/multiplication',
+    icon: <MultiplicationIcon />,
+    band: '4-5',
+    kind: 'workshop',
+  },
+  {
+    title: 'Division',
+    description: 'Splitting numbers into equal groups',
+    to: '/practice/division',
+    icon: <DivisionIcon />,
+    band: '4-5',
+    kind: 'workshop',
+  },
+]
+
+
+/** The id the API uses for a game, which is the last part of its route. */
+export function gameId(game: Game): string {
+  return game.to.split('/').pop() ?? ''
+}
