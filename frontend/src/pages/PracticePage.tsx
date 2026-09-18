@@ -5,6 +5,7 @@ import AppHeader from '../components/AppHeader'
 import DigitChip from '../components/DigitChip'
 import HomeButton from '../components/HomeButton'
 import Keypad from '../components/Keypad'
+import MistakeReplay from '../components/MistakeReplay'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
@@ -22,6 +23,7 @@ import { formatMisconception } from '../format'
 import { getGradeBand } from '../gradeBand'
 import { prefersReducedMotion } from '../motion'
 import { buildRegroupSteps, PLACE_ORDER, type RegroupStep } from '../regroup'
+import { buildReplaySteps } from '../replay'
 import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
@@ -230,6 +232,7 @@ function PracticePage() {
   const [revealed, setRevealed] = useState(false)
   const [checking, setChecking] = useState(false)
   const [wrongAnswer, setWrongAnswer] = useState<number | null>(null)
+  const [showReplay, setShowReplay] = useState(false)
   const hintRequest = useRef<AbortController | null>(null)
 
   const showProblem = useCallback((data: ProblemPayload) => {
@@ -246,6 +249,7 @@ function PracticePage() {
     setRegroupSteps([])
     setActiveStep(null)
     setRevealed(false)
+    setShowReplay(false)
   }, [])
 
   const fetchProblem = () => {
@@ -466,6 +470,22 @@ function PracticePage() {
     feedback === 'correct' ||
     Number(digits.join('')) === wrongAnswer
 
+  /**
+   * The walk through a diagnosed wrong answer, offered only once the hint has been
+   * revealed. Column games only: long division's algorithm doesn't lay out in places
+   * this way, the same reason it skips the regroup animation.
+   */
+  const replaySteps =
+    revealed && misconception && wrongAnswer !== null && config.displayMode === 'columns'
+      ? buildReplaySteps(
+          problem.columns,
+          config.topDigitField,
+          config.bottomDigitField,
+          problem.answer,
+          wrongAnswer,
+        )
+      : null
+
   return (
     <div className="flex min-h-screen flex-col bg-base">
       <AppHeader
@@ -607,6 +627,25 @@ function PracticePage() {
                 <p className="mt-2 text-sm text-ink-muted">
                   Diagnosed pattern: {formatMisconception(misconception)}
                 </p>
+              )}
+              {replaySteps && (
+                <div className="mt-4">
+                  {showReplay ? (
+                    <MistakeReplay
+                      steps={replaySteps}
+                      operator={config.operatorSymbol}
+                      explanation={hint ?? ''}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowReplay(true)}
+                      className="tap-target rounded-2xl border-4 border-ink bg-white px-5 font-display text-lg font-semibold text-ink active:translate-y-1 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
+                    >
+                      Show me what I did
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           )}

@@ -11,6 +11,7 @@
 const LEARNER_KEY = 'learner_id'
 const NAME_KEY = 'learner_name'
 const TOKEN_KEY = 'learner_token'
+const ROSTER_KEY = 'learner_roster'
 
 /** The tokens a student can sit behind, as emoji-free named shapes drawn by `PlayerToken`. */
 export const TOKENS = ['star', 'rocket', 'heart', 'leaf', 'moon', 'bolt'] as const
@@ -52,4 +53,61 @@ export function getLearnerToken(): Token {
 
 export function saveLearnerToken(token: Token): void {
   localStorage.setItem(TOKEN_KEY, token)
+}
+
+/** One saved profile on this device. */
+export type Profile = {
+  id: string
+  name: string
+  token: Token
+}
+
+/**
+ * Everyone who plays on this device.
+ *
+ * A family tablet or a classroom machine is shared, so the device holds a roster rather
+ * than one student. Switching is a tap on a name -- there are no passwords and no server
+ * accounts, so a profile protects nobody's privacy from someone holding the device. It
+ * exists so two students don't share one set of levels.
+ */
+export function getRoster(): Profile[] {
+  const saved = localStorage.getItem(ROSTER_KEY)
+  if (!saved) return []
+  const parsed: unknown = JSON.parse(saved)
+  if (!Array.isArray(parsed)) return []
+  return parsed.filter(
+    (entry): entry is Profile =>
+      typeof entry?.id === 'string' &&
+      typeof entry?.name === 'string' &&
+      TOKENS.includes(entry?.token),
+  )
+}
+
+function saveRoster(roster: Profile[]): void {
+  localStorage.setItem(ROSTER_KEY, JSON.stringify(roster))
+}
+
+/** Add a profile, or update the one already holding this id, and make it the current one. */
+export function rememberProfile(profile: Profile): void {
+  const others = getRoster().filter((entry) => entry.id !== profile.id)
+  saveRoster([...others, profile])
+  switchTo(profile)
+}
+
+/** Make an existing profile the one playing now. */
+export function switchTo(profile: Profile): void {
+  localStorage.setItem(LEARNER_KEY, profile.id)
+  localStorage.setItem(NAME_KEY, profile.name)
+  localStorage.setItem(TOKEN_KEY, profile.token)
+}
+
+/** A fresh learner id for a profile being added. */
+export function newLearnerId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+/** Remove a profile. Its attempts stay on the server; only this device forgets it. */
+export function forgetProfile(id: string): void {
+  saveRoster(getRoster().filter((entry) => entry.id !== id))
 }

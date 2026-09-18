@@ -53,14 +53,45 @@ function shelvesInOrder(): string[] {
     .filter((text) => text !== 'Play next')
 }
 
-test('a first visit asks for the grade before showing games', () => {
+test('a first visit asks the age before showing games', () => {
   renderLandingPage()
 
-  expect(screen.getByRole('heading', { name: 'What grade are you in?' })).toBeTruthy()
+  expect(screen.getByRole('heading', { name: 'How old are you?' })).toBeTruthy()
+  expect(screen.queryByRole('heading', { name: 'What grade are you in?' })).toBeNull()
   expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
 })
 
-test('the grade question and its choices can be read aloud', async () => {
+test('each age says which shelf it leads to, so the mapping is not hidden', () => {
+  renderLandingPage()
+
+  expect(screen.getByRole('button', { name: '5 years old, Kindergarten & 1st grade' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: '8 years old, 2nd & 3rd grade' })).toBeTruthy()
+  expect(screen.getByRole('button', { name: '10 years old, 4th & 5th grade' })).toBeTruthy()
+})
+
+test('the age sets the shelf without being asked the grade', async () => {
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: /^9 years old/ }))
+
+  expect(localStorage.getItem('grade_band')).toBe('4-5')
+  expect(screen.queryByRole('heading', { name: 'What grade are you in?' })).toBeNull()
+})
+
+test('the grade can still be changed afterwards, and that choice wins over the age', async () => {
+  localStorage.setItem('grade_band', '4-5')
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: 'Change grade' }))
+  expect(screen.getByRole('heading', { name: 'What grade are you in?' })).toBeTruthy()
+  await user.click(screen.getByRole('button', { name: '2nd & 3rd grade' }))
+
+  expect(localStorage.getItem('grade_band')).toBe('2-3')
+})
+
+test('the age question can be read aloud', async () => {
   const speak = vi.fn()
   vi.stubGlobal('speechSynthesis', { speak, cancel: vi.fn() })
   vi.stubGlobal(
@@ -79,16 +110,14 @@ test('the grade question and its choices can be read aloud', async () => {
 
   await user.click(screen.getByRole('button', { name: 'Read aloud' }))
 
-  expect(speak.mock.calls[0][0].text).toBe(
-    'What grade are you in? Kindergarten and 1st grade. 2nd and 3rd grade. 4th and 5th grade.',
-  )
+  expect(speak.mock.calls[0][0].text).toBe('How old are you? Tap your age.')
 })
 
 test('picking 2nd & 3rd grade saves it and shows only that shelf by default', async () => {
   const user = userEvent.setup()
   renderLandingPage()
 
-  await user.click(screen.getByRole('button', { name: '2nd & 3rd grade' }))
+  await user.click(screen.getByRole('button', { name: /^7 years old/ }))
 
   expect(localStorage.getItem('grade_band')).toBe('2-3')
   expect(shelvesInOrder()).toEqual(['2nd & 3rd grade', 'Skill workshops'])
@@ -107,7 +136,7 @@ test('picking 4th & 5th grade shows only its shelf and workshops by default', as
   const user = userEvent.setup()
   renderLandingPage()
 
-  await user.click(screen.getByRole('button', { name: '4th & 5th grade' }))
+  await user.click(screen.getByRole('button', { name: /^9 years old/ }))
 
   expect(shelvesInOrder()).toEqual(['4th & 5th grade', 'Skill workshops'])
   const shelf = screen.getByRole('region', { name: '4th & 5th grade' })
@@ -143,7 +172,7 @@ test('only the student’s shelf says Your grade', async () => {
   const user = userEvent.setup()
   renderLandingPage()
 
-  await user.click(screen.getByRole('button', { name: '4th & 5th grade' }))
+  await user.click(screen.getByRole('button', { name: /^9 years old/ }))
 
   expect(screen.getAllByText('Your grade')).toHaveLength(1)
   expect(screen.queryByRole('region', { name: '2nd & 3rd grade' })).toBeNull()
@@ -153,7 +182,7 @@ test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo
   const user = userEvent.setup()
   renderLandingPage()
 
-  await user.click(screen.getByRole('button', { name: 'Kindergarten & 1st grade' }))
+  await user.click(screen.getByRole('button', { name: /^5 years old/ }))
 
   expect(shelvesInOrder()[0]).toBe('Kindergarten & 1st grade')
   const shelf = screen.getByRole('region', { name: 'Kindergarten & 1st grade' })
@@ -421,7 +450,7 @@ test('a first visit asks who is playing once the grade is picked', async () => {
   const user = userEvent.setup()
   renderLandingPage()
 
-  await user.click(screen.getByRole('button', { name: '2nd & 3rd grade' }))
+  await user.click(screen.getByRole('button', { name: /^7 years old/ }))
 
   expect(screen.getByRole('heading', { name: 'Who is playing?' })).toBeTruthy()
   expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
@@ -523,4 +552,67 @@ test('the header shows who is playing and can change it', async () => {
   await user.click(screen.getByRole('button', { name: 'Playing as Sam. Change your name or token.' }))
 
   expect(screen.getByRole('heading', { name: 'Who is playing?' })).toBeTruthy()
+})
+
+test('a second profile can be added and becomes the one playing', async () => {
+  localStorage.setItem('grade_band', '2-3')
+  localStorage.setItem('learner_roster', JSON.stringify([{ id: 'a1', name: 'Sam', token: 'star' }]))
+  localStorage.setItem('learner_id', 'a1')
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: 'Playing as Sam. Change your name or token.' }))
+  await user.click(screen.getByRole('button', { name: 'Add someone' }))
+  await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'Bo')
+  await user.click(screen.getByRole('button', { name: 'leaf' }))
+  await user.click(screen.getByRole('button', { name: 'Start playing' }))
+
+  const roster = JSON.parse(localStorage.getItem('learner_roster') ?? '[]')
+  expect(roster.map((entry: { name: string }) => entry.name)).toEqual(['Sam', 'Bo'])
+  expect(localStorage.getItem('learner_name')).toBe('Bo')
+  expect(localStorage.getItem('learner_id')).not.toBe('a1')
+})
+
+test('switching profiles changes who is playing without touching the roster', async () => {
+  localStorage.setItem('grade_band', '2-3')
+  localStorage.setItem(
+    'learner_roster',
+    JSON.stringify([
+      { id: 'a1', name: 'Sam', token: 'star' },
+      { id: 'b2', name: 'Bo', token: 'leaf' },
+    ]),
+  )
+  localStorage.setItem('learner_id', 'a1')
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: /Playing as Sam/ }))
+  await user.click(screen.getByRole('button', { name: /^Bo/ }))
+
+  expect(localStorage.getItem('learner_id')).toBe('b2')
+  expect(localStorage.getItem('learner_name')).toBe('Bo')
+  expect(JSON.parse(localStorage.getItem('learner_roster') ?? '[]')).toHaveLength(2)
+})
+
+test('each profile asks the server for its own progress', async () => {
+  localStorage.setItem('grade_band', '2-3')
+  localStorage.setItem(
+    'learner_roster',
+    JSON.stringify([
+      { id: 'a1', name: 'Sam', token: 'star' },
+      { id: 'b2', name: 'Bo', token: 'leaf' },
+    ]),
+  )
+  localStorage.setItem('learner_id', 'a1')
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await screen.findByRole('heading', { name: 'Play next' })
+  await user.click(screen.getByRole('button', { name: /Playing as Sam/ }))
+  await user.click(screen.getByRole('button', { name: /^Bo/ }))
+  await screen.findByRole('heading', { name: 'Play next' })
+
+  const calls = (globalThis.fetch as unknown as { mock: { calls: string[][] } }).mock.calls
+  expect(calls[0][0]).toContain('/home/a1')
+  expect(calls[calls.length - 1][0]).toContain('/home/b2')
 })

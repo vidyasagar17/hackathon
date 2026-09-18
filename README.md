@@ -355,8 +355,22 @@ their first visit, which saves a `learner_id` in the browser's localStorage; the
 session id in `sessionStorage` still marks one sitting, and the session summary
 stays scoped to it. So closing the browser ends the session but not the
 progress: a student who comes back tomorrow resumes at the level they reached
-instead of starting again at level 1. There are no accounts and no login — the
-profile is local to the device and only the random id reaches the server.
+instead of starting again at level 1.
+
+A device holds a roster, not one student, so a family tablet or a classroom
+machine can be shared: tap a name to switch, and each profile has its own
+levels and mastery. There are no passwords and no server accounts — a profile
+exists so two students don't share one set of levels, not to keep anyone out.
+Only the random id reaches the server.
+
+## Starting band
+
+A new student is asked their **age**, not their grade — a 5-year-old knows how
+old they are more reliably than which band their grade sits in. `bandForAge` in
+`frontend/src/gradeBand.ts` maps it: 5–6 to K–1, 7–8 to grades 2–3, 9–10 to
+grades 4–5, with 4 and 11 pulled to the nearest shelf rather than refused. Each
+age button names the shelf it leads to, so the mapping is never hidden, and
+"Change grade" still overrides it for a student held back or moved up.
 
 ## The home screen engine
 
@@ -381,6 +395,24 @@ One game is then suggested, in this order:
 Only games shelved in the student's own grade band are ever suggested. The
 reason code maps to its sentence in `frontend/src/home.ts`, so what a student is
 told always matches the rule that actually fired.
+
+## Replaying the mistake
+
+A wrong answer in a workshop offers **"Show me what I did"**: the student's own
+work walked column by column beside the correct work, right to left, the way
+they would have worked it. Each step names the two digits that column was worked
+from and what was written there, and the diagnosed explanation appears exactly
+when the walk reaches the place where the two answers part company.
+
+`frontend/src/replay.ts` builds the walk from the two answers rather than from
+the buggy simulators. The server has already decided *which* bug this was, and
+the digits it produced are what the student actually wrote, so the replay can
+never invent reasoning the diagnosis didn't find.
+
+One digit lands per press, the press is the student's own, and nothing moves
+under `prefers-reduced-motion` — so this stays inside the one-thing-animates
+rule below. Column games only: long division's algorithm doesn't lay out in
+places this way, the same reason it skips the regroup animation.
 
 ## Hints
 

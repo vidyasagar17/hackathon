@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { API_URL } from '../api'
+import AgePicker from '../components/AgePicker'
 import AppHeader from '../components/AppHeader'
 import GradePicker from '../components/GradePicker'
 import MuteToggle from '../components/MuteToggle'
 import PlayerToken from '../components/PlayerToken'
 import ProfilePicker from '../components/ProfilePicker'
+import ProfileSwitcher from '../components/ProfileSwitcher'
 import ReadAloudButton from '../components/ReadAloudButton'
 import RoboAvatar from '../components/RoboAvatar'
 import RoboBubble from '../components/RoboBubble'
 import { GAMES, gameId, type Game } from '../gameCatalog'
 import {
+  bandForAge,
   getGradeBand,
   GRADE_BAND_LABELS,
   GRADE_BANDS,
@@ -28,8 +31,11 @@ import {
   getLearnerId,
   getLearnerName,
   getLearnerToken,
-  saveLearnerName,
-  saveLearnerToken,
+  getRoster,
+  newLearnerId,
+  rememberProfile,
+  switchTo,
+  type Profile,
   type Token,
 } from '../learner'
 
@@ -241,7 +247,10 @@ function LandingPage() {
   const [band, setBand] = useState<GradeBand | null>(getGradeBand)
   const [name, setName] = useState<string | null>(getLearnerName)
   const [token, setToken] = useState<Token>(getLearnerToken)
-  const [picking, setPicking] = useState<'grade' | 'profile' | null>(null)
+  const [picking, setPicking] = useState<'grade' | 'profile' | 'switch' | null>(null)
+  const [roster, setRoster] = useState<Profile[]>(getRoster)
+  /** The profile the name-and-token screen is editing, or null when it is adding one. */
+  const [editing, setEditing] = useState<Profile | null>(null)
   const [showAll, setShowAll] = useState(false)
   const [home, setHome] = useState<Home | null>(null)
 
@@ -260,20 +269,61 @@ function LandingPage() {
   }
 
   const pickProfile = (chosenName: string, chosenToken: Token) => {
-    saveLearnerName(chosenName)
-    saveLearnerToken(chosenToken)
-    setName(chosenName)
-    setToken(chosenToken)
+    const profile = {
+      id: editing?.id ?? (roster.length === 0 ? getLearnerId() : newLearnerId()),
+      name: chosenName,
+      token: chosenToken,
+    }
+    rememberProfile(profile)
+    setRoster(getRoster())
+    setName(profile.name)
+    setToken(profile.token)
+    setEditing(null)
     setPicking(null)
+    setHome(null)
   }
 
-  if (band === null || picking === 'grade') {
+  const playAs = (profile: Profile) => {
+    switchTo(profile)
+    setName(profile.name)
+    setToken(profile.token)
+    setPicking(null)
+    setHome(null)
+  }
+
+  // A new student is asked their age; the grade question is kept for changing it afterwards.
+  if (band === null) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-8">
-        <GradePicker
-          onPick={pickBand}
-          currentBand={band}
-          onCancel={band !== null ? () => setPicking(null) : undefined}
+        <AgePicker onPick={(age) => pickBand(bandForAge(age))} />
+      </div>
+    )
+  }
+
+  if (picking === 'grade') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-8">
+        <GradePicker onPick={pickBand} currentBand={band} onCancel={() => setPicking(null)} />
+      </div>
+    )
+  }
+
+  if (picking === 'switch') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-8">
+        <ProfileSwitcher
+          roster={roster}
+          currentId={getLearnerId()}
+          onPick={playAs}
+          onAdd={() => {
+            setEditing(null)
+            setPicking('profile')
+          }}
+          onEdit={(profile) => {
+            setEditing(profile)
+            setPicking('profile')
+          }}
+          onCancel={() => setPicking(null)}
         />
       </div>
     )
@@ -284,9 +334,9 @@ function LandingPage() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-8">
         <ProfilePicker
           onPick={pickProfile}
-          currentName={name}
-          currentToken={token}
-          onCancel={name !== null ? () => setPicking(null) : undefined}
+          currentName={editing ? editing.name : picking === 'profile' && !editing ? '' : name}
+          currentToken={editing ? editing.token : token}
+          onCancel={name !== null ? () => setPicking(roster.length === 0 ? null : 'switch') : undefined}
         />
       </div>
     )
@@ -304,7 +354,7 @@ function LandingPage() {
             <MuteToggle />
             <button
               type="button"
-              onClick={() => setPicking('profile')}
+              onClick={() => setPicking(roster.length === 0 ? 'profile' : 'switch')}
               aria-label={`Playing as ${name}. Change your name or token.`}
               className={`tap-target inline-flex items-center gap-2 rounded-2xl border-2 border-felt-edge bg-card px-3 font-display text-base font-bold text-ink shadow-[0_2px_0_#163A34] ${FOCUS_RING}`}
             >
