@@ -157,7 +157,7 @@ test('a right tap covers the number', async () => {
   expect(screen.getByRole('button', { name: "Robo's turn" })).toBeTruthy()
 })
 
-test('a wrong tap wobbles, outlines the right number, resets the stars and shows and speaks the hint', async () => {
+test('a wrong tap wobbles, outlines the right number, resets the stars and shows and speaks the hint with no red text', async () => {
   const user = userEvent.setup()
   renderPage()
   await user.click(await screen.findByRole('button', { name: 'Roll' }))
@@ -171,6 +171,7 @@ test('a wrong tap wobbles, outlines the right number, resets the stars and shows
   expect(number(5).getAttribute('aria-label')).toBe('Number 5, the right answer')
   expect(spokenTexts()).toContain(`${HINT} Tap Robo's turn.`)
   expect(screen.queryByText(/Diagnosed pattern/)).toBeNull()
+  expect(document.querySelector('.text-alert-text')).toBeNull()
 })
 
 test('a right tap on a covered number offers Roll again', async () => {

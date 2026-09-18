@@ -10,6 +10,7 @@ import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
 import { postJson } from '../api'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 import { speakWhenAllowed } from '../speech'
@@ -39,10 +40,11 @@ type MoveResult = { correct: boolean; misconception: string | null; visible_stat
 
 const RESULTS = { mine: 'You win!', robo: 'Robo wins.', same: "Same! It's a tie." }
 
-const BIG_BUTTON = 'flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink'
+const BIG_BUTTON =
+  'flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-chalk focus-visible:ring-offset-2 focus-visible:ring-offset-felt'
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/cover-the-number/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/cover-the-number/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 const rollTotal = (roll: Roll) => roll.values.reduce((sum, value) => sum + value, 0)
@@ -234,7 +236,7 @@ function CoverTheNumberPage() {
         <GameTable>
           <div className="flex flex-col items-center gap-4">
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <SeatName name="Robo" />
+              <SeatName name="Robo" message={roboShown && state.robo_last ? roboSaid(state) : undefined} />
               <div
                 role="img"
                 aria-label={`Robo's board: ${state.robo_covered.length} of ${state.board.length} covered`}
@@ -255,7 +257,6 @@ function CoverTheNumberPage() {
               {roboShown && state.robo_last && (
                 <div className="flex items-center gap-2">
                   <RollFace roll={state.robo_last.rolls[state.robo_last.rolls.length - 1]} size="small" />
-                  <p className="font-display text-xl font-semibold text-chalk">{roboSaid(state)}</p>
                 </div>
               )}
             </div>
@@ -296,7 +297,7 @@ function CoverTheNumberPage() {
                     aria-label={label}
                     onClick={() => tap(value)}
                     disabled={sending || state.step !== 'tap'}
-                    className={`tap-target w-16 rounded-xl border-4 font-display text-3xl font-bold ${
+                    className={`tap-target w-16 rounded-xl border-4 font-display text-3xl font-bold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${
                       covered ? 'border-chalk/40 bg-felt-edge text-chalk' : 'border-felt-edge bg-card text-ink'
                     } ${right ? 'ring-8 ring-hundreds' : ''}`}
                   >

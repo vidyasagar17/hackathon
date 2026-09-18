@@ -11,6 +11,7 @@ import ReadAloudButton from '../components/ReadAloudButton'
 import RoboAvatar from '../components/RoboAvatar'
 import SeatName from '../components/SeatName'
 import { postJson } from '../api'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 import { speakWhenAllowed } from '../speech'
@@ -88,15 +89,25 @@ function pickResult<T>(option: T, pick: T | null, right: T | null): PickResult {
 }
 
 function requestRound(game: GameId): Promise<RoundPayload> {
-  return postJson(`/curriculum/${game}/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/${game}/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
-function Hand({ name, cards, operation }: { name: 'You' | 'Robo'; cards: Cards; operation: Operation }) {
+function Hand({
+  name,
+  cards,
+  operation,
+  message,
+}: {
+  name: 'You' | 'Robo'
+  cards: Cards
+  operation: Operation
+  message?: string
+}) {
   const [first, second] = readingOrder(cards, operation)
   const word = operation === 'add' ? 'plus' : 'take away'
   return (
     <div className="flex items-center gap-4">
-      <SeatName name={name} />
+      <SeatName name={name} message={message} />
       <span
         aria-label={`${name === 'You' ? 'Your' : "Robo's"} cards: ${first} ${word} ${second}`}
         className="flex items-center gap-3"
@@ -263,8 +274,12 @@ function CardWarPage({ game }: { game: GameId }) {
         <GameTable>
           <div className="flex flex-col items-center gap-5">
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <Hand name="Robo" cards={state.robo} operation={state.operation} />
-              <p className="font-display text-2xl font-semibold text-chalk">{`Robo has ${state.robo_total}`}</p>
+              <Hand
+                name="Robo"
+                cards={state.robo}
+                operation={state.operation}
+                message={`I have ${state.robo_total}!`}
+              />
             </div>
 
             <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-start md:justify-center">
@@ -351,7 +366,7 @@ function CardWarPage({ game }: { game: GameId }) {
                       type="button"
                       aria-label="Next hand"
                       onClick={dealNext}
-                      className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-10 font-display text-2xl font-bold text-ink"
+                      className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-10 font-display text-2xl font-bold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-chalk focus-visible:ring-offset-2 focus-visible:ring-offset-felt"
                     >
                       Next
                       <NextArrow />

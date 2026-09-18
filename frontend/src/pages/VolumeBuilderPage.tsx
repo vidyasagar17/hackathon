@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import CubeBox, { type Box, type Layer } from '../components/CubeBox'
+import DuelResult from '../components/DuelResult'
+import DuelScoreLine from '../components/DuelScoreLine'
+import DuelTurnButtons from '../components/DuelTurnButtons'
 import GameTable from '../components/GameTable'
 import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
@@ -9,8 +12,11 @@ import Keypad from '../components/Keypad'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
+import { duelOutcome } from '../duel'
 import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -42,13 +48,14 @@ const LARGEST_EDGE = 10
 
 const COUNT_QUESTION = "How many cubes build this box? It's full inside."
 
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 const STEP_BUTTON =
-  'w-16 rounded-2xl bg-white font-display text-3xl font-bold text-ink shadow-[0_4px_0_rgba(0,0,0,0.15)] disabled:opacity-40'
+  'w-16 rounded-2xl bg-white font-display text-3xl font-bold text-ink shadow-[0_4px_0_rgba(0,0,0,0.15)] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/volume-builder/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/volume-builder/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 const sameBox = (first: Box, second: Box) => [...first].sort((a, b) => a - b).join() === [...second].sort((a, b) => a - b).join()
@@ -60,12 +67,6 @@ function layerHolding([length, width, height]: Box, cubes: number): Layer {
   if (length * height === cubes && length * width !== cubes) return 'front'
   if (width * height === cubes && length * width !== cubes) return 'side'
   return 'top'
-}
-
-function outcome(myPoints: number, roboPoints: number) {
-  if (myPoints > roboPoints) return 'You win the game!'
-  if (myPoints < roboPoints) return 'Robo wins the game.'
-  return "It's a draw!"
 }
 
 /**
@@ -262,7 +263,7 @@ function VolumeBuilderPage() {
     `Robo counted ${robo.layer} cubes in the top layer and ${robo.layers} layers: ${robo.layers} × ${robo.layer} = ${robo.volume}.`,
     robo.built ? `Robo built a ${times(robo.built)} box with ${robo.volume} cubes too.` : `Robo couldn't find a different box with ${robo.volume} cubes.`,
   ]
-  const spoken = finished ? outcome(myPoints, roboPoints) : [instruction, result?.message, ...(roboLines ?? [])].filter(Boolean).join(' ')
+  const spoken = finished ? duelOutcome(myPoints, roboPoints) : [instruction, result?.message, ...(roboLines ?? [])].filter(Boolean).join(' ')
 
   return (
     <div className="flex min-h-screen flex-col bg-base">
@@ -271,7 +272,10 @@ function VolumeBuilderPage() {
         right={
           <>
             <MuteToggle />
-            <Link to="/summary" className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted">
+            <Link
+              to="/summary"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
+            >
               Session summary
             </Link>
           </>
@@ -287,7 +291,7 @@ function VolumeBuilderPage() {
 
         <GameTable>
           <div className="flex flex-col items-center gap-4">
-            <p className="font-display text-xl font-semibold text-chalk">{`Turn ${turn} of ${TURNS} · You ${myPoints} · Robo ${roboPoints}`}</p>
+            <DuelScoreLine unit="Turn" at={turn} of={TURNS} myPoints={myPoints} roboPoints={roboPoints} />
             {instruction && <p className="text-center font-display text-2xl font-semibold text-chalk">{instruction}</p>}
 
             <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-center md:justify-center">
@@ -356,9 +360,9 @@ function VolumeBuilderPage() {
                 )}
 
                 {result && (
-                  <p className={`font-display text-xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}>
+                  <Verdict correct={result.correct}>
                     {result.message}
-                  </p>
+                  </Verdict>
                 )}
                 <HintPanel
                   wrong={Boolean(result && !result.correct)}
@@ -373,36 +377,24 @@ function VolumeBuilderPage() {
                     Build a box
                   </button>
                 )}
-                {state.step === 'done' && !roboShown && (
-                  <button type="button" onClick={showRobo} className={`tap-target ${PANEL_BUTTON} bg-hundreds text-ink`}>
-                    Robo's turn
-                  </button>
-                )}
 
                 {roboLines && roboLines.map((line) => (
                   <p key={line} className="font-display text-xl font-semibold">
                     {line}
                   </p>
                 ))}
-                {robo && turn < TURNS && (
-                  <button type="button" onClick={nextTurn} disabled={dealing} className={`tap-target ${PANEL_BUTTON} bg-ink text-base disabled:opacity-40`}>
-                    Next turn
-                  </button>
-                )}
-                {robo && turn === TURNS && !finished && (
-                  <button type="button" onClick={() => setFinished(true)} className={`tap-target ${PANEL_BUTTON} bg-ink text-base`}>
-                    See who won
-                  </button>
-                )}
-                {finished && (
-                  <div role="group" aria-label="Game result" className="flex flex-col items-start gap-2">
-                    <p className="font-display text-xl font-semibold">{`You ${myPoints} · Robo ${roboPoints}`}</p>
-                    <p className="font-display text-3xl font-bold">{outcome(myPoints, roboPoints)}</p>
-                    <button type="button" onClick={playAgain} disabled={dealing} className={`tap-target ${PANEL_BUTTON} bg-ink text-base disabled:opacity-40`}>
-                      Play again
-                    </button>
-                  </div>
-                )}
+                <DuelTurnButtons
+                  roboDue={state.step === 'done' && !roboShown}
+                  turnDone={Boolean(robo)}
+                  lastTurn={turn === TURNS}
+                  finished={finished}
+                  nextLabel="Next turn"
+                  dealing={dealing}
+                  onRoboTurn={showRobo}
+                  onNext={nextTurn}
+                  onSeeWhoWon={() => setFinished(true)}
+                />
+                {finished && <DuelResult myPoints={myPoints} roboPoints={roboPoints} dealing={dealing} onPlayAgain={playAgain} />}
               </div>
             </div>
           </div>

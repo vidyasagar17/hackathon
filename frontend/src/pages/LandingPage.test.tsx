@@ -4,8 +4,29 @@ import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import LandingPage from './LandingPage'
 
+const WELCOME = 'Play a game against Robo, or practice one skill at a time.'
+
+/** A home reply with nothing played yet, which is what most of these tests render against. */
+const EMPTY_HOME = {
+  games: [],
+  suggestion: { game: 'decimal-war', reason: 'try_new', misconception: null },
+  total_answers: 0,
+  total_correct: 0,
+}
+
+function stubHome(home: unknown = EMPTY_HOME) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(home) })),
+  )
+}
+
 beforeEach(() => {
   localStorage.clear()
+  // A named learner, so these tests land on the games rather than the profile question.
+  localStorage.setItem('learner_name', 'Sam')
+  localStorage.setItem('learner_token', 'star')
+  stubHome()
 })
 
 afterEach(() => {
@@ -24,8 +45,12 @@ function gameTitlesInOrder(): string[] {
   return screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent ?? '')
 }
 
+/** The shelf and workshop headings, in page order. The suggested game's own heading is not a shelf. */
 function shelvesInOrder(): string[] {
-  return screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent ?? '')
+  return screen
+    .getAllByRole('heading', { level: 2 })
+    .map((heading) => heading.textContent ?? '')
+    .filter((text) => text !== 'Play next')
 }
 
 test('a first visit asks for the grade before showing games', () => {
@@ -59,14 +84,14 @@ test('the grade question and its choices can be read aloud', async () => {
   )
 })
 
-test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
+test('picking 2nd & 3rd grade saves it and shows only that shelf by default', async () => {
   const user = userEvent.setup()
   renderLandingPage()
 
   await user.click(screen.getByRole('button', { name: '2nd & 3rd grade' }))
 
   expect(localStorage.getItem('grade_band')).toBe('2-3')
-  expect(shelvesInOrder()).toEqual(['2nd & 3rd grade', 'Kindergarten & 1st grade', '4th & 5th grade'])
+  expect(shelvesInOrder()).toEqual(['2nd & 3rd grade', 'Skill workshops'])
   expect(gameTitlesInOrder()).toEqual([
     'For Keeps',
     'Multiplication Shootout',
@@ -75,11 +100,20 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
     'Clock Match',
     'Subtraction',
     'Addition',
-    'Addition War',
-    'Take-Away War',
-    'Shut the Box',
-    'Four in a Row',
-    'Cover the Number',
+  ])
+})
+
+test('picking 4th & 5th grade shows only its shelf and workshops by default', async () => {
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: '4th & 5th grade' }))
+
+  expect(shelvesInOrder()).toEqual(['4th & 5th grade', 'Skill workshops'])
+  const shelf = screen.getByRole('region', { name: '4th & 5th grade' })
+  expect(within(shelf).getByText('Your grade')).toBeTruthy()
+  expect(within(shelf).queryByText('Skill workshops')).toBeNull()
+  expect(gameTitlesInOrder()).toEqual([
     'Decimal War',
     'Fraction Spoons',
     'The 24 Game',
@@ -90,38 +124,19 @@ test('picking 2nd & 3rd grade saves it and puts that shelf first', async () => {
   ])
 })
 
-test('picking 4th & 5th grade puts its shelf first with games against Robo before workshops', async () => {
+test('clicking Show all grades expands to all shelves and workshops', async () => {
   const user = userEvent.setup()
+  localStorage.setItem('grade_band', '2-3')
   renderLandingPage()
 
-  await user.click(screen.getByRole('button', { name: '4th & 5th grade' }))
+  expect(shelvesInOrder()).toEqual(['2nd & 3rd grade', 'Skill workshops'])
+  await user.click(screen.getByRole('button', { name: 'Show all grades' }))
 
-  expect(shelvesInOrder()).toEqual(['4th & 5th grade', 'Kindergarten & 1st grade', '2nd & 3rd grade'])
-  const shelf = screen.getByRole('region', { name: '4th & 5th grade' })
-  expect(within(shelf).getByText('Your grade')).toBeTruthy()
-  expect(within(shelf).getByText('Games against Robo')).toBeTruthy()
-  expect(within(shelf).getByText('Skill workshops')).toBeTruthy()
-  expect(gameTitlesInOrder()).toEqual([
-    'Decimal War',
-    'Fraction Spoons',
-    'The 24 Game',
-    'Coordinate Plane Battleship',
-    'Volume Builder',
-    'Multiplication',
-    'Division',
-    'Addition War',
-    'Take-Away War',
-    'Shut the Box',
-    'Four in a Row',
-    'Cover the Number',
-    'For Keeps',
-    'Multiplication Shootout',
-    "Don't Break the Bank",
-    'Target Number',
-    'Clock Match',
-    'Subtraction',
-    'Addition',
-  ])
+  expect(shelvesInOrder()).toEqual(['2nd & 3rd grade', 'Kindergarten & 1st grade', '4th & 5th grade', 'Skill workshops'])
+  expect(gameTitlesInOrder()).toHaveLength(19)
+
+  await user.click(screen.getByRole('button', { name: 'Show only my grade' }))
+  expect(shelvesInOrder()).toEqual(['2nd & 3rd grade', 'Skill workshops'])
 })
 
 test('only the student’s shelf says Your grade', async () => {
@@ -131,10 +146,10 @@ test('only the student’s shelf says Your grade', async () => {
   await user.click(screen.getByRole('button', { name: '4th & 5th grade' }))
 
   expect(screen.getAllByText('Your grade')).toHaveLength(1)
-  expect(within(screen.getByRole('region', { name: '2nd & 3rd grade' })).queryByText('Your grade')).toBeNull()
+  expect(screen.queryByRole('region', { name: '2nd & 3rd grade' })).toBeNull()
 })
 
-test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo and keeps every game playable', async () => {
+test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo', async () => {
   const user = userEvent.setup()
   renderLandingPage()
 
@@ -142,7 +157,6 @@ test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo
 
   expect(shelvesInOrder()[0]).toBe('Kindergarten & 1st grade')
   const shelf = screen.getByRole('region', { name: 'Kindergarten & 1st grade' })
-  expect(within(shelf).getByText('Games against Robo')).toBeTruthy()
   const additionWar = within(shelf).getByRole('link', { name: /Addition War/ })
   const takeAwayWar = within(shelf).getByRole('link', { name: /Take-Away War/ })
   expect(additionWar.getAttribute('href')).toBe('/curriculum/addition-war')
@@ -150,7 +164,6 @@ test('kindergarten & 1st grade shows Addition War and Take-Away War against Robo
   expect(within(additionWar).getByText('vs Robo')).toBeTruthy()
   expect(within(takeAwayWar).getByText('vs Robo')).toBeTruthy()
   expect(screen.queryByText(/on the way/)).toBeNull()
-  expect(gameTitlesInOrder()).toHaveLength(19)
 })
 
 test('only games against Robo carry the vs Robo tag', () => {
@@ -159,6 +172,66 @@ test('only games against Robo carry the vs Robo tag', () => {
 
   expect(within(screen.getByRole('link', { name: /Decimal War/ })).getByText('vs Robo')).toBeTruthy()
   expect(within(screen.getByRole('link', { name: /Times tables/ })).queryByText('vs Robo')).toBeNull()
+})
+
+test('the home page welcomes the student and can read the welcome aloud', async () => {
+  const speak = vi.fn()
+  vi.stubGlobal('speechSynthesis', { speak, cancel: vi.fn() })
+  vi.stubGlobal(
+    'SpeechSynthesisUtterance',
+    class {
+      text: string
+      rate = 1
+      lang = ''
+      constructor(text: string) {
+        this.text = text
+      }
+    },
+  )
+  localStorage.setItem('grade_band', '2-3')
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  expect(screen.getByText(WELCOME)).toBeTruthy()
+  await user.click(screen.getByRole('button', { name: 'Read aloud' }))
+
+  expect(speak.mock.calls[0][0].text).toBe(`What do you want to practice? ${WELCOME}`)
+})
+
+test('each shelf says how many games it holds when all grades are shown', async () => {
+  const user = userEvent.setup()
+  localStorage.setItem('grade_band', 'k-1')
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: 'Show all grades' }))
+
+  expect(within(screen.getByRole('region', { name: 'Kindergarten & 1st grade' })).getByText('5 games')).toBeTruthy()
+  expect(within(screen.getByRole('region', { name: '2nd & 3rd grade' })).getByText('5 games')).toBeTruthy()
+  expect(within(screen.getByRole('region', { name: '4th & 5th grade' })).getByText('5 games')).toBeTruthy()
+})
+
+test('the skill workshops have their own space after the grade shelves, each tagged with its grade', async () => {
+  const user = userEvent.setup()
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: 'Show all grades' }))
+
+  const space = screen.getByRole('region', { name: 'Skill workshops' })
+  expect(within(space).getByText('Practice one skill at a time, one step after another.')).toBeTruthy()
+  const boxes = within(space).getAllByRole('link')
+  expect(boxes.map((box) => box.getAttribute('href'))).toEqual([
+    '/practice/multiplication',
+    '/practice/division',
+    '/practice/subtraction',
+    '/practice/addition',
+  ])
+  expect(within(boxes[0]).getByText('4th & 5th grade')).toBeTruthy()
+  expect(within(boxes[2]).getByText('2nd & 3rd grade')).toBeTruthy()
+  for (const band of ['Kindergarten & 1st grade', '2nd & 3rd grade', '4th & 5th grade']) {
+    const shelfLinks = within(screen.getByRole('region', { name: band })).getAllByRole('link')
+    expect(shelfLinks.filter((link) => link.getAttribute('href')?.startsWith('/practice/'))).toEqual([])
+  }
 })
 
 test('a return visit skips the grade question', () => {
@@ -186,7 +259,6 @@ test('the For Keeps box sits on the 2nd & 3rd grade shelf, opens its game and is
   const box = within(shelf).getByRole('link', { name: /For Keeps/ })
   expect(box.getAttribute('href')).toBe('/curriculum/for-keeps')
   expect(within(box).getByText('vs Robo')).toBeTruthy()
-  expect(within(shelf).getByText('Games against Robo')).toBeTruthy()
 })
 
 test('the Multiplication Shootout box sits on the 2nd & 3rd grade shelf, opens its game and is played against Robo', () => {
@@ -318,4 +390,137 @@ test('Change grade asks the grade question again', async () => {
   await user.click(screen.getByRole('button', { name: 'Change grade' }))
 
   expect(screen.getByRole('heading', { name: 'What grade are you in?' })).toBeTruthy()
+})
+
+test('the header displays the active grade band badge', () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  const header = screen.getByRole('banner')
+  expect(within(header).getByLabelText('Current grade: 4th & 5th grade')).toBeTruthy()
+  expect(within(header).getByText('4th & 5th grade')).toBeTruthy()
+})
+
+test('Change grade shows Back to games which returns without changing grade', async () => {
+  const user = userEvent.setup()
+  localStorage.setItem('grade_band', '2-3')
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: 'Change grade' }))
+  expect(screen.getByRole('heading', { name: 'What grade are you in?' })).toBeTruthy()
+
+  await user.click(screen.getByRole('button', { name: 'Back to games' }))
+  expect(screen.queryByRole('heading', { name: 'What grade are you in?' })).toBeNull()
+  expect(screen.getByRole('heading', { name: 'What do you want to practice?' })).toBeTruthy()
+})
+
+
+test('a first visit asks who is playing once the grade is picked', async () => {
+  localStorage.clear()
+  stubHome()
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: '2nd & 3rd grade' }))
+
+  expect(screen.getByRole('heading', { name: 'Who is playing?' })).toBeTruthy()
+  expect(screen.queryAllByRole('heading', { level: 3 })).toHaveLength(0)
+})
+
+test('the name and token are saved and the student lands on the games', async () => {
+  localStorage.clear()
+  localStorage.setItem('grade_band', '4-5')
+  stubHome()
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'Ada')
+  await user.click(screen.getByRole('button', { name: 'rocket' }))
+  await user.click(screen.getByRole('button', { name: 'Start playing' }))
+
+  expect(localStorage.getItem('learner_name')).toBe('Ada')
+  expect(localStorage.getItem('learner_token')).toBe('rocket')
+  expect(screen.getByRole('heading', { name: 'What do you want to practice?' })).toBeTruthy()
+})
+
+test('the learner id is made once and kept for the next visit', () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  const id = localStorage.getItem('learner_id')
+  expect(id).toMatch(/^[0-9a-f]{32}$/)
+})
+
+test('a game never tried reads as not tried yet and shows no score', async () => {
+  localStorage.setItem('grade_band', '4-5')
+  renderLandingPage()
+
+  const box = await screen.findByRole('link', { name: /Decimal War/ })
+  expect(within(box).getByText('Not tried yet')).toBeTruthy()
+  expect(within(box).queryByText(/right$/)).toBeNull()
+})
+
+test('a game in progress shows its score and level on the tile', async () => {
+  localStorage.setItem('grade_band', '4-5')
+  stubHome({
+    games: [{ game: 'decimal-war', mastery: 'growing', total: 10, correct: 7, level: 2 }],
+    suggestion: { game: 'decimal-war', reason: 'keep_going', misconception: null },
+    total_answers: 10,
+    total_correct: 7,
+  })
+  renderLandingPage()
+
+  const box = await screen.findByRole('link', { name: /Decimal War/ })
+  expect(within(box).getByText('7 of 10 right')).toBeTruthy()
+  expect(within(box).getByText('Level 2')).toBeTruthy()
+})
+
+test('Robo names the repeated mistake behind the suggested game', async () => {
+  localStorage.setItem('grade_band', '4-5')
+  stubHome({
+    games: [{ game: 'decimal-war', mastery: 'learning', total: 8, correct: 3, level: 1 }],
+    suggestion: { game: 'decimal-war', reason: 'stuck_on', misconception: 'longer_is_larger' },
+    total_answers: 8,
+    total_correct: 3,
+  })
+  renderLandingPage()
+
+  expect(await screen.findByRole('heading', { name: 'Play next' })).toBeTruthy()
+  expect(
+    screen.getByText(/"longer is larger" slip keeps coming back. Want another go at Decimal War\?/),
+  ).toBeTruthy()
+  expect(screen.getByRole('link', { name: 'Play' }).getAttribute('href')).toBe('/curriculum/decimal-war')
+})
+
+test('the whole-learner score is shown once something has been answered', async () => {
+  localStorage.setItem('grade_band', '4-5')
+  stubHome({
+    games: [],
+    suggestion: { game: 'decimal-war', reason: 'try_new', misconception: null },
+    total_answers: 20,
+    total_correct: 14,
+  })
+  renderLandingPage()
+
+  expect(await screen.findByText('14 of 20 right so far. Keep going, Sam.')).toBeTruthy()
+})
+
+test('the home request asks for this learner and grade band', async () => {
+  localStorage.setItem('grade_band', '2-3')
+  renderLandingPage()
+
+  await screen.findByRole('heading', { name: 'Play next' })
+  const url = (globalThis.fetch as unknown as { mock: { calls: string[][] } }).mock.calls[0][0]
+  expect(url).toContain(`/home/${localStorage.getItem('learner_id')}`)
+  expect(url).toContain('band=2-3')
+})
+
+test('the header shows who is playing and can change it', async () => {
+  localStorage.setItem('grade_band', '4-5')
+  const user = userEvent.setup()
+  renderLandingPage()
+
+  await user.click(screen.getByRole('button', { name: 'Playing as Sam. Change your name or token.' }))
+
+  expect(screen.getByRole('heading', { name: 'Who is playing?' })).toBeTruthy()
 })

@@ -155,7 +155,7 @@ test('a right tap covers the space with your star and offers Robo’s turn', asy
   expect(spokenTexts()).toContain("Yes! 10 and 4 make 14. Tap Robo's turn.")
 })
 
-test('a wrong tap wobbles, outlines the right spaces, resets the stars, and shows and speaks the hint', async () => {
+test('a wrong tap wobbles, outlines the right spaces, resets the stars, and shows and speaks the hint with no red text', async () => {
   const user = userEvent.setup()
   renderPage()
   await screen.findByRole('group', { name: 'Board' })
@@ -172,6 +172,7 @@ test('a wrong tap wobbles, outlines the right spaces, resets the stars, and show
   expect(space(3).disabled).toBe(true)
   expect(spokenTexts()).toContain(`${HINT} 10 and 4 make 14. Tap Robo's turn.`)
   expect(screen.queryByText(/Diagnosed pattern/)).toBeNull()
+  expect(document.querySelector('.text-alert-text')).toBeNull()
 })
 
 test("Robo's turn shows what Robo covered and deals your next fact", async () => {

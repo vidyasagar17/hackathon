@@ -1,8 +1,15 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { API_URL } from '../api'
 import AppHeader from '../components/AppHeader'
 import GradePicker from '../components/GradePicker'
 import MuteToggle from '../components/MuteToggle'
+import PlayerToken from '../components/PlayerToken'
+import ProfilePicker from '../components/ProfilePicker'
+import ReadAloudButton from '../components/ReadAloudButton'
+import RoboAvatar from '../components/RoboAvatar'
+import RoboBubble from '../components/RoboBubble'
+import { GAMES, gameId, type Game } from '../gameCatalog'
 import {
   getGradeBand,
   GRADE_BAND_LABELS,
@@ -10,626 +17,321 @@ import {
   saveGradeBand,
   type GradeBand,
 } from '../gradeBand'
+import {
+  masteryLabel,
+  percentRight,
+  suggestionSentence,
+  type GameState,
+  type Home,
+} from '../home'
+import {
+  getLearnerId,
+  getLearnerName,
+  getLearnerToken,
+  saveLearnerName,
+  saveLearnerToken,
+  type Token,
+} from '../learner'
 
-function SubtractionIcon() {
+const QUESTION = 'What do you want to practice?'
+
+const WELCOME = 'Play a game against Robo, or practice one skill at a time.'
+
+/** A thick purple ring for keyboard focus only; a tap never shows it. */
+const FOCUS_RING =
+  'focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
+
+/** Each band's own colour, so a shelf is recognisable before its heading is read. */
+const BAND_RAIL: Record<GradeBand, string> = {
+  'k-1': 'bg-spark',
+  '2-3': 'bg-tens',
+  '4-5': 'bg-hundreds',
+}
+
+/** How a tile shows its state: a ring for work in progress, a full border once it is held. */
+const MASTERY_RING: Record<GameState['mastery'], string> = {
+  new: '',
+  learning: 'ring-4 ring-ones',
+  growing: 'ring-4 ring-tens',
+  strong: 'ring-4 ring-spark',
+}
+
+const NEW_STATE: GameState = { game: '', mastery: 'new', total: 0, correct: 0, level: 1 }
+
+/** A thin bar of how much of this game the student has got right so far. */
+function MasteryMeter({ state }: { state: GameState }) {
   return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <line x1="6" y1="60" x2="90" y2="60" stroke="#1B1B2F" strokeOpacity="0.15" strokeWidth="2" />
-      <rect x="12" y="40" width="24" height="20" rx="6" className="fill-hundreds" />
-      <rect x="42" y="34" width="24" height="26" rx="6" className="fill-tens" />
-      <g transform="rotate(-10 78 22)">
-        <rect x="64" y="10" width="24" height="20" rx="6" className="fill-ones" />
-      </g>
-      <circle cx="84" cy="8" r="9" fill="#1B1B2F" />
-      <rect x="79.5" y="6.5" width="9" height="3" rx="1.5" fill="#F3E8D4" />
-    </svg>
+    <div aria-hidden="true" className="h-2 w-full overflow-hidden rounded-full bg-ink/10">
+      <div className="h-full rounded-full bg-felt" style={{ width: `${percentRight(state)}%` }} />
+    </div>
   )
 }
 
-function AdditionIcon() {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <rect x="8" y="14" width="22" height="18" rx="6" className="fill-ones" />
-      <rect x="8" y="38" width="22" height="18" rx="6" className="fill-ones" />
-      <rect x="66" y="14" width="22" height="18" rx="6" className="fill-tens" />
-      <rect x="66" y="38" width="22" height="18" rx="6" className="fill-tens" />
-      <circle cx="48" cy="36" r="14" fill="#1B1B2F" />
-      <rect x="42" y="34.5" width="12" height="3" rx="1.5" fill="#F3E8D4" />
-      <rect x="46.5" y="30" width="3" height="12" rx="1.5" fill="#F3E8D4" />
-    </svg>
-  )
-}
+/** A game box: a felt lid holding the icon on a card-stock tile, then the title, state and description. */
+function GameBox({ game, state }: { game: Game; state: GameState }) {
+  const played = state.total > 0
 
-function MultiplicationIcon() {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      {[0, 1, 2].map((col) =>
-        [0, 1].map((row) => (
-          <rect
-            key={`${col}-${row}`}
-            x={14 + col * 26}
-            y={16 + row * 26}
-            width="18"
-            height="18"
-            rx="5"
-            className={row === 0 ? 'fill-hundreds' : 'fill-tens'}
-          />
-        )),
-      )}
-    </svg>
-  )
-}
-
-function DivisionIcon() {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <rect x="18" y="34" width="60" height="6" rx="3" className="fill-ones" />
-      <circle cx="48" cy="18" r="6" className="fill-tens" />
-      <circle cx="48" cy="54" r="6" className="fill-tens" />
-    </svg>
-  )
-}
-
-function DecimalWarIcon() {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <text x="18" y="54" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
-        0.
-      </text>
-      <rect x="34" y="12" width="26" height="46" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
-      <rect x="66" y="12" width="26" height="46" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
-      <text x="47" y="43" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
-        4
-      </text>
-      <text x="79" y="43" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
-        5
-      </text>
-    </svg>
-  )
-}
-
-/** 73 − 58 on digit cards: the two numbers a For Keeps hand builds. */
-function ForKeepsIcon() {
-  const cards = [
-    { x: 46, y: 4, digit: 7 },
-    { x: 70, y: 4, digit: 3 },
-    { x: 46, y: 38, digit: 5 },
-    { x: 70, y: 38, digit: 8 },
-  ]
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      {cards.map(({ x, y, digit }) => (
-        <g key={`${x}-${y}`}>
-          <rect x={x} y={y} width="22" height="30" rx="4" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
-          <text x={x + 11} y={y + 22} textAnchor="middle" fontSize="18" fontWeight="700" className="fill-ink font-display">
-            {digit}
-          </text>
-        </g>
-      ))}
-      <rect x="24" y="51" width="14" height="4" rx="2" className="fill-ink" />
-    </svg>
-  )
-}
-
-/**
- * Two digit cards with the operation sign between them: the hand an Addition War or Take-Away War
- * round deals, or a fact Robo calls in Multiplication Shootout.
- */
-function TwoCardsIcon({ first, sign, second }: { first: number; sign: string; second: number }) {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      {[
-        { x: 6, digit: first },
-        { x: 62, digit: second },
-      ].map(({ x, digit }) => (
-        <g key={x}>
-          <rect x={x} y="14" width="28" height="44" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
-          <text x={x + 14} y="44" textAnchor="middle" fontSize="24" fontWeight="700" className="fill-ink font-display">
-            {digit}
-          </text>
-        </g>
-      ))}
-      <text x="48" y="45" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
-        {sign}
-      </text>
-    </svg>
-  )
-}
-
-/** 1/2 = 2/4 on two fraction cards: a match Fraction Spoons asks the student to spot. */
-function FractionSpoonsIcon() {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      {[
-        { x: 6, top: 1, bottom: 2 },
-        { x: 62, top: 2, bottom: 4 },
-      ].map(({ x, top, bottom }) => (
-        <g key={x}>
-          <rect x={x} y="6" width="28" height="60" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
-          <text x={x + 14} y="30" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
-            {top}
-          </text>
-          <rect x={x + 7} y="35" width="14" height="3" rx="1.5" className="fill-ink" />
-          <text x={x + 14} y="58" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
-            {bottom}
-          </text>
-        </g>
-      ))}
-      <text x="48" y="45" textAnchor="middle" fontSize="28" fontWeight="700" className="fill-ink font-display">
-        =
-      </text>
-    </svg>
-  )
-}
-
-/** The target 24 on a card over the four signs a 24 Game expression uses. */
-function TwentyFourIcon() {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <rect x="26" y="4" width="44" height="40" rx="5" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
-      <text x="48" y="35" textAnchor="middle" fontSize="26" fontWeight="700" className="fill-ink font-display">
-        24
-      </text>
-      <text x="48" y="66" textAnchor="middle" fontSize="18" fontWeight="700" className="fill-ink font-display">
-        + − × ÷
-      </text>
-    </svg>
-  )
-}
-
-/** Two dice showing 3 and 5: the roll a Shut the Box turn adds up. */
-function ShutTheBoxIcon() {
-  const pips = [
-    { x: 4, dots: [[15, 22], [26, 36], [37, 50]] },
-    { x: 50, dots: [[61, 22], [83, 22], [72, 36], [61, 50], [83, 50]] },
-  ]
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      {pips.map(({ x, dots }) => (
-        <g key={x}>
-          <rect x={x} y="11" width="42" height="50" rx="7" strokeWidth="2.5" className="fill-white stroke-felt-edge" />
-          {dots.map(([cx, cy]) => (
-            <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="4" className="fill-ink" />
-          ))}
-        </g>
-      ))}
-    </svg>
-  )
-}
-
-/** 456 + 365 + 163 stacked in place columns over a line: the three numbers a Don't Break the Bank game adds. */
-function DontBreakTheBankIcon() {
-  const rows = ['456', '365', '163']
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      {rows.map((row, index) => (
-        <text
-          key={row}
-          x="62"
-          y={18 + index * 17}
-          textAnchor="middle"
-          fontSize="17"
-          fontWeight="700"
-          letterSpacing="3"
-          className="fill-ink font-display"
-        >
-          {row}
-        </text>
-      ))}
-      <text x="22" y="52" textAnchor="middle" fontSize="20" fontWeight="700" className="fill-ink font-display">
-        +
-      </text>
-      <rect x="30" y="58" width="62" height="3" rx="1.5" className="fill-ink" />
-      <text x="62" y="71" textAnchor="middle" fontSize="10" fontWeight="700" className="fill-ink font-display">
-        under 1000
-      </text>
-    </svg>
-  )
-}
-
-/** A small first-quadrant grid with one hit marked at (2, 3): the pairs a Battleship game calls. */
-function CoordinateBattleshipIcon() {
-  const lines = [0, 1, 2, 3, 4]
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      {lines.map((line) => (
-        <g key={line}>
-          <line x1={24 + line * 14} x2={24 + line * 14} y1="6" y2="62" strokeWidth={line === 0 ? 3 : 1.5} className="stroke-ink" />
-          <line x1="24" x2="80" y1={62 - line * 14} y2={62 - line * 14} strokeWidth={line === 0 ? 3 : 1.5} className="stroke-ink" />
-        </g>
-      ))}
-      <circle cx={24 + 2 * 14} cy={62 - 3 * 14} r="6" className="fill-ones stroke-ink" strokeWidth="2" />
-      <text x="10" y="20" textAnchor="middle" fontSize="12" fontWeight="700" className="fill-ink font-display">
-        y
-      </text>
-      <text x="90" y="70" textAnchor="middle" fontSize="12" fontWeight="700" className="fill-ink font-display">
-        x
-      </text>
-    </svg>
-  )
-}
-
-/** A 3 × 2 × 2 box of unit cubes drawn from the front, top and side, as the Volume Builder game draws its boxes. */
-function VolumeBuilderIcon() {
-  const cube = 14
-  const depth = cube / 2
-  const [left, top] = [20, 15]
-  const [length, width, height] = [3, 2, 2]
-  const back = width * depth
-  const lines: [number, number, number, number][] = []
-  for (let x = 0; x <= length; x += 1) {
-    lines.push([x * cube, back, x * cube, back + height * cube])
-    lines.push([x * cube, back, x * cube + back, 0])
-  }
-  for (let y = 0; y <= height; y += 1) {
-    lines.push([0, back + y * cube, length * cube, back + y * cube])
-    lines.push([length * cube, back + y * cube, length * cube + back, y * cube])
-  }
-  for (let z = 0; z <= width; z += 1) {
-    lines.push([z * depth, back - z * depth, length * cube + z * depth, back - z * depth])
-    lines.push([length * cube + z * depth, back - z * depth, length * cube + z * depth, back - z * depth + height * cube])
-  }
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <path
-        d={`M ${left} ${top + back} h ${length * cube} l ${back} ${-back} h ${-length * cube} Z`}
-        className="fill-white"
-      />
-      <path d={`M ${left} ${top + back} h ${length * cube} v ${height * cube} h ${-length * cube} Z`} className="fill-card" />
-      <path
-        d={`M ${left + length * cube} ${top + back} l ${back} ${-back} v ${height * cube} l ${-back} ${back} Z`}
-        className="fill-chalk"
-      />
-      {lines.map(([x1, y1, x2, y2], index) => (
-        <line key={index} x1={left + x1} y1={top + y1} x2={left + x2} y2={top + y2} strokeWidth="1.5" className="stroke-ink" />
-      ))}
-    </svg>
-  )
-}
-
-/** A target with 16 in the middle and 9 + 7 below: cards added to hit the target number. */
-function TargetNumberIcon() {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <circle cx="48" cy="28" r="24" className="fill-white stroke-ink" strokeWidth="2" />
-      <circle cx="48" cy="28" r="15" className="fill-hundreds stroke-ink" strokeWidth="2" />
-      <text x="48" y="34" textAnchor="middle" fontSize="16" fontWeight="700" className="fill-ink font-display">
-        16
-      </text>
-      <text x="48" y="68" textAnchor="middle" fontSize="14" fontWeight="700" className="fill-ink font-display">
-        9 + 7
-      </text>
-    </svg>
-  )
-}
-
-/** A small 4 × 3 board with four brass spaces in a row: the line the Four in a Row game is played for. */
-function FourInARowIcon() {
-  const spaces = Array.from({ length: 12 }, (_, index) => index)
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      {spaces.map((space) => {
-        const row = Math.floor(space / 4)
-        const column = space % 4
-        return (
-          <rect
-            key={space}
-            x={10 + column * 20}
-            y={8 + row * 20}
-            width="16"
-            height="16"
-            rx="3"
-            className={`${row === 1 ? 'fill-hundreds' : 'fill-white'} stroke-ink`}
-            strokeWidth="1.5"
-          />
-        )
-      })}
-    </svg>
-  )
-}
-
-/** A die showing 3 beside a row of number tiles with the 3 covered: roll, count, cover. */
-function CoverTheNumberIcon() {
-  const pips = [[14, 20], [24, 30], [34, 40]]
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <rect x="6" y="12" width="36" height="36" rx="6" strokeWidth="2" className="fill-white stroke-ink" />
-      {pips.map(([x, y]) => (
-        <circle key={x} cx={x} cy={y} r="3.5" className="fill-ink" />
-      ))}
-      {[1, 2, 3].map((value, index) => (
-        <g key={value}>
-          <rect x={50 + index * 14} y="18" width="12" height="24" rx="2" strokeWidth="1.5" className={`${value === 3 ? 'fill-hundreds' : 'fill-white'} stroke-ink`} />
-          <text x={56 + index * 14} y="35" textAnchor="middle" fontSize="11" fontWeight="700" className="fill-ink font-display">
-            {value}
-          </text>
-        </g>
-      ))}
-    </svg>
-  )
-}
-
-/** A small clock showing 2:50, the hour hand almost at the 3. */
-function ClockMatchIcon() {
-  return (
-    <svg viewBox="0 0 96 72" className="h-16 w-20">
-      <circle cx="48" cy="36" r="30" strokeWidth="2.5" className="fill-white stroke-ink" />
-      {[0, 90, 180, 270].map((angle) => (
-        <line key={angle} x1="48" y1="9" x2="48" y2="14" strokeWidth="2" transform={`rotate(${angle} 48 36)`} className="stroke-ink" />
-      ))}
-      <line x1="48" y1="36" x2="48" y2="20" strokeWidth="4" strokeLinecap="round" transform="rotate(85 48 36)" className="stroke-ink" />
-      <line x1="48" y1="36" x2="48" y2="12" strokeWidth="2" strokeLinecap="round" transform="rotate(300 48 36)" className="stroke-ink" />
-      <circle cx="48" cy="36" r="2.5" className="fill-ink" />
-    </svg>
-  )
-}
-
-type Game = {
-  title: string
-  description: string
-  to: string
-  icon: ReactNode
-  /** The one shelf the game sits on: its home band in the curriculum catalog. */
-  band: GradeBand
-  /** Curriculum games are played against Robo; skill workshops are solo practice. */
-  kind: 'robo' | 'workshop'
-}
-
-const GAMES: Game[] = [
-  {
-    title: 'Decimal War',
-    description: 'Judge whose decimal is larger',
-    to: '/curriculum/decimal-war',
-    icon: <DecimalWarIcon />,
-    band: '4-5',
-    kind: 'robo',
-  },
-  {
-    title: 'Fraction Spoons',
-    description: 'Collect four equal fractions to win a spoon',
-    to: '/curriculum/fraction-spoons',
-    icon: <FractionSpoonsIcon />,
-    band: '4-5',
-    kind: 'robo',
-  },
-  {
-    title: 'The 24 Game',
-    description: 'Use all four cards with + − × ÷ to make 24',
-    to: '/curriculum/the-24-game',
-    icon: <TwentyFourIcon />,
-    band: '4-5',
-    kind: 'robo',
-  },
-  {
-    title: 'Coordinate Plane Battleship',
-    description: 'Write and read ordered pairs to find Robo’s hidden ships',
-    to: '/curriculum/coordinate-plane-battleship',
-    icon: <CoordinateBattleshipIcon />,
-    band: '4-5',
-    kind: 'robo',
-  },
-  {
-    title: 'Volume Builder',
-    description: 'Count the cubes in a box, then build a different box that holds as many',
-    to: '/curriculum/volume-builder',
-    icon: <VolumeBuilderIcon />,
-    band: '4-5',
-    kind: 'robo',
-  },
-  {
-    title: 'For Keeps',
-    description: 'Build two numbers, subtract, keep the lowest score',
-    to: '/curriculum/for-keeps',
-    icon: <ForKeepsIcon />,
-    band: '2-3',
-    kind: 'robo',
-  },
-  {
-    title: 'Multiplication Shootout',
-    description: 'Answer times and division facts in turns with Robo',
-    to: '/curriculum/multiplication-shootout',
-    icon: <TwoCardsIcon first={6} sign="×" second={7} />,
-    band: '2-3',
-    kind: 'robo',
-  },
-  {
-    title: "Don't Break the Bank",
-    description: 'Place rolled digits, add your numbers, and get close to 1000 without going over',
-    to: '/curriculum/dont-break-the-bank',
-    icon: <DontBreakTheBankIcon />,
-    band: '2-3',
-    kind: 'robo',
-  },
-  {
-    title: 'Target Number',
-    description: 'Add and take away cards one step at a time to make the target',
-    to: '/curriculum/target-number',
-    icon: <TargetNumberIcon />,
-    band: '2-3',
-    kind: 'robo',
-  },
-  {
-    title: 'Clock Match',
-    description: 'Read clocks and find the clock for a time',
-    to: '/curriculum/clock-match',
-    icon: <ClockMatchIcon />,
-    band: '2-3',
-    kind: 'robo',
-  },
-  {
-    title: 'Addition War',
-    description: 'Add your two cards and see whose hand wins',
-    to: '/curriculum/addition-war',
-    icon: <TwoCardsIcon first={3} sign="+" second={4} />,
-    band: 'k-1',
-    kind: 'robo',
-  },
-  {
-    title: 'Take-Away War',
-    description: 'Take the smaller card away and see whose hand wins',
-    to: '/curriculum/take-away-war',
-    icon: <TwoCardsIcon first={8} sign="−" second={3} />,
-    band: 'k-1',
-    kind: 'robo',
-  },
-  {
-    title: 'Shut the Box',
-    description: 'Roll two dice, add the dots, and shut tiles that make that many',
-    to: '/curriculum/shut-the-box',
-    icon: <ShutTheBoxIcon />,
-    band: 'k-1',
-    kind: 'robo',
-  },
-  {
-    title: 'Four in a Row',
-    description: 'Add two cards and cover the answer to get four in a row',
-    to: '/curriculum/four-in-a-row',
-    icon: <FourInARowIcon />,
-    band: 'k-1',
-    kind: 'robo',
-  },
-  {
-    title: 'Cover the Number',
-    description: 'Roll, count the dots, and cover that number on your board',
-    to: '/curriculum/cover-the-number',
-    icon: <CoverTheNumberIcon />,
-    band: 'k-1',
-    kind: 'robo',
-  },
-  {
-    title: 'Subtraction',
-    description: 'Multi-digit subtraction with borrowing',
-    to: '/practice/subtraction',
-    icon: <SubtractionIcon />,
-    band: '2-3',
-    kind: 'workshop',
-  },
-  {
-    title: 'Addition',
-    description: 'Multi-digit addition with carrying',
-    to: '/practice/addition',
-    icon: <AdditionIcon />,
-    band: '2-3',
-    kind: 'workshop',
-  },
-  {
-    title: 'Multiplication',
-    description: 'Times tables and multi-digit products',
-    to: '/practice/multiplication',
-    icon: <MultiplicationIcon />,
-    band: '4-5',
-    kind: 'workshop',
-  },
-  {
-    title: 'Division',
-    description: 'Splitting numbers into equal groups',
-    to: '/practice/division',
-    icon: <DivisionIcon />,
-    band: '4-5',
-    kind: 'workshop',
-  },
-]
-
-/** A game box: a felt lid holding the icon on a card-stock tile, then the title and description. */
-function GameBox({ game }: { game: Game }) {
   return (
     <Link
       to={game.to}
-      className="tap-target block overflow-hidden rounded-2xl border-2 border-felt-edge bg-card shadow-[0_6px_0_#163A34] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2 active:translate-y-1 active:shadow-[0_2px_0_#163A34]"
+      className={`tap-target flex h-full flex-col overflow-hidden rounded-2xl border-2 border-felt-edge bg-card shadow-[0_6px_0_#163A34] active:translate-y-1 active:shadow-[0_2px_0_#163A34] ${MASTERY_RING[state.mastery]} ${FOCUS_RING}`}
     >
       <div className="flex h-24 items-center justify-center bg-felt">
         <span className="rounded-xl bg-card px-2 py-1">{game.icon}</span>
       </div>
-      <div className="flex flex-col items-start gap-1 p-4">
+      <div className="flex flex-1 flex-col items-start gap-1 p-4">
         <h3 className="font-display text-xl font-bold text-ink">{game.title}</h3>
-        <p className="text-sm text-ink">{game.description}</p>
-        {game.kind === 'robo' && (
-          <span className="mt-1 rounded-full bg-hundreds px-3 py-0.5 font-display text-sm font-bold text-ink">
-            vs Robo
-          </span>
+        <p className="text-base text-ink">{game.description}</p>
+        {played && (
+          <div className="mt-2 w-full">
+            <MasteryMeter state={state} />
+            <p className="mt-1 font-display text-sm font-semibold text-ink-muted">
+              {`${state.correct} of ${state.total} right`}
+            </p>
+          </div>
         )}
+        <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
+          {game.kind === 'robo' ? (
+            <span className="rounded-full bg-hundreds px-3 py-0.5 font-display text-sm font-bold text-ink">
+              vs Robo
+            </span>
+          ) : (
+            <span className="rounded-full border-2 border-felt-edge px-3 py-0.5 font-display text-sm font-bold text-ink">
+              {GRADE_BAND_LABELS[game.band]}
+            </span>
+          )}
+          <span className="rounded-full bg-felt px-3 py-0.5 font-display text-sm font-bold text-chalk">
+            {masteryLabel(state)}
+          </span>
+        </div>
       </div>
     </Link>
   )
 }
 
-function GameGroup({ label, games }: { label: string; games: Game[] }) {
+/** Boxes in rows of equal height. */
+function GameGrid({
+  games,
+  states,
+  minWidth,
+}: {
+  games: Game[]
+  states: Map<string, GameState>
+  minWidth: '12rem' | '14rem'
+}) {
   return (
-    <div className="flex flex-col gap-3" style={{ flexGrow: games.length, flexBasis: 0 }}>
-      <p className="font-display text-lg font-semibold text-ink-muted">{label}</p>
-      <div className="grid flex-1 grid-cols-[repeat(auto-fit,minmax(14rem,1fr))] gap-6">
-        {games.map((game) => (
-          <GameBox key={game.to} game={game} />
-        ))}
-      </div>
+    <div
+      className="grid auto-rows-fr gap-6"
+      style={{ gridTemplateColumns: `repeat(auto-fit, minmax(${minWidth}, 1fr))` }}
+    >
+      {games.map((game) => (
+        <GameBox key={game.to} game={game} state={states.get(gameId(game)) ?? NEW_STATE} />
+      ))}
     </div>
   )
 }
 
-/** One grade band's shelf: games against Robo first, then skill workshops. */
-function Shelf({ band, isYours }: { band: GradeBand; isYours: boolean }) {
+/**
+ * The one game the engine suggests, on its own card above the shelves, with Robo saying why
+ * in the same words the rule that picked it means. Absent until the home data has loaded.
+ */
+function PlayNext({ home, name }: { home: Home; name: string }) {
+  const game = GAMES.find((candidate) => gameId(candidate) === home.suggestion.game)
+  if (!game) return null
+
+  const sentence = suggestionSentence(home.suggestion)
+
+  return (
+    <section
+      aria-labelledby="play-next"
+      className="w-full max-w-4xl rounded-3xl border-4 border-hundreds bg-card p-4 shadow-[0_8px_0_#163A34] sm:p-6"
+    >
+      <div className="mb-4 flex items-start gap-3">
+        <RoboAvatar />
+        <RoboBubble message={`${name}, ${sentence.charAt(0).toLowerCase()}${sentence.slice(1)}`} />
+      </div>
+      <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+        <span className="rounded-2xl border-2 border-felt-edge bg-white px-3 py-2">{game.icon}</span>
+        <div className="flex flex-1 flex-col items-center gap-1 text-center sm:items-start sm:text-left">
+          <h2 id="play-next" className="font-display text-sm font-bold uppercase tracking-wide text-ink-muted">
+            Play next
+          </h2>
+          <p className="font-display text-3xl font-bold text-ink">{game.title}</p>
+          <p className="text-lg text-ink">{game.description}</p>
+        </div>
+        <Link
+          to={game.to}
+          className={`tap-target inline-flex items-center rounded-2xl bg-ink px-8 font-display text-2xl font-bold text-base shadow-[0_6px_0_rgba(0,0,0,0.3)] active:translate-y-1 active:shadow-none ${FOCUS_RING}`}
+        >
+          Play
+        </Link>
+      </div>
+      <div className="mt-4">
+        <ReadAloudButton text={sentence} label="Read this aloud" />
+      </div>
+    </section>
+  )
+}
+
+/** One grade band's shelf of games against Robo, on a rail in the band's own colour. */
+function Shelf({
+  band,
+  isYours,
+  states,
+}: {
+  band: GradeBand
+  isYours: boolean
+  states: Map<string, GameState>
+}) {
   const id = `shelf-${band}`
-  const games = GAMES.filter((game) => game.band === band)
-  const roboGames = games.filter((game) => game.kind === 'robo')
-  const workshops = games.filter((game) => game.kind === 'workshop')
+  const games = GAMES.filter((game) => game.band === band && game.kind === 'robo')
 
   return (
     <section aria-labelledby={id} className="w-full max-w-4xl">
-      <div className="mb-4 flex flex-wrap items-center gap-3 border-b-4 border-felt-edge pb-2">
-        <h2 id={id} className="font-display text-2xl font-bold">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <span aria-hidden="true" className={`h-6 w-3 rounded-full ${BAND_RAIL[band]}`} />
+        <h2 id={id} className="font-display text-2xl font-bold text-chalk">
           {GRADE_BAND_LABELS[band]}
         </h2>
         {isYours && (
-          <span className="rounded-full bg-felt px-3 py-1 font-display text-sm font-bold text-chalk">
+          <span className="rounded-full bg-card px-3 py-1 font-display text-sm font-bold text-ink">
             Your grade
           </span>
         )}
+        <span className="ml-auto font-display text-lg font-semibold text-chalk">{`${games.length} games`}</span>
       </div>
-      <div className="flex flex-col gap-6 lg:flex-row">
-        {roboGames.length > 0 && <GameGroup label="Games against Robo" games={roboGames} />}
-        {workshops.length > 0 && <GameGroup label="Skill workshops" games={workshops} />}
+      <div className={`mb-4 h-1.5 w-full rounded-full ${BAND_RAIL[band]}`} />
+      <GameGrid games={games} states={states} minWidth="14rem" />
+    </section>
+  )
+}
+
+/**
+ * The skill workshops' own space after the grade shelves: a card-stock panel, so solo practice
+ * reads apart from the games against Robo. The student's grade comes first.
+ */
+function WorkshopSpace({
+  bandsInOrder,
+  states,
+}: {
+  bandsInOrder: GradeBand[]
+  states: Map<string, GameState>
+}) {
+  const workshops = bandsInOrder.flatMap((band) =>
+    GAMES.filter((game) => game.band === band && game.kind === 'workshop'),
+  )
+
+  return (
+    <section
+      aria-labelledby="workshops"
+      className="w-full max-w-4xl rounded-3xl border-4 border-dashed border-chalk bg-card p-4 sm:p-6"
+    >
+      <div className="mb-4 flex flex-col gap-1">
+        <h2 id="workshops" className="font-display text-2xl font-bold">
+          Skill workshops
+        </h2>
+        <p className="text-lg text-ink">Practice one skill at a time, one step after another.</p>
       </div>
+      <GameGrid games={workshops} states={states} minWidth="12rem" />
     </section>
   )
 }
 
 function LandingPage() {
   const [band, setBand] = useState<GradeBand | null>(getGradeBand)
-  const [picking, setPicking] = useState(false)
+  const [name, setName] = useState<string | null>(getLearnerName)
+  const [token, setToken] = useState<Token>(getLearnerToken)
+  const [picking, setPicking] = useState<'grade' | 'profile' | null>(null)
+  const [showAll, setShowAll] = useState(false)
+  const [home, setHome] = useState<Home | null>(null)
+
+  useEffect(() => {
+    if (band === null) return
+    fetch(`${API_URL}/home/${getLearnerId()}?band=${band}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Home request failed'))))
+      .then(setHome)
+      .catch(() => setHome(null))
+  }, [band, name])
 
   const pickBand = (chosen: GradeBand) => {
     saveGradeBand(chosen)
     setBand(chosen)
-    setPicking(false)
+    setPicking(null)
   }
 
-  if (band === null || picking) {
+  const pickProfile = (chosenName: string, chosenToken: Token) => {
+    saveLearnerName(chosenName)
+    saveLearnerToken(chosenToken)
+    setName(chosenName)
+    setToken(chosenToken)
+    setPicking(null)
+  }
+
+  if (band === null || picking === 'grade') {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-8">
-        <GradePicker onPick={pickBand} />
+        <GradePicker
+          onPick={pickBand}
+          currentBand={band}
+          onCancel={band !== null ? () => setPicking(null) : undefined}
+        />
       </div>
     )
   }
 
-  const shelves = [band, ...GRADE_BANDS.filter((other) => other !== band)]
+  if (name === null || picking === 'profile') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-base px-4 py-8">
+        <ProfilePicker
+          onPick={pickProfile}
+          currentName={name}
+          currentToken={token}
+          onCancel={name !== null ? () => setPicking(null) : undefined}
+        />
+      </div>
+    )
+  }
+
+  const shelves = showAll ? [band, ...GRADE_BANDS.filter((other) => other !== band)] : [band]
+  const states = new Map((home?.games ?? []).map((state) => [state.game, state]))
 
   return (
-    <div className="flex min-h-screen flex-col bg-base">
+    <div className="flex min-h-screen flex-col bg-felt">
       <AppHeader
-        left={<span className="font-display text-2xl font-bold">Number Quest</span>}
+        left={<span className="font-display text-2xl font-bold text-chalk">Number Quest</span>}
         right={
           <>
             <MuteToggle />
             <button
               type="button"
-              onClick={() => setPicking(true)}
-              className="tap-target rounded-2xl border-4 border-ink bg-white px-4 font-display font-semibold text-ink"
+              onClick={() => setPicking('profile')}
+              aria-label={`Playing as ${name}. Change your name or token.`}
+              className={`tap-target inline-flex items-center gap-2 rounded-2xl border-2 border-felt-edge bg-card px-3 font-display text-base font-bold text-ink shadow-[0_2px_0_#163A34] ${FOCUS_RING}`}
             >
-              Change grade
+              <PlayerToken token={token} />
+              <span>{name}</span>
             </button>
+            <div className="flex items-center gap-2">
+              <span
+                aria-label={`Current grade: ${GRADE_BAND_LABELS[band]}`}
+                className="inline-flex items-center gap-2 rounded-2xl border-2 border-felt-edge bg-card px-3 py-2 font-display text-base font-bold text-ink shadow-[0_2px_0_#163A34]"
+              >
+                <span className="rounded-full bg-felt px-2.5 py-0.5 font-display text-xs font-bold text-chalk">
+                  Grade
+                </span>
+                <span>{GRADE_BAND_LABELS[band]}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setPicking('grade')}
+                className={`tap-target rounded-2xl border-4 border-chalk bg-felt px-4 font-display font-semibold text-chalk ${FOCUS_RING}`}
+              >
+                Change grade
+              </button>
+            </div>
             <Link
               to="/summary"
-              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+              className={`tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-chalk ${FOCUS_RING}`}
             >
               Session summary
             </Link>
@@ -638,10 +340,32 @@ function LandingPage() {
       />
 
       <main className="flex flex-1 flex-col items-center gap-10 px-4 py-8">
-        <h1 className="text-center font-display text-4xl font-bold">What do you want to practice?</h1>
+        <div className="flex max-w-2xl flex-col items-center gap-3 text-center">
+          <h1 className="font-display text-4xl font-bold text-chalk">{QUESTION}</h1>
+          <p className="text-xl text-chalk">{WELCOME}</p>
+          <ReadAloudButton text={`${QUESTION} ${WELCOME}`} />
+          {home && home.total_answers > 0 && (
+            <p className="text-xl text-chalk">
+              {`${home.total_correct} of ${home.total_answers} right so far. Keep going, ${name}.`}
+            </p>
+          )}
+        </div>
+
+        {home && <PlayNext home={home} name={name} />}
+
         {shelves.map((shelfBand) => (
-          <Shelf key={shelfBand} band={shelfBand} isYours={shelfBand === band} />
+          <Shelf key={shelfBand} band={shelfBand} isYours={shelfBand === band} states={states} />
         ))}
+        <WorkshopSpace bandsInOrder={shelves} states={states} />
+        <div className="flex justify-center pb-4">
+          <button
+            type="button"
+            onClick={() => setShowAll((current) => !current)}
+            className={`tap-target rounded-2xl border-2 border-felt-edge bg-card px-6 py-3 font-display text-lg font-semibold text-ink shadow-[0_2px_0_#163A34] ${FOCUS_RING}`}
+          >
+            {showAll ? 'Show only my grade' : 'Show all grades'}
+          </button>
+        </div>
       </main>
     </div>
   )

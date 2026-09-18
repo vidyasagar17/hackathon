@@ -11,9 +11,11 @@ import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
 import { chipColor, placeLetter, type Column } from '../columns'
 import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -52,7 +54,8 @@ type MoveResult = { correct: boolean; misconception: string | null; visible_stat
 /** Every answer the game asks for fits in 6 digits, even a sum written column by column (81714). */
 const MAX_DIGITS = 6
 
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 const PLACES: Column[] = ['hundreds', 'tens', 'ones']
 
@@ -64,7 +67,7 @@ const OUTCOMES: Record<Winner, string> = {
 }
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/dont-break-the-bank/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/dont-break-the-bank/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function placesFor(width: number): Column[] {
@@ -131,7 +134,7 @@ function Board({
                   aria-label={label}
                   onClick={() => onPlace(spot)}
                   disabled={!placing}
-                  className="tap-target w-16 rounded-xl border-4 border-dashed border-chalk/70 bg-felt-edge"
+                  className="tap-target w-16 rounded-xl border-4 border-dashed border-chalk/70 bg-felt-edge focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds"
                 />
               ) : (
                 <span
@@ -433,7 +436,7 @@ function DontBreakTheBankPage() {
             <MuteToggle />
             <Link
               to="/summary"
-              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Session summary
             </Link>
@@ -486,9 +489,9 @@ function DontBreakTheBankPage() {
                     className="flex w-full max-w-sm flex-col items-start gap-3 rounded-2xl border-2 border-felt-edge bg-card p-4 md:w-96"
                   >
                     {verdict && (
-                      <p className={`font-display text-2xl font-bold ${result?.correct ? 'text-success-text' : 'text-alert-text'}`}>
+                      <Verdict correct={Boolean(result?.correct)}>
                         {verdict}
-                      </p>
+                      </Verdict>
                     )}
                     <HintPanel
                       wrong={Boolean(result && !result.correct)}

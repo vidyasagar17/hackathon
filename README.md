@@ -350,6 +350,38 @@ hands — and never shows wrong math.
 down when the *same* misconception is diagnosed twice in a row, per game.
 Stars on the page show progress; there are no timers.
 
+Levels follow the *learner*, not the tab. A student picks a name and a token on
+their first visit, which saves a `learner_id` in the browser's localStorage; the
+session id in `sessionStorage` still marks one sitting, and the session summary
+stays scoped to it. So closing the browser ends the session but not the
+progress: a student who comes back tomorrow resumes at the level they reached
+instead of starting again at level 1. There are no accounts and no login — the
+profile is local to the device and only the random id reaches the server.
+
+## The home screen engine
+
+`backend/recommend.py` decides what the home screen leads with. It is pure and
+deterministic, tested in `test_recommend.py`, and — like the diagnosis — an LLM
+never picks the game or the reason.
+
+Each game's tile carries its own state for that learner: `new` (never opened),
+`learning` (fewer than 4 answers, or under 60% right), `growing`, or `strong`
+(the top level reached at 80% or better). The tile shows the score and a meter
+alongside the words, so the state is never carried by colour alone.
+
+One game is then suggested, in this order:
+
+| Reason | When | What Robo says |
+|---|---|---|
+| `stuck_on` | a misconception in this band was diagnosed twice or more | names the bug and offers another go |
+| `keep_going` | a game is started but not yet strong | offers the most recently played one |
+| `try_new` | every started game is strong, one is untouched | offers the new one |
+| `stay_sharp` | everything in the band is strong | offers the lowest-scoring one |
+
+Only games shelved in the student's own grade band are ever suggested. The
+reason code maps to its sentence in `frontend/src/home.ts`, so what a student is
+told always matches the rule that actually fired.
+
 ## Hints
 
 Hints start as a sentence **built by code from the student's own numbers**
@@ -466,7 +498,8 @@ The session summary counts workshop attempts and moves together, per game.
   button; after answering, the hint, winner buttons and Next sit beside the
   answer cards so nothing falls below the table.
 - **Game-table design:** games are played on a felt table with real-looking
-  digit cards; the home screen is a set of grade-band shelves of game boxes.
+  digit cards; the home screen is a set of grade-band shelves of games against
+  Robo, with the skill workshops in their own space below them.
   Animation is used only for the math itself (the carry/borrow badge) and
   short feedback cues.
 
@@ -524,6 +557,8 @@ backend/
     twenty_four/         expressions.py (work out tokens under any order),
                          the same files: solver and dealing, detectors,
                          moves and Robo, hints
+  catalog.py             each game's grade band, for shelving and suggesting
+  recommend.py           the home screen engine: tile states and what to play next
   tiering.py             adaptive levels
   db.py                  SQLite: attempts, rounds, moves, summary
   main.py                FastAPI routes

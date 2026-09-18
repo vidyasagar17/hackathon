@@ -10,8 +10,10 @@ import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
 import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -52,10 +54,11 @@ const INSTRUCTIONS: Partial<Record<Step, string>> = {
 }
 
 /** Shared look of the panel buttons; each tag still writes `tap-target` so `check:tap-targets` can see it. */
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/fraction-spoons/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/fraction-spoons/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function fractionText(fraction: Fraction): string {
@@ -363,7 +366,7 @@ function FractionSpoonsPage() {
             <MuteToggle />
             <Link
               to="/summary"
-              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Session summary
             </Link>
@@ -413,7 +416,7 @@ function FractionSpoonsPage() {
                       aria-pressed={index === collectingIndex}
                       disabled={!(canCollect || canDiscard)}
                       onClick={() => (state.step === 'discard' ? discard(index) : collect(index))}
-                      className={`tap-target rounded-lg disabled:cursor-default ${
+                      className={`tap-target rounded-lg disabled:cursor-default focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${
                         index === collectingIndex ? 'ring-4 ring-hundreds ring-offset-4 ring-offset-felt' : ''
                       }`}
                     >
@@ -451,11 +454,9 @@ function FractionSpoonsPage() {
                     </div>
                   )}
                   {result && (
-                    <p
-                      className={`font-display text-2xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}
-                    >
+                    <Verdict correct={result.correct}>
                       {result.message}
-                    </p>
+                    </Verdict>
                   )}
                   <HintPanel
                     wrong={Boolean(result && !result.correct)}
@@ -512,7 +513,7 @@ function FractionSpoonsPage() {
         </GameTable>
 
         {moveError && (
-          <p className="font-display text-xl font-bold text-alert-text">Couldn't send your move — try again.</p>
+          <p className="font-display text-lg font-semibold text-alert-text">Couldn't send your move — try again.</p>
         )}
       </main>
     </div>

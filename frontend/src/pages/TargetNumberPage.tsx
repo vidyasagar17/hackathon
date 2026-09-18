@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
+import DuelResult from '../components/DuelResult'
+import DuelScoreLine from '../components/DuelScoreLine'
+import DuelTurnButtons from '../components/DuelTurnButtons'
 import GameTable from '../components/GameTable'
 import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
@@ -10,8 +13,11 @@ import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
+import { duelOutcome } from '../duel'
 import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -49,27 +55,23 @@ type Result = { correct: boolean; misconception: string | null; message: string 
 const HANDS = 5
 const MAX_DIGITS = 3
 
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 /** A + or − tile; each tag still writes `tap-target` so `check:tap-targets` can see it. */
-const TILE = 'w-16 rounded-xl border-2 border-felt-edge bg-card font-display text-4xl font-bold text-ink disabled:opacity-40'
+const TILE =
+  'w-16 rounded-xl border-2 border-felt-edge bg-card font-display text-4xl font-bold text-ink disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds'
 
 const SHOWN_SIGN: Record<Sign, string> = { '+': '+', '-': '−' }
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/target-number/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/target-number/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 const stepText = (before: number, sign: Sign, card: number) => `${before} ${SHOWN_SIGN[sign]} ${card}`
 
 /** "16 = 2 + □" or "1 + 15 = 2 + □", with `box` in place of the box. */
 const equationText = (equation: Equation, box: string) => `${equation.left.join(' + ')} = ${equation.right} + ${box}`
-
-function outcome(myPoints: number, roboPoints: number) {
-  if (myPoints > roboPoints) return 'You win the game!'
-  if (myPoints < roboPoints) return 'Robo wins the game.'
-  return "It's a draw!"
-}
 
 /** Lines of a way, one equation per step. */
 function WayLines({ label, lines }: { label: string; lines: string[] }) {
@@ -318,7 +320,7 @@ function TargetNumberPage() {
           : 'Tap + or −, then a card.'
   const wayLines = state.total !== null && started ? [String(state.cards[state.way[0]]), ...state.steps.map((each) => `${stepText(each.before, each.sign, each.card)} = ${each.after}`)] : []
   const spoken = finished
-    ? outcome(myPoints, roboPoints)
+    ? duelOutcome(myPoints, roboPoints)
     : [instruction, result?.message, madeMessage].filter(Boolean).join(' ') || `Make ${state.target}.`
 
   return (
@@ -328,7 +330,10 @@ function TargetNumberPage() {
         right={
           <>
             <MuteToggle />
-            <Link to="/summary" className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted">
+            <Link
+              to="/summary"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
+            >
               Session summary
             </Link>
           </>
@@ -345,7 +350,7 @@ function TargetNumberPage() {
         <GameTable>
           <div className="flex flex-col items-center gap-4">
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <p className="font-display text-xl font-semibold text-chalk">{`Hand ${hand} of ${HANDS} · You ${myPoints} · Robo ${roboPoints}`}</p>
+              <DuelScoreLine unit="Hand" at={hand} of={HANDS} myPoints={myPoints} roboPoints={roboPoints} />
               <p aria-label={`Target ${state.target}`} className="rounded-full bg-hundreds px-4 font-display text-3xl font-bold text-ink">
                 {`Target ${state.target}`}
               </p>
@@ -357,18 +362,17 @@ function TargetNumberPage() {
                 {roboShown && state.robo ? (
                   <>
                     <div role="group" aria-label={`Robo's cards: ${state.robo.cards.join(', ')}`} className="flex flex-col items-center gap-2">
-                      <SeatName name="Robo" />
+                      <SeatName
+                        name="Robo"
+                        message={state.robo.way ? `Here is how I made ${state.target}!` : `Robo couldn't find a way to make ${state.target}.`}
+                      />
                       <span aria-hidden="true" className="flex gap-2">
                         {state.robo.cards.map((card, index) => (
                           <PlayingCard key={index} digit={card} />
                         ))}
                       </span>
                     </div>
-                    {state.robo.way ? (
-                      <WayLines label="Robo's way" lines={state.robo.way} />
-                    ) : (
-                      <p className="font-display text-2xl font-semibold text-chalk">{`Robo couldn't find a way to make ${state.target}.`}</p>
-                    )}
+                    {state.robo.way && <WayLines label="Robo's way" lines={state.robo.way} />}
                     {state.equation && (
                       <p
                         aria-label={equationText(state.equation, answered ? String(state.equation_answer) : 'box')}
@@ -389,7 +393,7 @@ function TargetNumberPage() {
                           aria-pressed={pick === index}
                           onClick={() => tapCard(index)}
                           disabled={!building || sending || !fits(index)}
-                          className={`tap-target rounded-lg disabled:opacity-40 ${pick === index ? 'ring-4 ring-hundreds ring-offset-2 ring-offset-felt' : ''}`}
+                          className={`tap-target rounded-lg disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${pick === index ? 'ring-4 ring-hundreds ring-offset-2 ring-offset-felt' : ''}`}
                         >
                           <PlayingCard digit={card} />
                         </button>
@@ -427,7 +431,7 @@ function TargetNumberPage() {
                             type="button"
                             onClick={startOver}
                             disabled={sending}
-                            className={`tap-target ${PANEL_BUTTON} border-4 border-chalk bg-felt text-chalk`}
+                            className={`tap-target ${PANEL_BUTTON} border-4 border-chalk bg-felt text-chalk focus-visible:ring-hundreds`}
                           >
                             Start over
                           </button>
@@ -436,7 +440,7 @@ function TargetNumberPage() {
                           type="button"
                           onClick={showWay}
                           disabled={sending}
-                          className={`tap-target ${PANEL_BUTTON} border-4 border-chalk bg-felt text-chalk`}
+                          className={`tap-target ${PANEL_BUTTON} border-4 border-chalk bg-felt text-chalk focus-visible:ring-hundreds`}
                         >
                           Show me a way
                         </button>
@@ -464,9 +468,9 @@ function TargetNumberPage() {
                   )}
 
                   {result && !pending && (
-                    <p className={`font-display text-xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}>
+                    <Verdict correct={result.correct}>
                       {result.message}
-                    </p>
+                    </Verdict>
                   )}
                   <HintPanel
                     wrong={Boolean(result && !pending && !result.correct)}
@@ -477,30 +481,18 @@ function TargetNumberPage() {
                   />
 
                   {madeMessage && <p className="font-display text-xl font-bold">{madeMessage}</p>}
-                  {state.done && !roboShown && (
-                    <button type="button" onClick={showRobo} className={`tap-target ${PANEL_BUTTON} bg-hundreds text-ink`}>
-                      Robo's turn
-                    </button>
-                  )}
-                  {answered && hand < HANDS && (
-                    <button type="button" onClick={nextHand} disabled={dealing} className={`tap-target ${PANEL_BUTTON} bg-ink text-base disabled:opacity-40`}>
-                      Next hand
-                    </button>
-                  )}
-                  {answered && hand === HANDS && !finished && (
-                    <button type="button" onClick={() => setFinished(true)} className={`tap-target ${PANEL_BUTTON} bg-ink text-base`}>
-                      See who won
-                    </button>
-                  )}
-                  {finished && (
-                    <div role="group" aria-label="Game result" className="flex flex-col items-start gap-2">
-                      <p className="font-display text-xl font-semibold">{`You ${myPoints} · Robo ${roboPoints}`}</p>
-                      <p className="font-display text-3xl font-bold">{outcome(myPoints, roboPoints)}</p>
-                      <button type="button" onClick={playAgain} disabled={dealing} className={`tap-target ${PANEL_BUTTON} bg-ink text-base disabled:opacity-40`}>
-                        Play again
-                      </button>
-                    </div>
-                  )}
+                  <DuelTurnButtons
+                    roboDue={state.done && !roboShown}
+                    turnDone={answered}
+                    lastTurn={hand === HANDS}
+                    finished={finished}
+                    nextLabel="Next hand"
+                    dealing={dealing}
+                    onRoboTurn={showRobo}
+                    onNext={nextHand}
+                    onSeeWhoWon={() => setFinished(true)}
+                  />
+                  {finished && <DuelResult myPoints={myPoints} roboPoints={roboPoints} dealing={dealing} onPlayAgain={playAgain} />}
                 </div>
               )}
             </div>

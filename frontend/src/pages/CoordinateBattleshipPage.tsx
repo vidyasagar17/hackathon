@@ -7,8 +7,10 @@ import HomeButton from '../components/HomeButton'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
 import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -49,12 +51,13 @@ type Result = { kind: 'write' | 'read'; correct: boolean; misconception: string 
 const STEP = 64
 const LABEL = 28
 
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 const OUTCOMES = { mine: 'You win!', robo: 'Robo wins.', same: "It's a tie!" }
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/coordinate-plane-battleship/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/coordinate-plane-battleship/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function pair(point: Point | null): string {
@@ -121,7 +124,7 @@ function Ocean({
             aria-label={`Point ${pair(point)}${ship}${description}`}
             disabled={!onTap}
             onClick={() => onTap?.(point)}
-            className="tap-target absolute flex w-16 items-center justify-center rounded-full"
+            className="tap-target absolute flex w-16 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds"
             style={{ left: left(point[0]) - STEP / 2, top: top(point[1]) - STEP / 2 }}
           >
             <span
@@ -317,7 +320,10 @@ function CoordinateBattleshipPage() {
         right={
           <>
             <MuteToggle />
-            <Link to="/summary" className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted">
+            <Link
+              to="/summary"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
+            >
               Session summary
             </Link>
           </>
@@ -378,7 +384,7 @@ function CoordinateBattleshipPage() {
                           type="button"
                           onClick={() => pressDigit(digit)}
                           disabled={digits.length === 2}
-                          className="tap-target rounded-2xl bg-white font-display text-3xl font-bold text-ink shadow-[0_4px_0_rgba(0,0,0,0.15)] disabled:opacity-40"
+                          className="tap-target rounded-2xl bg-white font-display text-3xl font-bold text-ink shadow-[0_4px_0_rgba(0,0,0,0.15)] disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
                         >
                           {digit}
                         </button>
@@ -405,9 +411,9 @@ function CoordinateBattleshipPage() {
                   </>
                 )}
                 {result && (
-                  <p className={`font-display text-xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}>
+                  <Verdict correct={result.correct}>
                     {result.message}
-                  </p>
+                  </Verdict>
                 )}
                 <HintPanel
                   wrong={Boolean(result && !result.correct)}

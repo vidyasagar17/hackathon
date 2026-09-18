@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AnswerBox from '../components/AnswerBox'
 import AppHeader from '../components/AppHeader'
+import DuelResult from '../components/DuelResult'
+import DuelScoreLine from '../components/DuelScoreLine'
+import DuelTurnButtons from '../components/DuelTurnButtons'
 import GameTable from '../components/GameTable'
 import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
@@ -11,11 +14,13 @@ import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
 import { shiftIntoPlaces } from '../answerEntry'
 import type { Column } from '../columns'
-import { prefersReducedMotion } from '../motion'
+import { duelOutcome } from '../duel'
 import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -42,18 +47,12 @@ const MAX_DIGITS = 2
 
 const TURNS = 10
 
-/** The win celebration's ring pulse: one run, under decision 1's 1.5 s limit. */
-const WIN_PULSE_MS = 1200
-
 const SIGN = { multiply: '×', divide: '÷' } as const
 
 const SPOKEN_SIGN = { multiply: 'times', divide: 'divided by' } as const
 
-/** Shared look of the panel buttons; each tag still writes `tap-target` so `check:tap-targets` can see it. */
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
-
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/multiplication-shootout/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/multiplication-shootout/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function spokenFact(fact: Fact) {
@@ -62,17 +61,6 @@ function spokenFact(fact: Fact) {
 
 function writtenFact(fact: Fact) {
   return `${fact.left} ${SIGN[fact.operation]} ${fact.right}`
-}
-
-function outcome(myPoints: number, roboPoints: number) {
-  if (myPoints > roboPoints) return 'You win this duel!'
-  if (myPoints < roboPoints) return 'Robo wins this duel.'
-  return "It's a draw!"
-}
-
-/** True while any animation on the page is still playing, so a celebration never overlaps it. */
-function animationRunning() {
-  return document.getAnimations?.().some((animation) => animation.playState === 'running') ?? false
 }
 
 /** A number as one playing card per digit. */
@@ -107,7 +95,7 @@ function CalledFact({ fact }: { fact: Fact }) {
       aria-label={`Robo calls ${spokenFact(fact)}`}
       className="flex flex-wrap items-center justify-center gap-4"
     >
-      <SeatName name="Robo" />
+      <SeatName name="Robo" message={`Your turn! What is ${writtenFact(fact)}?`} />
       <FactCards fact={fact} />
     </div>
   )
@@ -115,61 +103,17 @@ function CalledFact({ fact }: { fact: Fact }) {
 
 /** Robo's own fact and answer in the same row as the called fact, so the table doesn't grow; a wrong answer always shows the right one. */
 function RoboTurn({ fact, answer, correctAnswer }: { fact: Fact; answer: number; correctAnswer: number }) {
+  const message =
+    answer === correctAnswer
+      ? `I think it's ${answer} — correct!`
+      : `I said ${answer} — ${writtenFact(fact)} is ${correctAnswer}.`
+
   return (
     <div className="flex flex-wrap items-center justify-center gap-4">
       <div role="group" aria-label={`Robo's fact: ${spokenFact(fact)}`} className="flex items-center gap-4">
-        <SeatName name="Robo" />
+        <SeatName name="Robo" message={message} />
         <FactCards fact={fact} />
       </div>
-      <p className="font-display text-xl font-semibold text-chalk">
-        {answer === correctAnswer
-          ? `Robo said ${answer} — correct!`
-          : `Robo said ${answer} — ${writtenFact(fact)} is ${correctAnswer}.`}
-      </p>
-    </div>
-  )
-}
-
-/**
- * The end of a duel: both totals, who won, and Play again. A win pulses a ring around the card once
- * (decision 1's feedback cue), triggered by the student's "See who won" press; nothing plays under
- * reduced motion or while another animation is still running. A loss or a draw only shows the totals.
- */
-function DuelResult({
-  myPoints,
-  roboPoints,
-  onPlayAgain,
-}: {
-  myPoints: number
-  roboPoints: number
-  onPlayAgain: () => void
-}) {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const celebrated = useRef(false)
-  const won = myPoints > roboPoints
-
-  useEffect(() => {
-    if (!won || celebrated.current || prefersReducedMotion() || animationRunning()) return
-    celebrated.current = true
-    cardRef.current?.animate(
-      [{ boxShadow: '0 0 0 0 rgba(61, 220, 151, 0.8)' }, { boxShadow: '0 0 0 18px rgba(61, 220, 151, 0)' }],
-      { duration: WIN_PULSE_MS, easing: 'ease-out' },
-    )
-  }, [won])
-
-  return (
-    <div
-      ref={cardRef}
-      role="group"
-      aria-label="Duel result"
-      aria-live="polite"
-      className="mx-auto flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl border-2 border-felt-edge bg-card p-6"
-    >
-      <p className="font-display text-2xl font-semibold">{`You ${myPoints} · Robo ${roboPoints}`}</p>
-      <p className="font-display text-3xl font-bold">{outcome(myPoints, roboPoints)}</p>
-      <button type="button" onClick={onPlayAgain} className={`tap-target ${PANEL_BUTTON} bg-ink text-base`}>
-        Play again
-      </button>
     </div>
   )
 }
@@ -188,6 +132,7 @@ function MultiplicationShootoutPage() {
   const [progress, setProgress] = useState<Progress | null>(null)
   const [loadError, setLoadError] = useState(false)
   const [sending, setSending] = useState(false)
+  const [dealing, setDealing] = useState(false)
   const [moveError, setMoveError] = useState(false)
   const [typed, setTyped] = useState('')
   const [result, setResult] = useState<MoveResult | null>(null)
@@ -224,10 +169,13 @@ function MultiplicationShootoutPage() {
     }
   }, [showRound])
 
+  /** Deal the next fact; Next turn stays off until it arrives, so a double tap deals once. */
   const dealTurn = () => {
+    setDealing(true)
     requestRound()
       .then(showRound)
       .catch(() => setLoadError(true))
+      .finally(() => setDealing(false))
   }
 
   if (loadError) {
@@ -316,7 +264,7 @@ function MultiplicationShootoutPage() {
   }
 
   const spoken = finished
-    ? `You ${myPoints}, Robo ${roboPoints}. ${outcome(myPoints, roboPoints)}`
+    ? `You ${myPoints}, Robo ${roboPoints}. ${duelOutcome(myPoints, roboPoints, 'duel')}`
     : roboTurn
       ? roboTurn.answer === roboTurn.correctAnswer
         ? `Robo's fact is ${spokenFact(roboTurn.fact)}. Robo said ${roboTurn.answer}, which is correct.`
@@ -354,12 +302,18 @@ function MultiplicationShootoutPage() {
 
         <GameTable>
           {finished ? (
-            <DuelResult myPoints={myPoints} roboPoints={roboPoints} onPlayAgain={playAgain} />
+            <DuelResult
+              myPoints={myPoints}
+              roboPoints={roboPoints}
+              noun="duel"
+              card
+              celebrate
+              dealing={dealing}
+              onPlayAgain={playAgain}
+            />
           ) : (
             <div className="flex flex-col items-center gap-6">
-              <p className="font-display text-xl font-semibold text-chalk">
-                {`Turn ${turn} of ${TURNS} · You ${myPoints} · Robo ${roboPoints}`}
-              </p>
+              <DuelScoreLine unit="Turn" at={turn} of={TURNS} myPoints={myPoints} roboPoints={roboPoints} />
               {roboTurn ? <RoboTurn {...roboTurn} /> : <CalledFact fact={state.fact} />}
               <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-center md:justify-center">
                 <div className="flex items-center gap-4">
@@ -397,13 +351,11 @@ function MultiplicationShootoutPage() {
                     aria-live="polite"
                     className="flex w-full max-w-xs flex-col items-start gap-3 rounded-2xl border-2 border-felt-edge bg-card p-4 md:w-80"
                   >
-                    <p
-                      className={`font-display text-2xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}
-                    >
+                    <Verdict correct={result.correct}>
                       {result.correct
                         ? 'Correct!'
                         : `Not quite — ${writtenFact(state.fact)} is ${state.correct_answer}.`}
-                    </p>
+                    </Verdict>
                     <HintPanel
                       wrong={!result.correct}
                       hint={hint}
@@ -411,33 +363,17 @@ function MultiplicationShootoutPage() {
                       misconception={result.misconception}
                       onShowWhy={() => showWhy(roundId)}
                     />
-                    {!roboTurn && (
-                      <button
-                        type="button"
-                        onClick={showRoboTurn}
-                        className={`tap-target ${PANEL_BUTTON} bg-hundreds text-ink`}
-                      >
-                        Robo's turn
-                      </button>
-                    )}
-                    {roboTurn && turn < TURNS && (
-                      <button
-                        type="button"
-                        onClick={nextTurn}
-                        className={`tap-target ${PANEL_BUTTON} bg-ink text-base`}
-                      >
-                        Next turn
-                      </button>
-                    )}
-                    {roboTurn && turn === TURNS && (
-                      <button
-                        type="button"
-                        onClick={() => setFinished(true)}
-                        className={`tap-target ${PANEL_BUTTON} bg-ink text-base`}
-                      >
-                        See who won
-                      </button>
-                    )}
+                    <DuelTurnButtons
+                      roboDue={!roboTurn}
+                      turnDone={Boolean(roboTurn)}
+                      lastTurn={turn === TURNS}
+                      finished={finished}
+                      nextLabel="Next turn"
+                      dealing={dealing}
+                      onRoboTurn={showRoboTurn}
+                      onNext={nextTurn}
+                      onSeeWhoWon={() => setFinished(true)}
+                    />
                   </div>
                 )}
               </div>

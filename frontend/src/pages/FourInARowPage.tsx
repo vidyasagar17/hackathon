@@ -11,6 +11,7 @@ import ReadAloudButton from '../components/ReadAloudButton'
 import RoboAvatar from '../components/RoboAvatar'
 import SeatName from '../components/SeatName'
 import { postJson } from '../api'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 import { speakWhenAllowed } from '../speech'
@@ -42,7 +43,7 @@ type MoveResult = { correct: boolean; misconception: string | null; visible_stat
 const RESULTS = { mine: 'You win!', robo: 'Robo wins.', same: "Same! It's a tie." }
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/four-in-a-row/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/four-in-a-row/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function roboSaid(state: VisibleState): string {
@@ -211,8 +212,7 @@ function FourInARowPage() {
         <GameTable>
           <div className="flex flex-col items-center gap-4">
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <SeatName name="Robo" />
-              {roboShown && state.robo_last && <p className="font-display text-xl font-semibold text-chalk">{roboSaid(state)}</p>}
+              <SeatName name="Robo" message={roboShown && state.robo_last ? roboSaid(state) : undefined} />
             </div>
 
             <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-start md:justify-center">
@@ -232,7 +232,7 @@ function FourInARowPage() {
                       aria-label={label}
                       onClick={() => tap(index)}
                       disabled={sending || state.step !== 'tap' || owner !== null}
-                      className={`tap-target flex w-16 items-center justify-center rounded-xl border-2 font-display text-2xl font-bold ${
+                      className={`tap-target flex w-16 items-center justify-center rounded-xl border-2 font-display text-2xl font-bold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${
                         owner ? 'border-chalk/60 bg-felt-edge' : 'border-felt-edge bg-card text-ink'
                       } ${right || inLine ? 'ring-4 ring-hundreds ring-offset-2 ring-offset-felt' : ''}`}
                     >
@@ -263,7 +263,7 @@ function FourInARowPage() {
                     type="button"
                     onClick={roboTurn}
                     disabled={sending}
-                    className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink"
+                    className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-chalk focus-visible:ring-offset-2 focus-visible:ring-offset-felt"
                   >
                     Robo's turn
                     <NextArrow />
@@ -281,7 +281,7 @@ function FourInARowPage() {
                       aria-label="Play again"
                       onClick={dealGame}
                       disabled={dealing}
-                      className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink disabled:opacity-40"
+                      className="tap-target flex items-center gap-3 rounded-2xl bg-hundreds px-8 font-display text-2xl font-bold text-ink disabled:opacity-40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-chalk focus-visible:ring-offset-2 focus-visible:ring-offset-felt"
                     >
                       Play again
                       <NextArrow />

@@ -29,13 +29,13 @@ export default function HintPanel({
         <button
           type="button"
           onClick={onShowWhy}
-          className="tap-target inline-flex items-center gap-2 self-start rounded-2xl border-4 border-ink bg-white px-6 font-display text-xl font-semibold text-ink"
+          className="tap-target inline-flex items-center gap-2 self-start rounded-2xl border-4 border-ink bg-white px-6 font-display text-xl font-semibold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
         >
           <LightbulbIcon />
           Show me why
         </button>
       )}
-      {hintError && <p className="font-semibold text-alert-text">Couldn't load the hint — try again.</p>}
+      {hintError && <p className="font-display text-lg font-semibold text-alert-text">Couldn't load the hint — try again.</p>}
       {hint && (
         <div className="flex w-full flex-col items-start gap-2">
           {picture}

@@ -10,8 +10,10 @@ import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
 import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -31,7 +33,7 @@ type RoundPayload = { round_id: string; visible_state: VisibleState; progress: P
 type MoveResult = { correct: boolean; misconception: string | null; visible_state: VisibleState }
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/decimal-war/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/decimal-war/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 /** Decimal places in card order. Their colors are never the whole-number colors, so tens and tenths can't be confused. */
@@ -204,7 +206,7 @@ function DecimalWarPage() {
             <MuteToggle />
             <Link
               to="/summary"
-              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Session summary
             </Link>
@@ -267,11 +269,9 @@ function DecimalWarPage() {
             aria-live="polite"
             className="flex w-full max-w-3xl flex-col gap-3 rounded-2xl border-2 border-felt-edge bg-card p-5"
           >
-            <p
-              className={`font-display text-2xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}
-            >
+            <Verdict correct={result.correct}>
               {verdict}
-            </p>
+            </Verdict>
 
             <HintPanel
               wrong={!result.correct}
@@ -290,7 +290,7 @@ function DecimalWarPage() {
             <button
               type="button"
               onClick={nextRound}
-              className="tap-target self-end rounded-2xl bg-ink px-8 font-display text-xl font-semibold text-base"
+              className="tap-target self-end rounded-2xl bg-ink px-8 font-display text-xl font-semibold text-base focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Next round
             </button>

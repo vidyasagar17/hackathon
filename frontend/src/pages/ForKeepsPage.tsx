@@ -11,10 +11,12 @@ import PlayingCard from '../components/PlayingCard'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
 import SeatName from '../components/SeatName'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
 import { columnEntryOrder } from '../answerEntry'
 import { answerFill, chipColor, placeLetter } from '../columns'
 import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -67,10 +69,11 @@ const ENTRY_ORDER = columnEntryOrder(ANSWER_PLACES) as AnswerPlace[]
 const EMPTY_ANSWER: Record<AnswerPlace, string> = { tens: '', ones: '' }
 
 /** Shared look of the panel buttons; each tag still writes `tap-target` so `check:tap-targets` can see it. */
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
+const PANEL_BUTTON =
+  'rounded-2xl px-6 font-display text-xl font-semibold focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2'
 
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/for-keeps/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/for-keeps/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 function RoboCards({ cards }: { cards: number[] }) {
@@ -432,7 +435,7 @@ function ForKeepsPage() {
             <MuteToggle />
             <Link
               to="/summary"
-              className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
             >
               Session summary
             </Link>
@@ -519,11 +522,9 @@ function ForKeepsPage() {
                   className="flex w-full max-w-xs flex-col items-start gap-3 rounded-2xl border-2 border-felt-edge bg-card p-4 md:w-80"
                 >
                   {result && (
-                    <p
-                      className={`font-display text-2xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}
-                    >
+                    <Verdict correct={result.correct}>
                       {result.correct ? 'Correct!' : `Not quite — the difference is ${hand.difference}.`}
-                    </p>
+                    </Verdict>
                   )}
                   <HintPanel
                     wrong={Boolean(result && !result.correct)}
@@ -568,7 +569,7 @@ function ForKeepsPage() {
                       </button>
                     </>
                   )}
-                  {moveError && <p className="font-semibold text-alert-text">{moveErrorText}</p>}
+                  {moveError && <p className="font-display text-lg font-semibold text-alert-text">{moveErrorText}</p>}
                 </div>
               )}
             </div>
@@ -577,7 +578,7 @@ function ForKeepsPage() {
                 type="button"
                 onClick={arrange}
                 disabled={sending || slots.includes(null)}
-                className="tap-target rounded-2xl bg-hundreds px-8 font-display text-xl font-semibold text-ink disabled:opacity-60"
+                className="tap-target rounded-2xl bg-hundreds px-8 font-display text-xl font-semibold text-ink disabled:opacity-60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-chalk focus-visible:ring-offset-2 focus-visible:ring-offset-felt"
               >
                 Make these numbers
               </button>

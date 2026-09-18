@@ -3,14 +3,21 @@ import { Link } from 'react-router-dom'
 import AppHeader from '../components/AppHeader'
 import ClockFace from '../components/ClockFace'
 import type { Clock } from '../clock'
+import DuelResult from '../components/DuelResult'
+import DuelScoreLine from '../components/DuelScoreLine'
+import DuelTurnButtons from '../components/DuelTurnButtons'
 import GameTable from '../components/GameTable'
 import HintPanel from '../components/HintPanel'
 import HomeButton from '../components/HomeButton'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
+import RoboBubble from '../components/RoboBubble'
+import Verdict from '../components/Verdict'
 import { postJson } from '../api'
+import { duelOutcome } from '../duel'
 import { useRoundHint } from '../roundHint'
+import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
 
@@ -33,19 +40,11 @@ type MoveResult = { correct: boolean; misconception: string | null; visible_stat
 
 const TURNS = 8
 
-const PANEL_BUTTON = 'rounded-2xl px-6 font-display text-xl font-semibold'
-
 function requestRound(): Promise<RoundPayload> {
-  return postJson(`/curriculum/clock-match/rounds?session_id=${getSessionId()}`)
+  return postJson(`/curriculum/clock-match/rounds?session_id=${getSessionId()}&learner_id=${getLearnerId()}`)
 }
 
 const timeText = ([hour, minute]: number[]) => `${hour}:${String(minute).padStart(2, '0')}`
-
-function outcome(myPoints: number, roboPoints: number) {
-  if (myPoints > roboPoints) return 'You win the game!'
-  if (myPoints < roboPoints) return 'Robo wins the game.'
-  return "It's a draw!"
-}
 
 function roboSaid(robo: NonNullable<VisibleState['robo']>): string {
   const time = timeText(robo.time)
@@ -179,7 +178,7 @@ function ClockMatchPage() {
         ? `Right! That clock shows ${shownTime}.`
         : `Not quite — the outlined clock shows ${shownTime}.`
     : null
-  const spoken = finished ? outcome(myPoints, roboPoints) : [question, verdict, hint, roboShown && state.robo ? roboSaid(state.robo) : null].filter(Boolean).join(' ')
+  const spoken = finished ? duelOutcome(myPoints, roboPoints) : [question, verdict, hint, roboShown && state.robo ? roboSaid(state.robo) : null].filter(Boolean).join(' ')
 
   return (
     <div className="flex min-h-screen flex-col bg-base">
@@ -188,7 +187,10 @@ function ClockMatchPage() {
         right={
           <>
             <MuteToggle />
-            <Link to="/summary" className="tap-target inline-flex items-center px-2 font-display font-semibold text-ink-muted">
+            <Link
+              to="/summary"
+              className="tap-target inline-flex items-center rounded-2xl px-2 font-display font-semibold text-ink-muted focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
+            >
               Session summary
             </Link>
           </>
@@ -204,7 +206,7 @@ function ClockMatchPage() {
 
         <GameTable>
           <div className="flex flex-col items-center gap-4">
-            <p className="font-display text-xl font-semibold text-chalk">{`Turn ${turn} of ${TURNS} · You ${myPoints} · Robo ${roboPoints}`}</p>
+            <DuelScoreLine unit="Turn" at={turn} of={TURNS} myPoints={myPoints} roboPoints={roboPoints} />
             <p className="text-center font-display text-3xl font-bold text-chalk">{question}</p>
 
             <div className="flex w-full flex-col items-center gap-6 md:flex-row md:items-start md:justify-center">
@@ -221,7 +223,7 @@ function ClockMatchPage() {
                         aria-label={`${name}${right && !result?.correct ? ', the right answer' : ''}`}
                         onClick={() => pick(index)}
                         disabled={picked || sending}
-                        className={`tap-target flex items-center justify-center rounded-2xl border-2 border-felt-edge bg-card px-4 font-display text-3xl font-bold text-ink ${
+                        className={`tap-target flex items-center justify-center rounded-2xl border-2 border-felt-edge bg-card px-4 font-display text-3xl font-bold text-ink focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-hundreds ${
                           right ? 'ring-4 ring-hundreds ring-offset-2 ring-offset-felt' : ''
                         } ${picked && !right && state.pick !== index ? 'opacity-60' : ''}`}
                       >
@@ -234,7 +236,7 @@ function ClockMatchPage() {
 
               {result && (
                 <div aria-live="polite" className="flex w-full max-w-xs flex-col items-start gap-3 rounded-2xl border-2 border-felt-edge bg-card p-4 md:w-80">
-                  <p className={`font-display text-xl font-bold ${result.correct ? 'text-success-text' : 'text-alert-text'}`}>{verdict}</p>
+                  <Verdict correct={result.correct}>{verdict}</Verdict>
                   <HintPanel
                     wrong={!result.correct && !roboShown}
                     hint={hint}
@@ -242,36 +244,24 @@ function ClockMatchPage() {
                     misconception={result.misconception}
                     onShowWhy={() => showWhy(roundId)}
                   />
-                  {!roboShown && (
-                    <button type="button" onClick={showRobo} className={`tap-target ${PANEL_BUTTON} bg-hundreds text-ink`}>
-                      Robo's turn
-                    </button>
-                  )}
                   {roboShown && state.robo && (
                     <div className="flex items-center gap-3">
                       <ClockFace clock={state.robo.clock} label={`Robo's clock for ${timeText(state.robo.time)}`} size="small" />
-                      <p className="font-display text-lg font-semibold">{roboSaid(state.robo)}</p>
+                      <RoboBubble message={roboSaid(state.robo)} />
                     </div>
                   )}
-                  {roboShown && turn < TURNS && (
-                    <button type="button" onClick={nextTurn} disabled={dealing} className={`tap-target ${PANEL_BUTTON} bg-ink text-base disabled:opacity-40`}>
-                      Next turn
-                    </button>
-                  )}
-                  {roboShown && turn === TURNS && !finished && (
-                    <button type="button" onClick={() => setFinished(true)} className={`tap-target ${PANEL_BUTTON} bg-ink text-base`}>
-                      See who won
-                    </button>
-                  )}
-                  {finished && (
-                    <div role="group" aria-label="Game result" className="flex flex-col items-start gap-2">
-                      <p className="font-display text-xl font-semibold">{`You ${myPoints} · Robo ${roboPoints}`}</p>
-                      <p className="font-display text-3xl font-bold">{outcome(myPoints, roboPoints)}</p>
-                      <button type="button" onClick={playAgain} disabled={dealing} className={`tap-target ${PANEL_BUTTON} bg-ink text-base disabled:opacity-40`}>
-                        Play again
-                      </button>
-                    </div>
-                  )}
+                  <DuelTurnButtons
+                    roboDue={!roboShown}
+                    turnDone={roboShown}
+                    lastTurn={turn === TURNS}
+                    finished={finished}
+                    nextLabel="Next turn"
+                    dealing={dealing}
+                    onRoboTurn={showRobo}
+                    onNext={nextTurn}
+                    onSeeWhoWon={() => setFinished(true)}
+                  />
+                  {finished && <DuelResult myPoints={myPoints} roboPoints={roboPoints} dealing={dealing} onPlayAgain={playAgain} />}
                 </div>
               )}
             </div>
