@@ -26,8 +26,9 @@ function HouseIcon() {
 /**
  * Home button for the practice page. Leaving takes two steps, tap Home and then confirm,
  * so a stray tap never pulls a student out of a problem. Escape or "Keep playing" cancels.
+ * With `confirm` off (a game's intro, before any problem), one tap goes home.
  */
-export default function HomeButton() {
+export default function HomeButton({ confirm = true }: { confirm?: boolean }) {
   const navigate = useNavigate()
   const [confirming, setConfirming] = useState(false)
   const keepPlayingRef = useRef<HTMLButtonElement>(null)
@@ -46,9 +47,9 @@ export default function HomeButton() {
     <div className="relative z-10">
       <button
         type="button"
-        aria-expanded={confirming}
-        aria-controls="leave-problem"
-        onClick={() => setConfirming(true)}
+        aria-expanded={confirm ? confirming : undefined}
+        aria-controls={confirm ? 'leave-problem' : undefined}
+        onClick={() => (confirm ? setConfirming(true) : navigate('/'))}
         className="tap-target flex items-center gap-2 rounded-2xl bg-ink px-4 font-display text-lg font-semibold text-base focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-helper focus-visible:ring-offset-2"
       >
         <HouseIcon />

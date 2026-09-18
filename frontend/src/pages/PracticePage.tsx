@@ -9,7 +9,6 @@ import MistakeReplay from '../components/MistakeReplay'
 import MuteToggle from '../components/MuteToggle'
 import ProgressMeter, { type Progress } from '../components/ProgressMeter'
 import ReadAloudButton from '../components/ReadAloudButton'
-import TutorialOverlay from '../components/TutorialOverlay'
 import Verdict from '../components/Verdict'
 import { API_URL } from '../api'
 import {
@@ -27,7 +26,6 @@ import { buildReplaySteps } from '../replay'
 import { getLearnerId } from '../learner'
 import { getSessionId } from '../session'
 import { playSound } from '../sound'
-import { hasSeenTutorial, markTutorialSeen } from '../tutorial'
 
 type GameConfig = {
   heading: string
@@ -214,7 +212,6 @@ function PracticePage() {
   const { gameId } = useParams<{ gameId: string }>()
   const config = gameId ? GAME_CONFIGS[gameId] : undefined
 
-  const [tutorialDone, setTutorialDone] = useState(hasSeenTutorial)
   const [gradeBand] = useState(getGradeBand)
   const [problem, setProblem] = useState<Problem | null>(null)
   const [progress, setProgress] = useState<Progress | null>(null)
@@ -294,18 +291,6 @@ function PracticePage() {
           Unknown game.
         </p>
       </div>
-    )
-  }
-
-  if (!tutorialDone) {
-    return (
-      <TutorialOverlay
-        usesColumnChips={config.displayMode === 'columns'}
-        onDone={() => {
-          markTutorialSeen()
-          setTutorialDone(true)
-        }}
-      />
     )
   }
 

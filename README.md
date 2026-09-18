@@ -396,6 +396,32 @@ Only games shelved in the student's own grade band are ever suggested. The
 reason code maps to its sentence in `frontend/src/home.ts`, so what a student is
 told always matches the rule that actually fired.
 
+## Game intros
+
+Every game opens on an intro before any problem is dealt: the game's name and
+picture, a one-line pitch, what math it practices, and a **Watch how to play**
+demo on the game's own table, followed by a **Your turn!** move to try. The
+student steps through the demo with Next and Back and can press **Play!** at any
+point; the game page (and its first round) only starts on Play, so reading an
+intro and going home logs nothing.
+
+- **The demo shows the real rules on real numbers.** Each step brings in one new
+  piece — a card dealt, a die rolled, a tile shut, a clock hand turning, a
+  borrowed ten moving to the ones — and only that piece moves, so the demos keep
+  the one-thing-animates rule. Under `prefers-reduced-motion` nothing moves.
+  `intros.test.tsx` walks every game's demo and fails if a step moves more than
+  one piece or if anything moves under reduced motion.
+- **The try-it move is practice, never graded or logged.** Its wrong choices are
+  the mistakes the game diagnoses (e.g. 3:30 for a clock showing 2:30, 25 for
+  43 − 18 with no borrow), a wrong tap wobbles and shows the right way in ink,
+  and a right tap gets one short pulse.
+- **K–1 intros speak** the pitch and each step once the browser allows it, as
+  the K–1 games do; the others have read-aloud buttons.
+
+The intros replace the workshops' old first-visit "How to play" screen. Each
+game's words live in `frontend/src/intros/` (one file per grade band and one for
+the workshops, with the demo tables drawn in a matching `*Scenes.tsx` file).
+
 ## Replaying the mistake
 
 A wrong answer in a workshop offers **"Show me what I did"**: the student's own
@@ -603,6 +629,8 @@ frontend/src/
                          MultiplicationShootoutPage, FractionSpoonsPage,
                          TwentyFourPage, CoordinateBattleshipPage,
                          VolumeBuilderPage, DashboardPage
+  intros/                every game's intro: pitch, demo captions and try-it,
+                         with the demo tables in *Scenes.tsx
   components/            DigitChip, Keypad, AnswerBox, PlayingCard, GameTable,
                          ProgressMeter, HundredthsGrid, FractionCard, DiceFace,
                          FractionBars, CubeBox, DotCard, ClockFace, ...

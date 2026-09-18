@@ -3,6 +3,7 @@ import CardWarPage from './pages/CardWarPage'
 import ClockMatchPage from './pages/ClockMatchPage'
 import CoordinateBattleshipPage from './pages/CoordinateBattleshipPage'
 import CoverTheNumberPage from './pages/CoverTheNumberPage'
+import IntroGate from './components/IntroGate'
 import DashboardPage from './pages/DashboardPage'
 import DecimalWarPage from './pages/DecimalWarPage'
 import DontBreakTheBankPage from './pages/DontBreakTheBankPage'
@@ -22,22 +23,24 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/practice/:gameId" element={<PracticePage />} />
-        <Route path="/curriculum/decimal-war" element={<DecimalWarPage />} />
-        <Route path="/curriculum/for-keeps" element={<ForKeepsPage />} />
-        <Route path="/curriculum/dont-break-the-bank" element={<DontBreakTheBankPage />} />
-        <Route path="/curriculum/target-number" element={<TargetNumberPage />} />
-        <Route path="/curriculum/clock-match" element={<ClockMatchPage />} />
-        <Route path="/curriculum/fraction-spoons" element={<FractionSpoonsPage />} />
-        <Route path="/curriculum/the-24-game" element={<TwentyFourPage />} />
-        <Route path="/curriculum/coordinate-plane-battleship" element={<CoordinateBattleshipPage />} />
-        <Route path="/curriculum/volume-builder" element={<VolumeBuilderPage />} />
-        <Route path="/curriculum/multiplication-shootout" element={<MultiplicationShootoutPage />} />
-        <Route path="/curriculum/addition-war" element={<CardWarPage game="addition-war" />} />
-        <Route path="/curriculum/take-away-war" element={<CardWarPage game="take-away-war" />} />
-        <Route path="/curriculum/shut-the-box" element={<ShutTheBoxPage />} />
-        <Route path="/curriculum/four-in-a-row" element={<FourInARowPage />} />
-        <Route path="/curriculum/cover-the-number" element={<CoverTheNumberPage />} />
+        <Route element={<IntroGate />}>
+          <Route path="/practice/:gameId" element={<PracticePage />} />
+          <Route path="/curriculum/decimal-war" element={<DecimalWarPage />} />
+          <Route path="/curriculum/for-keeps" element={<ForKeepsPage />} />
+          <Route path="/curriculum/dont-break-the-bank" element={<DontBreakTheBankPage />} />
+          <Route path="/curriculum/target-number" element={<TargetNumberPage />} />
+          <Route path="/curriculum/clock-match" element={<ClockMatchPage />} />
+          <Route path="/curriculum/fraction-spoons" element={<FractionSpoonsPage />} />
+          <Route path="/curriculum/the-24-game" element={<TwentyFourPage />} />
+          <Route path="/curriculum/coordinate-plane-battleship" element={<CoordinateBattleshipPage />} />
+          <Route path="/curriculum/volume-builder" element={<VolumeBuilderPage />} />
+          <Route path="/curriculum/multiplication-shootout" element={<MultiplicationShootoutPage />} />
+          <Route path="/curriculum/addition-war" element={<CardWarPage game="addition-war" />} />
+          <Route path="/curriculum/take-away-war" element={<CardWarPage game="take-away-war" />} />
+          <Route path="/curriculum/shut-the-box" element={<ShutTheBoxPage />} />
+          <Route path="/curriculum/four-in-a-row" element={<FourInARowPage />} />
+          <Route path="/curriculum/cover-the-number" element={<CoverTheNumberPage />} />
+        </Route>
         <Route path="/summary" element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>

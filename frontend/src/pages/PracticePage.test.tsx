@@ -40,7 +40,6 @@ function fakeApi(url: string) {
 }
 
 beforeEach(() => {
-  localStorage.setItem('tutorial_seen', 'true')
   reducedMotion = false
   animate.mockClear()
   vi.mocked(playSound).mockClear()
